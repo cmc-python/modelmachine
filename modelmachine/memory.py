@@ -43,9 +43,12 @@ class AbstractMemory(dict):
 
     """Class from which inherits concrete memory."""
 
-    def __init__(self, word_size, endianess='big'):
+    def __init__(self, word_size, endianess='big', addresses=None):
         """Define concrete memory with the word size."""
-        super().__init__()
+        if addresses is None:
+            addresses = dict()
+
+        super().__init__(addresses)
         self.word_size = word_size
 
         if endianess == "big":
@@ -90,8 +93,11 @@ class AbstractMemory(dict):
         self.check_bits_count(bits)
 
         size = bits // self.word_size
-        return self.decode([self[i] for i in range(address, address + size)],
-                           self.word_size)
+        if size == 1: # Address not always is integer, sometimes string
+            return self[address]
+        else:
+            return self.decode([self[i] for i in range(address, address + size)],
+                               self.word_size)
 
     def put(self, address, value, bits=None):
         """Put size bits by address.
@@ -112,14 +118,22 @@ class AbstractMemory(dict):
                              .format(value=value, bits=bits))
         enc_value += [0] * (size - len(enc_value))
 
-        for i in range(size):
-            self[address + i] = enc_value[i]
+        if size == 1: # Address not always is integer, sometimes string
+            self[address] = value
+        else:
+            for i in range(size):
+                self[address + i] = enc_value[i]
 
 class RandomAccessMemory(AbstractMemory):
 
-    """Random access memory."""
+    """Random access memory.
+
+    Addresses is x: 0 <= x < memory_size.
+    If is_protected == True, you cannot read unassigned memory (usefull for debug).
+    """
 
     def __init__(self, word_size, memory_size, is_protected=True, **other):
+        """Read help(type(x))."""
         super().__init__(word_size, **other)
         self.memory_size = memory_size
         self.is_protected = is_protected
@@ -153,8 +167,10 @@ class Registers(AbstractMemory):
 
     """Registers."""
 
-    def __init__(self, word_size, **other):
-        super().__init__(word_size, **other)
+    def __init__(self, word_size, registers, **other):
+        """List of addresses are required."""
+        addresses = {register: 0 for register in registers}
+        super().__init__(word_size, addresses=addresses, **other)
 
     def check_address(self, address):
         """Check that we have the register."""
@@ -162,3 +178,9 @@ class Registers(AbstractMemory):
             raise KeyError('Invalid register name: {address}'
                            .format(address=address))
 
+    def check_bits_count(self, bits):
+        """Bit count must be equal to word_size."""
+        if bits != self.word_size:
+            raise KeyError('Invalid bits count: {bits}. Should be {word_size}'
+                           .format(bits=bits, word_size=self.word_size))
+        super().check_bits_count(bits)

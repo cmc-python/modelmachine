@@ -4,7 +4,7 @@
 
 from modelmachine.memory import check_word_size, big_endian_decode, little_endian_decode
 from modelmachine.memory import big_endian_encode, little_endian_encode
-from modelmachine.memory import AbstractMemory, RandomAccessMemory
+from modelmachine.memory import AbstractMemory, RandomAccessMemory, Registers
 from pytest import raises
 
 BYTE_SIZE = 8
@@ -77,6 +77,15 @@ class TestAbstractMemory:
             self.memory[0] = 0
         with raises(NotImplementedError):
             self.memory['R1'] = 0
+
+    def test_init(self):
+        """Test if we can predefine addresses."""
+        self.memory = AbstractMemory(BYTE_SIZE, addresses={0: 5, 'R1': 6})
+        assert 0 in self.memory
+        assert 1 not in self.memory
+        assert -1 not in self.memory
+        assert 'R1' in self.memory
+        assert 'R2' not in self.memory
 
     def test_fetch(self):
         """Test that fetch is defined."""
@@ -200,3 +209,73 @@ class TestRandomAccessMemory:
         self.ram.put(5, value, 4 * self.ram.word_size)
         for i in range(5, 9):
             assert self.ram[i] == i
+
+class TestRegisters:
+
+    """Test case for Registers."""
+
+    registers = None
+
+    def setup(self):
+        """Init state."""
+        self.registers = Registers(WORD_SIZE, ['R1', 'R2', 'S'])
+        assert 'R1' in self.registers
+        assert self.registers['R1'] == 0
+        assert 'R2' in self.registers
+        assert self.registers['R2'] == 0
+        assert 'S' in self.registers
+        assert self.registers['S'] == 0
+        assert 'R3' not in self.registers
+        assert 'R4' not in self.registers
+        assert 0 not in self.registers
+
+    def test_check_address(self):
+        """Should raise an error for undefined registers."""
+        self.registers.check_address('R1')
+        self.registers.check_address('R2')
+        self.registers.check_address('S')
+        with raises(KeyError):
+            self.registers.check_address('R3')
+        with raises(KeyError):
+            self.registers.check_address('R4')
+        with raises(KeyError):
+            self.registers.check_address(0)
+
+    def test_setitem(self):
+        """Setitem can raise an error."""
+        with raises(KeyError):
+            self.registers[0] = 5
+        with raises(KeyError):
+            self.registers.__getitem__(0)
+        with raises(KeyError):
+            self.registers['R3'] = 5
+        with raises(KeyError):
+            self.registers.__getitem__('R3')
+        self.registers['R1'] = 5
+        assert self.registers['R1'] == 5
+        with raises(ValueError):
+            self.registers['R2'] = 2 ** self.registers.word_size
+        assert self.registers['R2'] == 0
+
+    def test_fetch_put(self):
+        """Test main method to read and write."""
+        with raises(KeyError):
+            self.registers.fetch(0, 5)
+        with raises(KeyError):
+            self.registers.fetch(0)
+        with raises(KeyError):
+            self.registers.put('R3', 5)
+        with raises(KeyError):
+            self.registers.fetch('R3')
+        self.registers.put('R1', 5)
+        assert self.registers.fetch('R1') == 5
+        assert self.registers.fetch('R1', self.registers.word_size) == 5
+        with raises(ValueError):
+            self.registers.put('R2', 2 ** self.registers.word_size)
+        assert self.registers.fetch('R2') == 0
+        assert self.registers.fetch('R2', self.registers.word_size) == 0
+        with raises(KeyError):
+            self.registers.fetch('R1', self.registers.word_size - 1)
+        with raises(KeyError):
+            self.registers.fetch('R1', self.registers.word_size * 2)
+
