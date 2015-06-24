@@ -72,15 +72,11 @@ class TestAbstractMemory:
                     self.memory.check_bits_count(i)
 
     def test_setitem(self):
-        """Test that setitem may raise an exception."""
-        self.memory[0] = 0
-        assert self.memory[0] == 0
-        self.memory[1] = 128
-        assert self.memory[1] == 128
-        with raises(ValueError):
-            self.memory[2] = 256
-        self.memory['R1'] = 10
-        assert self.memory['R1'] == 10
+        """Test that setitem is not implemented."""
+        with raises(NotImplementedError):
+            self.memory[0] = 0
+        with raises(NotImplementedError):
+            self.memory['R1'] = 0
 
     def test_fetch(self):
         """Test that fetch is defined."""
@@ -145,6 +141,8 @@ class TestRandomAccessMemory:
         with raises(TypeError):
             self.ram['R1'] = 10
         assert 'R1' not in self.ram
+        with raises(ValueError):
+            self.ram[2] = 2 ** self.ram.word_size
 
     def test_getitem(self):
         """Address should be checked."""

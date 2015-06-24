@@ -59,14 +59,20 @@ class AbstractMemory(dict):
     def __setitem__(self, address, word):
         """Raise an error, if word has wrong format."""
         check_word_size(word, self.word_size)
+        self.check_address(address)
         super().__setitem__(address, word)
+
+    def __get_item__(self, address):
+        """Return word."""
+        self.check_address(address)
+        return super().__getitem__(address)
 
     def check_address(self, address):
         """Should raise an exception if address is invalid."""
         raise NotImplementedError()
 
     def check_bits_count(self, bits):
-        """Checks that we want to read integer count of words."""
+        """Check that we want to read integer count of words."""
         if bits % self.word_size != 0:
             raise KeyError('Cannot read not integer count of words: needs '
                            '{bits} of bits, and word size is {word_size} bits'
@@ -76,7 +82,8 @@ class AbstractMemory(dict):
         """Load bits by address.
 
         Size must be divisible by self.word_size.
-        Size=None means size=self.word_size."""
+        Size=None means size=self.word_size.
+        """
         self.check_address(address)
         if bits is None:
             bits = self.word_size
@@ -90,7 +97,8 @@ class AbstractMemory(dict):
         """Put size bits by address.
 
         Size must be divisible by self.word_size.
-        Size=None means size=self.word_size."""
+        Size=None means size=self.word_size.
+        """
         self.check_address(address)
         if bits is None:
             bits = self.word_size
@@ -131,12 +139,9 @@ class RandomAccessMemory(AbstractMemory):
                            .format(address=address,
                                    memory_size=len(self)))
 
-    def __getitem__(self, address):
-        self.check_address(address)
-        return super().__getitem__(address)
-
     def __missing__(self, address):
-        """Calls if there addressed memory not defined"""
+        """If addressed memory not defined."""
+        self.check_address(address)
         if self.is_protected:
             raise KeyError('Cannot read memory by address: {address}, '
                            'it is dirty memory, clean it first'
@@ -144,6 +149,16 @@ class RandomAccessMemory(AbstractMemory):
         else:
             return 0
 
-    def __setitem__(self, address, word):
-        self.check_address(address)
-        super().__setitem__(address, word)
+class Registers(AbstractMemory):
+
+    """Registers."""
+
+    def __init__(self, word_size, **other):
+        super().__init__(word_size, **other)
+
+    def check_address(self, address):
+        """Check that we have the register."""
+        if address not in self:
+            raise KeyError('Invalid register name: {address}'
+                           .format(address=address))
+
