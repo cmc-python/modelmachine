@@ -2,43 +2,13 @@
 
 """Test case for memory module."""
 
-from modelmachine.memory import check_word_size, big_endian_decode, little_endian_decode
+from modelmachine.memory import big_endian_decode, little_endian_decode
 from modelmachine.memory import big_endian_encode, little_endian_encode
-from modelmachine.memory import AbstractMemory, RandomAccessMemory, Registers
+from modelmachine.memory import AbstractMemory, RandomAccessMemory, RegisterMemory
 from pytest import raises
 
 BYTE_SIZE = 8
 WORD_SIZE = 32
-
-def test_check_word_size():
-    """Word size check is a first part of information protection."""
-    check_word_size(0, 1)
-    check_word_size(1, 1)
-    with raises(ValueError):
-        check_word_size(2, 1)
-    with raises(ValueError):
-        check_word_size(20, 1)
-    with raises(ValueError):
-        check_word_size(-1, 1)
-
-    for i in range(2 ** BYTE_SIZE):
-        check_word_size(i, BYTE_SIZE)
-    for i in range(2 ** BYTE_SIZE, 2 * 2 ** BYTE_SIZE):
-        with raises(ValueError):
-            check_word_size(i, BYTE_SIZE)
-    for i in range(-2 ** BYTE_SIZE, 0):
-        with raises(ValueError):
-            check_word_size(i, BYTE_SIZE)
-
-    for i in range(1024):
-        check_word_size(2 ** i - 1, 1024)
-    for i in range(1024):
-        with raises(ValueError):
-            check_word_size(-2 ** i, 1024)
-    with raises(ValueError):
-        check_word_size(2 ** 1024, 1024)
-    with raises(ValueError):
-        check_word_size(2 ** 1024, 1024)
 
 
 def test_endianess():
@@ -62,7 +32,18 @@ class TestAbstractMemory:
         self.memory = AbstractMemory(BYTE_SIZE)
         assert self.memory.word_size == BYTE_SIZE
 
-    def test_check_words_size(self):
+    def test_check_word_size(self):
+        """Word size check is a first part of information protection."""
+        for i in range(2 ** self.memory.word_size):
+            self.memory.check_word_size(i)
+        for i in range(2 ** self.memory.word_size, 2 * 2 ** self.memory.word_size):
+            with raises(ValueError):
+                self.memory.check_word_size(i)
+        for i in range(-2 ** self.memory.word_size, 0):
+            with raises(ValueError):
+                self.memory.check_word_size(i)
+
+    def test_check_bits_count(self):
         """Should runs without exception, when size % word_size == 0."""
         for i in range(1, self.memory.word_size * 10):
             if i % self.memory.word_size == 0:
@@ -210,15 +191,15 @@ class TestRandomAccessMemory:
         for i in range(5, 9):
             assert self.ram[i] == i
 
-class TestRegisters:
+class TestRegisterMemory:
 
-    """Test case for Registers."""
+    """Test case for RegisterMemory."""
 
     registers = None
 
     def setup(self):
         """Init state."""
-        self.registers = Registers(WORD_SIZE, ['R1', 'R2', 'S'])
+        self.registers = RegisterMemory(WORD_SIZE, ['R1', 'R2', 'S'])
         assert 'R1' in self.registers
         assert self.registers['R1'] == 0
         assert 'R2' in self.registers

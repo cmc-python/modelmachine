@@ -5,13 +5,6 @@
 Word is long integer.
 """
 
-def check_word_size(word, word_size):
-    """Check that value can be represented by word with the size."""
-    if not 0 <= word < 2 ** word_size:
-        raise ValueError('Wrong format of word: {word}, '
-                         'should be 0 <= word < {max_value}'
-                         .format(word=word, max_value=2 ** word_size))
-
 def big_endian_decode(array, word_size):
     """Transform array of words to one integer."""
     result = 0
@@ -59,9 +52,17 @@ class AbstractMemory(dict):
             raise ValueError('Unexpected endianess: {endianess}'
                              .format(endianess=endianess))
 
+    def check_word_size(self, word):
+        """Check that value can be represented by word with the size."""
+        if not 0 <= word < 2 ** self.word_size:
+            raise ValueError('Wrong format of word: {word}, '
+                             'should be 0 <= word < {max_value}'
+                             .format(word=word, max_value=2 ** self.word_size))
+
+
     def __setitem__(self, address, word):
         """Raise an error, if word has wrong format."""
-        check_word_size(word, self.word_size)
+        self.check_word_size(word)
         self.check_address(address)
         super().__setitem__(address, word)
 
@@ -163,7 +164,7 @@ class RandomAccessMemory(AbstractMemory):
         else:
             return 0
 
-class Registers(AbstractMemory):
+class RegisterMemory(AbstractMemory):
 
     """Registers."""
 
