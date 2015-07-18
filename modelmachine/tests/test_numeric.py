@@ -21,29 +21,24 @@ class TestNumeric:
         self.first = Integer(10)
         assert self.first.size == 32
         assert self.first.signed == True
-        assert self.first.value == 10
+        assert self.first.get_value() == 10
 
         self.first = Integer(2 ** 32 - 1)
-        assert self.first.value == -1
+        assert self.first.get_value() == -1
 
         self.first = Integer(2 ** 32 - 1, 32, False)
-        assert self.first.value == 2 ** 32 - 1
+        assert self.first.get_value() == 2 ** 32 - 1
 
         for size in (8, 16, 32, 64):
             for signed in (True, False):
                 self.first = Integer(10, size, signed)
                 assert self.first.size == size
                 assert self.first.signed == signed
-                assert self.first.value == 10
+                assert self.first.get_value() == 10
                 self.first = Integer(10, signed=signed, size=size)
                 assert self.first.size == size
                 assert self.first.signed == signed
-                assert self.first.value == 10
-
-        with raises(NotImplementedError):
-            Integer(10, 12, True)
-        with raises(NotImplementedError):
-            Integer(10, 12, False)
+                assert self.first.get_value() == 10
 
     def test_check_compability(self):
         """Test check compability method."""
