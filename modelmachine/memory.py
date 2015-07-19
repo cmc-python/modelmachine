@@ -19,6 +19,9 @@ def little_endian_decode(array, word_size):
 
 def little_endian_encode(value, word_size):
     """Transform long integer to list of small."""
+    if value < 0:
+        raise ValueError('Cannot save negative value: {value}'
+                         .format(value=value))
     if value == 0:
         return [0]
     else:

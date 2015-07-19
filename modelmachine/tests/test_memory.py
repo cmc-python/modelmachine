@@ -253,6 +253,8 @@ class TestRegisterMemory:
         assert self.registers.fetch('R1', self.registers.word_size) == 5
         with raises(ValueError):
             self.registers.put('R2', 2 ** self.registers.word_size)
+        with raises(ValueError):
+            self.registers.put('R2', -10)
         assert self.registers.fetch('R2') == 0
         assert self.registers.fetch('R2', self.registers.word_size) == 0
         with raises(KeyError):
