@@ -35,6 +35,10 @@ class Integer(Number):
 
         return self.value
 
+    def get_data(self):
+        """Return value in two's complement."""
+        return self.value
+
     def __add__(self, other):
         """Equal to self + other."""
         self.check_compability(other)

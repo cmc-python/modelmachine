@@ -185,3 +185,13 @@ class TestNumeric:
         assert self.second / self.first == Integer(1)
         assert self.second // self.first == Integer(1)
         assert self.second % self.first == Integer(2)
+
+    def test_get_data(self):
+        """Test two's complement."""
+        assert self.first.get_data() == 10
+        self.first = Integer(-5)
+        assert self.first.get_data() == 2 ** 32 - 5
+        assert self.first.get_value() == -5
+        self.first = Integer(-5, signed=False)
+        assert self.first.get_data() == 2 ** 32 - 5
+        assert self.first.get_value() == 2 ** 32 - 5
