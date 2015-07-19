@@ -197,3 +197,35 @@ class TestArithmeticLogicUnit:
         self.registers.put('R1', 15, BYTE_SIZE)
         self.alu.jump()
         assert self.registers.fetch('IP', BYTE_SIZE) == 15
+
+        self.registers.put('R1', 12, BYTE_SIZE)
+        self.registers.put('R2', 12, BYTE_SIZE)
+        self.alu.sub()
+        self.registers.put('R1', 1)
+        self.alu.jump_equal()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 1
+
+        self.registers.put('R1', 2)
+        self.alu.sub()
+        self.alu.jump_equal()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 1
+        self.alu.jump_not_equal()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 2
+
+        self.registers.put('R1', 3)
+        self.alu.sub()
+        self.alu.jump_unsigned_less()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 3
+        self.registers.put('R1', 15)
+        self.alu.sub()
+        self.alu.jump_unsigned_less()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 3
+        self.registers.put('R1', 18)
+        self.alu.sub()
+        self.alu.jump_unsigned_less()
+        assert self.registers.fetch('IP', BYTE_SIZE) == 3
+
+    def test_get_flags(self):
+        """Just test."""
+        self.registers.put('FLAGS', 15, BYTE_SIZE)
+        assert self.alu.get_flags() == 15

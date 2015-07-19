@@ -147,3 +147,57 @@ class ArithmeticLogicUnit:
         """IP := R1."""
         value = self.registers.fetch('R1', self.operand_size)
         self.registers.put('IP', value, self.operand_size)
+
+    def get_flags(self):
+        """Return flags register."""
+        return self.registers.fetch('FLAGS', self.operand_size)
+
+    def cond_jump(self, signed, comparasion, equal):
+        """All jumps: more, less, less_or_equal etc.
+
+        signed may be True or False.
+        comparasion may be 1, 0, -1.
+        equal may be True or False.
+
+        >>> alu.cond_jump(signed=False, comparasion=1, equal=False) # a > b
+        """
+
+        flags = self.get_flags()
+
+        if comparasion == 0:
+            if equal:
+                if bool(flags & ZF):
+                    self.jump()
+            else:
+                if not bool(flags & ZF):
+                    self.jump()
+        elif signed:
+            if comparasion < 0:
+                if equal:
+                    if bool(flags & OF) != bool(flags & SF) or bool(flags & ZF):
+                        self.jump()
+                else:
+                    if bool(flags & OF) != bool(flags & SF):
+                        self.jump()
+            else:
+                if equal:
+                    if bool(flags & OF) == bool(flags & SF):
+                        self.jump()
+                else:
+                    if bool(flags & OF) == bool(flags & SF) and not bool(flags & ZF):
+                        self.jump()
+        else: # unsigned
+            if comparasion < 0:
+                if equal:
+                    if bool(flags & CF) or bool(flags & ZF):
+                        self.jump()
+                else:
+                    if bool(flags & CF):
+                        self.jump()
+            else:
+                if equal:
+                    if not bool(flags & CF):
+                        self.jump()
+                else:
+                    if not bool(flags & CF) and not bool(flags & ZF):
+                        self.jump()
