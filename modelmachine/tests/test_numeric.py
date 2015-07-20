@@ -195,3 +195,16 @@ class TestNumeric:
         self.first = Integer(-5, signed=False)
         assert self.first.get_data() == 2 ** 32 - 5
         assert self.first.get_value() == 2 ** 32 - 5
+
+    def test_hash(self):
+        """Test if we can use Integer for indexing."""
+        third = Integer(10, 32, True)
+        assert hash(self.first) != hash(self.second)
+        assert hash(self.first) == hash(third)
+        assert hash(self.second) != hash(third)
+        dic = dict()
+        dic[self.first] = 10
+        dic[self.second] = 11
+        assert dic[self.first] == 10
+        assert dic[self.second] == 11
+        assert dic[third] == 10
