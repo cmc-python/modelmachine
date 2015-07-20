@@ -69,7 +69,7 @@ class AbstractMemory(dict):
         self.check_address(address)
         super().__setitem__(address, word)
 
-    def __get_item__(self, address):
+    def __getitem__(self, address):
         """Return word."""
         self.check_address(address)
         return super().__getitem__(address)
