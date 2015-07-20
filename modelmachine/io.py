@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Input/output device."""
+"""Allow to input and output program and data."""
 
-class IODevice:
+class InputOutputUnit:
 
-    """Input/output device."""
+    """Allow to input and output program and data."""
 
     def __init__(self, memory):
         """See help(type(x))."""

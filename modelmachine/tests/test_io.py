@@ -2,7 +2,7 @@
 
 """Test case for input/output device."""
 
-from modelmachine.io import IODevice
+from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory
 
 from pytest import raises
@@ -20,7 +20,7 @@ class TestIODevice:
     def setup(self):
         """Init state."""
         self.memory = RandomAccessMemory(BYTE_SIZE, MEMORY_SIZE, endianess='big')
-        self.io_device = IODevice(self.memory)
+        self.io_device = InputOutputUnit(self.memory)
 
     def test_load_from_string(self):
         """Test loading from string."""
