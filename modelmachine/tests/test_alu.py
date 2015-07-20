@@ -5,7 +5,7 @@
 from modelmachine.memory import RegisterMemory
 from modelmachine.numeric import Integer
 from modelmachine.alu import ArithmeticLogicUnit
-from modelmachine.alu import ZF, CF, OF, SF
+from modelmachine.alu import ZF, CF, OF, SF, LESS, EQUAL, GREATER
 
 BYTE_SIZE = 8
 
@@ -28,9 +28,9 @@ class TestArithmeticLogicUnit:
         assert self.alu.operand_size == BYTE_SIZE
         assert self.registers.word_size == BYTE_SIZE
 
-    def test_set_flags(self):
-        """Test set flags register algorithm."""
-        for i in range(4 * self.min_int, 4 * self.max_int):
+    def test_set_flags_negative(self):
+        """Test set flags register algorithm with negative numbers."""
+        for i in range(4 * self.min_int, 0):
             self.registers.put('S', i % 2 ** BYTE_SIZE, BYTE_SIZE)
             self.alu.set_flags(i, i)
             if i == 4 * self.min_int:
@@ -47,6 +47,12 @@ class TestArithmeticLogicUnit:
                 assert self.registers.fetch('FLAGS', BYTE_SIZE) == OF | CF
             if self.min_int <= i < 0:
                 assert self.registers.fetch('FLAGS', BYTE_SIZE) == SF | CF
+
+    def test_set_flags_positive(self):
+        """Test set flags register algorithm with positive numbers."""
+        for i in range(0, 4 * self.max_int):
+            self.registers.put('S', i % 2 ** BYTE_SIZE, BYTE_SIZE)
+            self.alu.set_flags(i, i)
             if i == 0:
                 assert self.registers.fetch('FLAGS', BYTE_SIZE) == ZF
             if 0 < i < self.max_int:
@@ -201,31 +207,66 @@ class TestArithmeticLogicUnit:
         self.registers.put('R1', 12, BYTE_SIZE)
         self.registers.put('R2', 12, BYTE_SIZE)
         self.alu.sub()
-        self.registers.put('R1', 1)
-        self.alu.jump_equal()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 1
+        self.alu.cond_jump(signed=True, comparasion=EQUAL, equal=True)
+        assert self.registers.fetch('IP', BYTE_SIZE) == 12
 
-        self.registers.put('R1', 2)
-        self.alu.sub()
-        self.alu.jump_equal()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 1
-        self.alu.jump_not_equal()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 2
 
-        self.registers.put('R1', 3)
+    def run_cond_jump(self, should_jump, first, second, *vargs, **kvargs):
+        """Run one conditional jump test."""
+        self.registers.put('R1', first % 2 ** BYTE_SIZE, BYTE_SIZE)
+        self.registers.put('R2', second % 2 ** BYTE_SIZE, BYTE_SIZE)
         self.alu.sub()
-        self.alu.jump_unsigned_less()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 3
-        self.registers.put('R1', 15)
-        self.alu.sub()
-        self.alu.jump_unsigned_less()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 3
-        self.registers.put('R1', 18)
-        self.alu.sub()
-        self.alu.jump_unsigned_less()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 3
+        self.registers.put('IP', 1, BYTE_SIZE)
+        self.registers.put('R1', 2, BYTE_SIZE)
+        self.alu.cond_jump(*vargs, **kvargs)
+        if should_jump:
+            assert self.registers.fetch('IP', BYTE_SIZE) == 2
+        else:
+            assert self.registers.fetch('IP', BYTE_SIZE) == 1
 
-    def test_get_flags(self):
-        """Just test."""
-        self.registers.put('FLAGS', 15, BYTE_SIZE)
-        assert self.alu.get_flags() == 15
+    def test_cond_jump(self):
+        """Tests for conditional jumps."""
+        for signed in (False, True):
+            self.run_cond_jump(False, 5, 10, signed, EQUAL, equal=True)
+            self.run_cond_jump(True, 10, 10, signed, EQUAL, equal=True)
+            self.run_cond_jump(False, 15, 10, signed, EQUAL, equal=True)
+
+            self.run_cond_jump(True, 5, 10, signed, EQUAL, equal=False)
+            self.run_cond_jump(False, 10, 10, signed, EQUAL, equal=False)
+            self.run_cond_jump(True, 15, 10, signed, EQUAL, equal=False)
+
+            self.run_cond_jump(True, 5, 10, signed, LESS, equal=False)
+            self.run_cond_jump(False, 10, 10, signed, LESS, equal=False)
+            self.run_cond_jump(False, 15, 10, signed, LESS, equal=False)
+
+            self.run_cond_jump(True, 5, 10, signed, LESS, equal=True)
+            self.run_cond_jump(True, 10, 10, signed, LESS, equal=True)
+            self.run_cond_jump(False, 15, 10, signed, LESS, equal=True)
+
+            self.run_cond_jump(False, 5, 10, signed, GREATER, equal=False)
+            self.run_cond_jump(False, 10, 10, signed, GREATER, equal=False)
+            self.run_cond_jump(True, 15, 10, signed, GREATER, equal=False)
+
+            self.run_cond_jump(False, 5, 10, signed, GREATER, equal=True)
+            self.run_cond_jump(True, 10, 10, signed, GREATER, equal=True)
+            self.run_cond_jump(True, 15, 10, signed, GREATER, equal=True)
+
+        self.run_cond_jump(False, -10, 10, False, LESS, equal=False)
+        self.run_cond_jump(False, -10, 10, False, LESS, equal=True)
+        self.run_cond_jump(True, -10, 10, True, LESS, equal=False)
+        self.run_cond_jump(True, -10, 10, True, LESS, equal=True)
+
+        self.run_cond_jump(True, 10, -10, False, LESS, equal=False)
+        self.run_cond_jump(True, 10, -10, False, LESS, equal=True)
+        self.run_cond_jump(False, 10, -10, True, LESS, equal=False)
+        self.run_cond_jump(False, 10, -10, True, LESS, equal=True)
+
+        self.run_cond_jump(True, -10, 10, False, GREATER, equal=False)
+        self.run_cond_jump(True, -10, 10, False, GREATER, equal=True)
+        self.run_cond_jump(False, -10, 10, True, GREATER, equal=False)
+        self.run_cond_jump(False, -10, 10, True, GREATER, equal=True)
+
+        self.run_cond_jump(False, 10, -10, False, GREATER, equal=False)
+        self.run_cond_jump(False, 10, -10, False, GREATER, equal=True)
+        self.run_cond_jump(True, 10, -10, True, GREATER, equal=False)
+        self.run_cond_jump(True, 10, -10, True, GREATER, equal=True)
