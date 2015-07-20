@@ -8,6 +8,7 @@ CF = 2 ** 0
 OF = 2 ** 1
 SF = 2 ** 2
 ZF = 2 ** 3
+HALT = 2 ** 4
 
 LESS = -1
 EQUAL = 0
@@ -208,3 +209,7 @@ class ArithmeticLogicUnit:
             _signed_cond_jump()
         else: # unsigned
             _unsigned_cond_jump()
+
+    def halt(self):
+        """Stop the machine."""
+        self.registers.put('FLAGS', HALT, self.operand_size)

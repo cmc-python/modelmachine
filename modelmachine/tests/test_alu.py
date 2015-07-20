@@ -5,7 +5,7 @@
 from modelmachine.memory import RegisterMemory
 from modelmachine.numeric import Integer
 from modelmachine.alu import ArithmeticLogicUnit
-from modelmachine.alu import ZF, CF, OF, SF, LESS, EQUAL, GREATER
+from modelmachine.alu import ZF, CF, OF, SF, HALT, LESS, EQUAL, GREATER
 
 BYTE_SIZE = 8
 
@@ -270,3 +270,9 @@ class TestArithmeticLogicUnit:
         self.run_cond_jump(False, 10, -10, False, GREATER, equal=True)
         self.run_cond_jump(True, 10, -10, True, GREATER, equal=False)
         self.run_cond_jump(True, 10, -10, True, GREATER, equal=True)
+
+    def test_halt(self):
+        """Very easy and important test."""
+        assert self.registers.fetch('FLAGS', BYTE_SIZE) & HALT == 0
+        self.alu.halt()
+        assert self.registers.fetch('FLAGS', BYTE_SIZE) & HALT != 0
