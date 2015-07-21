@@ -172,6 +172,12 @@ class TestArithmeticLogicUnit:
         assert self.registers.fetch('S', BYTE_SIZE) == -150 % 2 ** BYTE_SIZE
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == OF | CF
 
+    def test_move(self):
+        """Test move command."""
+        self.registers.put('R1', 10, BYTE_SIZE)
+        self.alu.move()
+        assert self.registers.fetch('S', BYTE_SIZE) == 10
+
     def test_divmod(self):
         """Division test."""
         self.registers.put('R1', 27, BYTE_SIZE)

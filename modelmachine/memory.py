@@ -111,7 +111,6 @@ class AbstractMemory(dict):
 
         size = bits // self.word_size
         enc_value = self.encode(value, self.word_size)
-        print(enc_value, bits, self.word_size)
         if len(enc_value) > size:
             raise ValueError('Too long integer: {value}, expected '
                              '{bits} bits integer'
@@ -200,8 +199,8 @@ class RegisterMemory(AbstractMemory):
     def check_bits_count(self, name, size):
         """Bit count must be equal to word_size."""
         if size != self.register_sizes[name]:
-            raise KeyError('Invalid register size: {size}. Should be {ex_size}'
-                           .format(size=size,
+            raise KeyError('Invalid register {name} size: {size}. Should be {ex_size}'
+                           .format(name=name, size=size,
                                    ex_size=self.register_sizes[name]))
         else:
             self.word_size = size

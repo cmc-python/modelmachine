@@ -222,3 +222,8 @@ class ArithmeticLogicUnit:
     def halt(self):
         """Stop the machine."""
         self.registers.put('FLAGS', HALT, self.operand_size)
+
+    def move(self):
+        """S := R1."""
+        value = self.registers.fetch('R1', self.operand_size)
+        self.registers.put('S', value, self.operand_size)
