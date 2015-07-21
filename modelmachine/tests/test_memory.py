@@ -47,10 +47,10 @@ class TestAbstractMemory:
         """Should runs without exception, when size % word_size == 0."""
         for i in range(1, self.memory.word_size * 10):
             if i % self.memory.word_size == 0:
-                self.memory.check_bits_count(i)
+                self.memory.check_bits_count(0, i)
             else:
                 with raises(KeyError):
-                    self.memory.check_bits_count(i)
+                    self.memory.check_bits_count(0, i)
 
     def test_setitem(self):
         """Test that setitem is not implemented."""
@@ -72,15 +72,11 @@ class TestAbstractMemory:
         """Test that fetch is defined."""
         with raises(NotImplementedError):
             self.memory.fetch(0, BYTE_SIZE)
-        with raises(NotImplementedError):
-            self.memory.fetch(0)
 
     def test_put(self):
         """Test that put is defined."""
         with raises(NotImplementedError):
             self.memory.put(0, 15, BYTE_SIZE)
-        with raises(NotImplementedError):
-            self.memory.put(0, 15)
 
     def test_endianess(self):
         """Test, if right functions are assigned."""
@@ -103,7 +99,7 @@ class TestRandomAccessMemory:
 
     def setup(self):
         """Init state."""
-        self.ram = RandomAccessMemory(WORD_SIZE, 512)
+        self.ram = RandomAccessMemory(WORD_SIZE, 512, endianess='big')
         assert self.ram.word_size == WORD_SIZE
         assert self.ram.memory_size == 512
         assert len(self.ram) == 512
@@ -132,7 +128,7 @@ class TestRandomAccessMemory:
             self.ram['R1'] = 10
         assert 'R1' not in self.ram
         with raises(ValueError):
-            self.ram[2] = 2 ** self.ram.word_size
+            self.ram[2] = 2 ** WORD_SIZE
 
     def test_getitem(self):
         """Address should be checked."""
@@ -148,7 +144,7 @@ class TestRandomAccessMemory:
 
     def test_not_protected_getitem(self):
         """Test if programmer can shut in his leg."""
-        self.ram = RandomAccessMemory(WORD_SIZE, 512, False)
+        self.ram = RandomAccessMemory(WORD_SIZE, 512, 'big', is_protected=False)
         for i in range(len(self.ram)):
             assert self.ram[i] == 0
         for i in range(len(self.ram), 2 * len(self.ram)):
@@ -159,35 +155,35 @@ class TestRandomAccessMemory:
         """Fetch is basic operation of transfer data."""
         for i in range(5, 9):
             self.ram[i] = i
-        assert (self.ram.fetch(5, 4 * self.ram.word_size) ==
-                big_endian_decode([5, 6, 7, 8], self.ram.word_size))
-        assert self.ram.fetch(5) == 5
+            assert self.ram.fetch(i, WORD_SIZE) == i
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                big_endian_decode([5, 6, 7, 8], WORD_SIZE))
 
         with raises(KeyError):
-            self.ram.fetch(5, 4 * self.ram.word_size - 1)
+            self.ram.fetch(5, 4 * WORD_SIZE - 1)
         with raises(KeyError):
-            self.ram.fetch(4, 4 * self.ram.word_size)
+            self.ram.fetch(4, 4 * WORD_SIZE)
 
         self.ram = RandomAccessMemory(WORD_SIZE, 512, endianess="little")
         for i in range(5, 9):
             self.ram[i] = i
-        assert (self.ram.fetch(5, 4 * self.ram.word_size) ==
-                little_endian_decode([5, 6, 7, 8], self.ram.word_size))
-        assert self.ram.fetch(5) == 5
+            assert self.ram.fetch(i, WORD_SIZE) == i
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                little_endian_decode([5, 6, 7, 8], WORD_SIZE))
 
     def test_put(self):
         """Test put operation."""
-        value = big_endian_decode([5, 6, 7, 8], self.ram.word_size)
-        self.ram.put(5, value, 4 * self.ram.word_size)
+        value = big_endian_decode([5, 6, 7, 8], WORD_SIZE)
+        self.ram.put(5, value, 4 * WORD_SIZE)
         with raises(ValueError):
-            self.ram.put(5, 2 ** self.ram.word_size)
-        self.ram.put(4, 4)
+            self.ram.put(5, 2 ** WORD_SIZE, WORD_SIZE)
+        self.ram.put(4, 4, WORD_SIZE)
         for i in range(4, 9):
             assert self.ram[i] == i
 
         self.ram = RandomAccessMemory(WORD_SIZE, 512, endianess="little")
-        value = little_endian_decode([5, 6, 7, 8], self.ram.word_size)
-        self.ram.put(5, value, 4 * self.ram.word_size)
+        value = little_endian_decode([5, 6, 7, 8], WORD_SIZE)
+        self.ram.put(5, value, 4 * WORD_SIZE)
         for i in range(5, 9):
             assert self.ram[i] == i
 
@@ -199,13 +195,16 @@ class TestRegisterMemory:
 
     def setup(self):
         """Init state."""
-        self.registers = RegisterMemory(WORD_SIZE, ['R1', 'R2', 'S'])
+        self.registers = RegisterMemory()
+        self.registers.add_register('R1', WORD_SIZE)
         assert 'R1' in self.registers
-        assert self.registers['R1'] == 0
+        assert self.registers.fetch('R1', WORD_SIZE) == 0
+        self.registers.add_register('R2', WORD_SIZE)
         assert 'R2' in self.registers
-        assert self.registers['R2'] == 0
+        assert self.registers.fetch('R2', WORD_SIZE) == 0
+        self.registers.add_register('S', WORD_SIZE)
         assert 'S' in self.registers
-        assert self.registers['S'] == 0
+        assert self.registers.fetch('S', WORD_SIZE) == 0
         assert 'R3' not in self.registers
         assert 'R4' not in self.registers
         assert 0 not in self.registers
@@ -221,6 +220,22 @@ class TestRegisterMemory:
             self.registers.check_address('R4')
         with raises(KeyError):
             self.registers.check_address(0)
+
+    def test_add_register(self):
+        """Register with exist name should be addable."""
+        self.registers.put('R1', 10, WORD_SIZE)
+        self.registers.add_register('R1', WORD_SIZE)
+        assert self.registers.fetch('R1', WORD_SIZE) == 10
+
+        with raises(KeyError):
+            self.registers.add_register('R1', WORD_SIZE + 1)
+
+        with raises(KeyError):
+            self.registers.fetch('R3', WORD_SIZE)
+        self.registers.add_register('R3', WORD_SIZE)
+        assert self.registers.fetch('R3', WORD_SIZE) == 0
+        self.registers.put('R3', 10, WORD_SIZE)
+        assert self.registers.fetch('R3', WORD_SIZE) == 10
 
     def test_setitem(self):
         """Setitem can raise an error."""
@@ -238,27 +253,21 @@ class TestRegisterMemory:
             self.registers['R2'] = 2 ** self.registers.word_size
         assert self.registers['R2'] == 0
 
-    def test_fetch_put(self):
+    def test_fetch_and_put(self):
         """Test main method to read and write."""
         with raises(KeyError):
-            self.registers.fetch(0, 5)
+            self.registers.fetch(0, WORD_SIZE)
         with raises(KeyError):
-            self.registers.fetch(0)
-        with raises(KeyError):
-            self.registers.put('R3', 5)
-        with raises(KeyError):
-            self.registers.fetch('R3')
-        self.registers.put('R1', 5)
-        assert self.registers.fetch('R1') == 5
-        assert self.registers.fetch('R1', self.registers.word_size) == 5
+            self.registers.put('R3', 5, WORD_SIZE + 1)
+        self.registers.put('R1', 5, WORD_SIZE)
+        assert self.registers.fetch('R1', WORD_SIZE) == 5
         with raises(ValueError):
-            self.registers.put('R2', 2 ** self.registers.word_size)
+            self.registers.put('R2', 2 ** WORD_SIZE, WORD_SIZE)
         with raises(ValueError):
-            self.registers.put('R2', -10)
-        assert self.registers.fetch('R2') == 0
-        assert self.registers.fetch('R2', self.registers.word_size) == 0
+            self.registers.put('R2', -10, WORD_SIZE)
+        assert self.registers.fetch('R2', WORD_SIZE) == 0
         with raises(KeyError):
-            self.registers.fetch('R1', self.registers.word_size - 1)
+            self.registers.fetch('R1', WORD_SIZE + 1)
         with raises(KeyError):
-            self.registers.fetch('R1', self.registers.word_size * 2)
+            self.registers.fetch('R1', WORD_SIZE * 2)
 

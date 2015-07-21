@@ -8,6 +8,7 @@ from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.alu import ZF, CF, OF, SF, HALT, LESS, EQUAL, GREATER
 
 BYTE_SIZE = 8
+WORD_SIZE = 32
 
 class TestArithmeticLogicUnit:
 
@@ -19,14 +20,13 @@ class TestArithmeticLogicUnit:
 
     def setup(self):
         """Init state."""
-        self.registers = RegisterMemory(BYTE_SIZE, ['R1', 'R2', 'S',
-                                                    'FLAGS', 'IP'])
-        self.alu = ArithmeticLogicUnit(BYTE_SIZE, self.registers)
+        self.registers = RegisterMemory()
+        self.alu = ArithmeticLogicUnit(self.registers, BYTE_SIZE, WORD_SIZE)
         self.max_int = 2 ** (self.alu.operand_size - 1)
         self.min_int = -2 ** (self.alu.operand_size - 1)
         assert self.alu.registers is self.registers
         assert self.alu.operand_size == BYTE_SIZE
-        assert self.registers.word_size == BYTE_SIZE
+        assert self.alu.address_size == WORD_SIZE
 
     def test_set_flags_negative(self):
         """Test set flags register algorithm with negative numbers."""
@@ -202,13 +202,13 @@ class TestArithmeticLogicUnit:
         """Test jump instruction."""
         self.registers.put('R1', 15, BYTE_SIZE)
         self.alu.jump()
-        assert self.registers.fetch('IP', BYTE_SIZE) == 15
+        assert self.registers.fetch('IP', WORD_SIZE) == 15
 
         self.registers.put('R1', 12, BYTE_SIZE)
         self.registers.put('R2', 12, BYTE_SIZE)
         self.alu.sub()
         self.alu.cond_jump(signed=True, comparasion=EQUAL, equal=True)
-        assert self.registers.fetch('IP', BYTE_SIZE) == 12
+        assert self.registers.fetch('IP', WORD_SIZE) == 12
 
 
     def run_cond_jump(self, should_jump, first, second, *vargs, **kvargs):
@@ -216,16 +216,16 @@ class TestArithmeticLogicUnit:
         self.registers.put('R1', first % 2 ** BYTE_SIZE, BYTE_SIZE)
         self.registers.put('R2', second % 2 ** BYTE_SIZE, BYTE_SIZE)
         self.alu.sub()
-        self.registers.put('IP', 1, BYTE_SIZE)
+        self.registers.put('IP', 1, WORD_SIZE)
         self.registers.put('R1', 2, BYTE_SIZE)
         self.alu.cond_jump(*vargs, **kvargs)
         if should_jump:
-            assert self.registers.fetch('IP', BYTE_SIZE) == 2
+            assert self.registers.fetch('IP', WORD_SIZE) == 2
         else:
-            assert self.registers.fetch('IP', BYTE_SIZE) == 1
+            assert self.registers.fetch('IP', WORD_SIZE) == 1
 
     def test_cond_jump(self):
-        """Tests for conditional jumps."""
+        """Test for conditional jumps."""
         for signed in (False, True):
             self.run_cond_jump(False, 5, 10, signed, EQUAL, equal=True)
             self.run_cond_jump(True, 10, 10, signed, EQUAL, equal=True)

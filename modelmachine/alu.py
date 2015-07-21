@@ -18,13 +18,22 @@ class ArithmeticLogicUnit:
 
     """Arithmetic logic unit.
 
-    Require registers R1, R2, S, RES, FLAGS and IP.
+    Require registers R1, R2, S, FLAGS with size operand_size and IP with
+    size address_size.
     """
 
-    def __init__(self, operand_size, registers):
+    def __init__(self, registers, operand_size, address_size):
         """See help(type(x))."""
         self.registers = registers
+
         self.operand_size = operand_size
+        self.address_size = address_size
+
+        self.registers.add_register('R1', operand_size)
+        self.registers.add_register('R2', operand_size)
+        self.registers.add_register('S', operand_size)
+        self.registers.add_register('FLAGS', operand_size)
+        self.registers.add_register('IP', address_size)
 
     def set_flags(self, signed, unsigned):
         """Set flags."""
@@ -151,7 +160,7 @@ class ArithmeticLogicUnit:
     def jump(self):
         """IP := R1."""
         value = self.registers.fetch('R1', self.operand_size)
-        self.registers.put('IP', value, self.operand_size)
+        self.registers.put('IP', value, self.address_size)
 
     def cond_jump(self, signed, comparasion, equal):
         """All jumps: more, less, less_or_equal etc.
