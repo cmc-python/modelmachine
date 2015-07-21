@@ -32,6 +32,11 @@ class AbstractControlUnit:
         else:
             return RUNNING
 
+    def run(self):
+        """Execute instruction one-by-one until we met HALT command."""
+        while self.get_status() == RUNNING:
+            self.step()
+
     def fetch_and_decode(self):
         """Fetch instruction and decode them.
 
@@ -51,8 +56,3 @@ class AbstractControlUnit:
     def write_back(self):
         """Save result of calculation to memory."""
         raise NotImplementedError()
-
-    def run(self):
-        """Execute instruction one-by-one until we met HALT command."""
-        while self.get_status() == RUNNING:
-            self.step()
