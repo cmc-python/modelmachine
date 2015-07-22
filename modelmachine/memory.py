@@ -83,7 +83,7 @@ class AbstractMemory(dict):
         address = address # May be usefull in successors
         if bits % self.word_size != 0:
             raise KeyError('Cannot read not integer count of words: needs '
-                           '{bits} of bits, and word size is {word_size} bits'
+                           '{bits} bits, but word size is {word_size}'
                            .format(bits=bits, word_size=self.word_size))
 
     def fetch(self, address, bits):
@@ -166,10 +166,10 @@ class RegisterMemory(AbstractMemory):
 
     """Registers."""
 
-    def __init__(self, **other):
+    def __init__(self, *vargs, **kvargs):
         """List of addresses are required."""
-        super().__init__(word_size=42, **other) # There dynamic word size are
-                                                # using
+        super().__init__(word_size=0, *vargs, **kvargs) # There is dynamic
+                                                        # word size
         self.register_sizes = dict()
 
     def add_register(self, name, register_size):

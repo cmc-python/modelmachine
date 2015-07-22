@@ -13,17 +13,16 @@ class TestNumeric:
 
     def setup(self):
         """Init two test values."""
-        self.first = Integer(10)
+        self.first = Integer(10, 32, True)
         self.second = Integer(12, 32, True)
 
     def test_init(self):
         """Test, that we can create numbers."""
-        self.first = Integer(10)
         assert self.first.size == 32
         assert self.first.signed == True
         assert self.first.get_value() == 10
 
-        self.first = Integer(2 ** 32 - 1)
+        self.first = Integer(2 ** 32 - 1, 32, True)
         assert self.first.get_value() == -1
 
         self.first = Integer(2 ** 32 - 1, 32, False)
@@ -89,13 +88,13 @@ class TestNumeric:
         assert self.first.get_value() == 10
         assert isinstance(self.second.get_value(), int)
         assert self.second.get_value() == 12
-        assert Integer(2 ** 32 - 1).get_value() == -1
+        assert Integer(2 ** 32 - 1, 32, True).get_value() == -1
         assert Integer(2 ** 32 - 1, 32, False).get_value() == 2 ** 32 - 1
 
     def test_index(self):
         """Test, if we can useinteger for indexing."""
         arr = [1, 2, 3, 4]
-        self.first = Integer(1)
+        self.first = Integer(1, 32, True)
         assert arr[self.first.get_value()] == 2
         arr[self.first.get_value()] = 10
         assert arr == [1, 10, 3, 4]
@@ -109,7 +108,7 @@ class TestNumeric:
         assert result.signed == True
         assert result.get_value() == 22
 
-        result = Integer(2 ** 31 - 1) + Integer(2 ** 31 - 1)
+        result = Integer(2 ** 31 - 1, 32, True) + Integer(2 ** 31 - 1, 32, True)
         assert result.get_value() == -2
 
         with raises(NotImplementedError):
@@ -124,7 +123,7 @@ class TestNumeric:
         assert result.signed == True
         assert result.get_value() == 120
 
-        result = Integer(1555256314) * Integer(-1234567890)
+        result = Integer(1555256314, 32, True) * Integer(-1234567890, 32, True)
         assert result.get_value() == 264317164
 
         with raises(NotImplementedError):
@@ -163,7 +162,7 @@ class TestNumeric:
         assert result.signed == False
         assert result.get_value() == 2
 
-        result = Integer(-2145634518) - Integer(2000000000)
+        result = Integer(-2145634518, 32, True) - Integer(2000000000, 32, True)
         assert result.get_value() == 149332778
 
         with raises(NotImplementedError):
@@ -172,27 +171,31 @@ class TestNumeric:
     def test_eq(self):
         """Test __eq__ method."""
         assert self.first != self.second
-        assert self.first == Integer(10)
+        assert self.first == Integer(10, 32, True)
 
     def test_divmod(self):
         """Test  method."""
-        assert divmod(self.second, self.first) == (Integer(1), Integer(2))
-        assert divmod(Integer(156), Integer(10)) == (Integer(15), Integer(6))
-        assert divmod(Integer(-156), Integer(10)) == (Integer(-15), Integer(-6))
-        assert divmod(Integer(156), Integer(-10)) == (Integer(-15), Integer(6))
-        assert divmod(Integer(-156), Integer(-10)) == (Integer(15), Integer(-6))
+        assert divmod(self.second, self.first) == (Integer(1, 32, True), Integer(2, 32, True))
+        assert (divmod(Integer(156, 32, True), Integer(10, 32, True)) ==
+                (Integer(15, 32, True), Integer(6, 32, True)))
+        assert (divmod(Integer(-156, 32, True), Integer(10, 32, True)) ==
+                (Integer(-15, 32, True), Integer(-6, 32, True)))
+        assert (divmod(Integer(156, 32, True), Integer(-10, 32, True)) ==
+                (Integer(-15, 32, True), Integer(6, 32, True)))
+        assert (divmod(Integer(-156, 32, True), Integer(-10, 32, True)) ==
+                (Integer(15, 32, True), Integer(-6, 32, True)))
 
-        assert self.second / self.first == Integer(1)
-        assert self.second // self.first == Integer(1)
-        assert self.second % self.first == Integer(2)
+        assert self.second / self.first == Integer(1, 32, True)
+        assert self.second // self.first == Integer(1, 32, True)
+        assert self.second % self.first == Integer(2, 32, True)
 
     def test_get_data(self):
         """Test two's complement."""
         assert self.first.get_data() == 10
-        self.first = Integer(-5)
+        self.first = Integer(-5, 32, True)
         assert self.first.get_data() == 2 ** 32 - 5
         assert self.first.get_value() == -5
-        self.first = Integer(-5, signed=False)
+        self.first = Integer(-5, 32, signed=False)
         assert self.first.get_data() == 2 ** 32 - 5
         assert self.first.get_value() == 2 ** 32 - 5
 

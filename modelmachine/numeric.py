@@ -8,7 +8,7 @@ class Integer(Number):
 
     """Integer type with fixed length."""
 
-    def __init__(self, value, size=32, signed=True):
+    def __init__(self, value, size, signed):
         """See help(type(x))."""
         self.size = size
         self.signed = signed

@@ -216,7 +216,6 @@ class TestArithmeticLogicUnit:
         self.alu.cond_jump(signed=True, comparasion=EQUAL, equal=True)
         assert self.registers.fetch('IP', WORD_SIZE) == 12
 
-
     def run_cond_jump(self, should_jump, first, second, *vargs, **kvargs):
         """Run one conditional jump test."""
         self.registers.put('R1', first % 2 ** BYTE_SIZE, BYTE_SIZE)

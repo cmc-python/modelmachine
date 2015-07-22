@@ -22,7 +22,6 @@ class AbstractControlUnit:
     def step(self):
         """Execution of one instruction."""
         self.fetch_and_decode()
-        self.increment_ip()
         self.load()
         self.execute()
         self.write_back()
@@ -40,15 +39,11 @@ class AbstractControlUnit:
             self.step()
 
     def fetch_and_decode(self):
-        """Fetch instruction and decode them.
+        """Fetch instruction and decode them. At last, method should increment IP.
 
         Recommendation: set up address registers A1, A2, AS for loading
         into operation registers R1, R2, S.
         """
-        raise NotImplementedError()
-
-    def increment_ip(self):
-        """Incrementing instruction pointer."""
         raise NotImplementedError()
 
     def load(self):
@@ -79,6 +74,8 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
         # Instruction register
         self.registers.add_register('IR', self.instruction_size)
+        self.registers.add_register('IP', self.address_size)
+        self.registers.put('IP', 0, self.address_size)
 
 
     def fetch_and_decode(self):
@@ -88,9 +85,6 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         self.registers.put('IR', instruction, self.instruction_size)
         self.opcode = instruction >> (self.instruction_size - self.OPCODE_SIZE)
 
-    def increment_ip(self):
-        """Increment = self.address_size."""
-        instruction_pointer = self.registers.fetch('IP', self.address_size)
         instruction_pointer += self.instruction_size // self.memory.word_size
         self.registers.put('IP', instruction_pointer, self.address_size)
 
@@ -120,7 +114,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
             self.registers.put('R1', mod, self.operand_size)
         else:
             raise ValueError('Invalid opcode `{opcode}`'
-                             .format(opcode=self.opcode))
+                             .format(opcode=hex(self.opcode)))
 
 
 class BordachenkovaControlUnit3(BordachenkovaControlUnit):
@@ -149,10 +143,12 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
 
     def execute(self):
         """Add specific commands: conditional jumps."""
-        if self.opcode in {0x81, 0x82, 0x83, 0x84, 0x85, 0x86,
+        if self.opcode in {0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86,
                            0x93, 0x94, 0x95, 0x96}:
             self.alu.sub()
             self.registers.put('R1', self.address3, self.operand_size)
+            if self.opcode == 0x80:
+                self.alu.jump()
             if self.opcode == 0x81:
                 self.alu.cond_jump(True, EQUAL, True)
             elif self.opcode == 0x82:
@@ -181,8 +177,9 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
         if self.opcode in self.ARITHMETIC_OPCODES:
             value = self.registers.fetch('S', self.operand_size)
             self.memory.put(self.address3, value, self.operand_size)
-            if self.opcode in {0x13, 0x14}:
+            if self.opcode in {0x04, 0x14}:
                 address = self.address3 + self.operand_size // self.memory.word_size
+                address %= self.memory.memory_size
                 value = self.registers.fetch('R1', self.operand_size)
                 self.memory.put(address, value, self.operand_size)
 

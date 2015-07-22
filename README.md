@@ -13,8 +13,94 @@ Model machine emulator
 
 * Работа с плавающей запятой
 * Загрузка программы и данных из файла
+* Подумать о mock в тестах
 * ГУИ
-* Продумать и поправить ввод-вывод
+
+## Списки
+
+Что делает контролирующее устройство?
+
+1. В регистр команды (РК) записывается содержимое ячейки, адрес
+   которой находится в регистре СА.
+2. Значение СА увеличивается на 1, так что теперь СА указывает на
+   следующую команду программы.
+3. Устройство управления расшифровывает команду, находящуюся в
+   РК, и организует её выполнение. Как именно выполняется команда, зависит
+   от вида самой команды.
+
+Как работает ЦП?
+
+1. Fetching the instruction: The next instruction is fetched from the memory
+   address that is currently stored in the program counter (PC), and stored
+   in the instruction register (IR). At the end of the fetch operation,
+   the PC points to the next instruction that will be read at the next cycle.
+2. Decode the instruction: During this cycle the encoded instruction
+   present in the IR (instruction register) is interpreted by the decoder.
+3. Read the effective address: In case of a memory instruction
+   (direct or indirect) the execution phase will be in the next clock pulse.
+   If the instruction has an indirect address, the effective address is read
+   from main memory, and any required data is fetched from main memory to be
+   processed and then placed into data registers (Clock Pulse: T3).
+   If the instruction is direct, nothing is done at this clock pulse.
+   If this is an I/O instruction or a Register instruction, the operation
+   is performed (executed) at clock Pulse.
+4. Execute the instruction: The control unit of the CPU passes
+   the decoded information as a sequence of control signals to the relevant
+   function units of the CPU to perform the actions required by
+   the instruction such as reading values from registers, passing them
+   to the ALU to perform mathematical or logic functions on them,
+   and writing the result back to a register. If the ALU is involved,
+   it sends a condition signal back to the CU. The result generated
+   by the operation is stored in the main memory, or sent to an output device.
+   Based on the condition of any feedback from the ALU,
+   Program Counter may be updated to a different address from which
+   the next instruction will be fetched.
+
+Инструкции модельных машин.
+
+|OPCODE|mm-3|
+|-----:|:--:|
+|  0x00|move|
+|  0x01|add |
+|  0x02|sub |
+|  0x03|smul|
+|  0x04|sdiv|
+|  0x13|umul|
+|  0x14|udiv|
+|  0x80|jump|
+|  0x81| =  |
+|  0x82| != |
+|  0x83|< s |
+|  0x84|>= s|
+|  0x85|<= s|
+|  0x86|> s |
+|  0x93|< u |
+|  0x94|>= u|
+|  0x95|<= u|
+|  0x96|> u |
+|  0x99|halt|
+
+
+### mm-3
+
+Действия процессора для арифметических инструкций `КОП A1 A2 A3`:
+
+1. Загрузить содержимое ячейки оперативной памяти с адресом `А1` в
+   регистр `R1`.
+2. Загрузить содержимое ячейки оперативной памяти с адресом `А2` в
+   регистр `R2`.
+3. Запустить в АЛУ электронную схему, реализующую операцию,
+   задаваемую `КОП`.
+4. Записать результат из регистра `S` в ячейку оперативной памяти с
+   адресом `А3`.
+   Если выполняется операция деления, в оперативную память записываются
+   два результата: частное – в ячейку с адресом `А3`, остаток – в следующую
+   ячейку, по адресу `(А3+1) mod 16^4`.
+
+* `JMP A1 A2 A3`: IP := A3
+* Условные переходы: сравниваются `R1` и `R2`, в зависимости от результата
+  происходит `IP := A3`.
+* Команда пересылки `move`: [A3] := R1.
 
 ## Модельная машина
 
