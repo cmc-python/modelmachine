@@ -39,6 +39,8 @@ class AbstractMemory(dict):
 
     """Class from which inherits concrete memory."""
 
+    word_size = None
+
     def __init__(self, word_size, endianess='big', addresses=None):
         """Define concrete memory with the word size."""
         if addresses is None:

@@ -38,3 +38,14 @@ class InputOutputUnit:
             data = self.memory.fetch(i, block_size)
             result.append(hex(data)[2:].rjust(block_size // 4, '0'))
         return ' '.join(result)
+
+    def load_source(self, source):
+        """Source code loader."""
+        program = ""
+        for line in source:
+            line = line.split(";")[0].strip() # remove comments
+            if line == "":
+                continue
+            line = line.split(":")[1].strip() # remove line numbers
+            program += " " + line
+        self.load_hex(0, program)
