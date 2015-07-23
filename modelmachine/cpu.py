@@ -16,31 +16,70 @@ from modelmachine.cu import BordachenkovaControlUnit3 as BCU3
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
 
+import sys
+
 class AbstractCPU:
 
-    """CPU must have methods: load_hex, store_hex, step and run."""
+    """CPU must have methods: load_program, print_result and run_fie"""
 
-    memory = None
+    ram = None
     registers = None
     alu = None
     control_unit = None
     io_unit = None
+    config = None
 
-    def load_hex(self, string):
-        """Load program and data from string."""
-        self.io_unit.load_hex(0, string)
+    def load_program(self, program):
+        """Load source and data to memory."""
+        def get_section_index(section):
+            """Function for checking and getting section."""
+            section = "[" + section + "]"
+            if section not in program:
+                raise ValueError('Cannot find section {section}'
+                                 .format(section=section))
+            return program.index(section)
 
-    def store_hex(self, size):
-        """Save program and data to string."""
-        return self.io_unit.store_hex(0, size)
+        program = [line.strip() for line in program]
 
-    def step(self):
-        """Run one step of execution."""
-        self.control_unit.step()
+        config_start = get_section_index("config")
+        code_start = get_section_index("code")
+        input_start = get_section_index("input")
 
-    def run(self):
-        """Run program."""
+        if not config_start < code_start < input_start:
+            raise ValueError('Wrong section order, should be: config, '
+                             'code, input')
+
+        config_list = program[config_start + 1:code_start]
+        code = program[code_start + 1:input_start]
+        data = program[input_start + 1:]
+
+        self.config = dict()
+        for line in config_list:
+            if line == "":
+                continue
+            line = [x.strip() for x in line.split("=")]
+            if len(line) != 2:
+                raise ValueError('Wrong config format: `{line}`'
+                                 .format(line="=".join(line)))
+            self.config[line[0]] = line[1]
+
+        self.io_unit.load_source(code)
+
+        input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
+        self.io_unit.load_data(input_addresses, data)
+
+    def print_result(self, output=sys.stdout):
+        """Print calculation result."""
+        for address in (int(x, 0) for x in self.config['output'].split(',')):
+            print(self.io_unit.get_int(address), file=output)
+
+    def run_file(self, filename, output=sys.stdout):
+        """Run all execution cycle."""
+        with open(filename) as source:
+            program = source.readlines()
+        self.load_program(program)
         self.control_unit.run()
+        self.print_result(output=output)
 
 class BordachenkovaMM3(AbstractCPU):
 
@@ -51,19 +90,21 @@ class BordachenkovaMM3(AbstractCPU):
         word_size = 7 * 8
         address_size = 2 * 8
         memory_size = 2 ** address_size
-        self.memory = RandomAccessMemory(word_size=word_size,
-                                         memory_size=memory_size,
-                                         endianess='big', # Unused
-                                         is_protected=True)
+        self.ram = RandomAccessMemory(word_size=word_size,
+                                      memory_size=memory_size,
+                                      endianess='big', # Unused
+                                      is_protected=True)
         self.registers = RegisterMemory()
         self.alu = ArithmeticLogicUnit(registers=self.registers,
                                        operand_size=word_size,
                                        address_size=address_size)
         self.control_unit = BCU3(instruction_size=word_size,
                                  registers=self.registers,
-                                 memory=self.memory,
+                                 memory=self.ram,
                                  alu=self.alu,
                                  operand_size=word_size,
                                  address_size=address_size)
-        self.io_unit = InputOutputUnit(memory=self.memory)
+        self.io_unit = InputOutputUnit(ram=self.ram,
+                                       start_address=0)
 
+LIST = {'bordachenkova_mm3': BordachenkovaMM3}
