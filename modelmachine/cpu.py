@@ -13,6 +13,7 @@ CPU includes:
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 from modelmachine.cu import BordachenkovaControlUnit3 as BCU3
+from modelmachine.cu import BordachenkovaControlUnit2 as BCU2
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
 
@@ -100,11 +101,40 @@ class BordachenkovaMM3(AbstractCPU):
                                        address_size=address_size)
         self.control_unit = BCU3(instruction_size=word_size,
                                  registers=self.registers,
-                                 memory=self.ram,
+                                 ram=self.ram,
                                  alu=self.alu,
                                  operand_size=word_size,
                                  address_size=address_size)
         self.io_unit = InputOutputUnit(ram=self.ram,
-                                       start_address=0)
+                                       start_address=0,
+                                       word_size=word_size)
 
-CPU_LIST = {'bordachenkova_mm3': BordachenkovaMM3}
+class BordachenkovaMM2(AbstractCPU):
+
+    """Bordachenkova model machine 2."""
+
+    def __init__(self):
+        """See help(type(x))."""
+        word_size = 5 * 8
+        address_size = 2 * 8
+        memory_size = 2 ** address_size
+        self.ram = RandomAccessMemory(word_size=word_size,
+                                      memory_size=memory_size,
+                                      endianess='big', # Unused
+                                      is_protected=True)
+        self.registers = RegisterMemory()
+        self.alu = ArithmeticLogicUnit(registers=self.registers,
+                                       operand_size=word_size,
+                                       address_size=address_size)
+        self.control_unit = BCU2(instruction_size=word_size,
+                                 registers=self.registers,
+                                 ram=self.ram,
+                                 alu=self.alu,
+                                 operand_size=word_size,
+                                 address_size=address_size)
+        self.io_unit = InputOutputUnit(ram=self.ram,
+                                       start_address=0,
+                                       word_size=word_size)
+
+CPU_LIST = {'bordachenkova_mm3': BordachenkovaMM3,
+            'bordachenkova_mm2': BordachenkovaMM2}

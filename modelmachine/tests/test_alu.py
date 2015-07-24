@@ -180,28 +180,45 @@ class TestArithmeticLogicUnit:
 
     def test_divmod(self):
         """Division test."""
-        self.registers.put('R1', 27, BYTE_SIZE)
-        self.registers.put('R2', 5, BYTE_SIZE)
+        first, second = 27, 5
+        div, mod = first // second, first % second
+        self.registers.put('R1', first, BYTE_SIZE)
+        self.registers.put('R2', second, BYTE_SIZE)
 
         self.alu.udiv()
-        assert self.registers.fetch('S', BYTE_SIZE) == 5
+        assert self.registers.fetch('S', BYTE_SIZE) == div
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
         self.alu.umod()
-        assert self.registers.fetch('S', BYTE_SIZE) == 2
+        assert self.registers.fetch('S', BYTE_SIZE) == mod
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
         self.alu.sdiv()
-        assert self.registers.fetch('S', BYTE_SIZE) == 5
+        assert self.registers.fetch('S', BYTE_SIZE) == div
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
         self.alu.smod()
-        assert self.registers.fetch('S', BYTE_SIZE) == 2
+        assert self.registers.fetch('S', BYTE_SIZE) == mod
+        assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
+        self.alu.sdivmod()
+        assert self.registers.fetch('S', BYTE_SIZE) == div
+        assert self.registers.fetch('R1', BYTE_SIZE) == mod
+        assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
+        self.registers.put('R1', first, BYTE_SIZE)
+        self.alu.udivmod()
+        assert self.registers.fetch('S', BYTE_SIZE) == div
+        assert self.registers.fetch('R1', BYTE_SIZE) == mod
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == 0
 
-        self.registers.put('R1', -27 % 2 ** BYTE_SIZE, BYTE_SIZE)
+        first = -27 % 2 ** BYTE_SIZE
+        div, mod = -5 % 2 ** BYTE_SIZE, -2 % 2 ** BYTE_SIZE
+        self.registers.put('R1', first, BYTE_SIZE)
         self.alu.sdiv()
-        assert self.registers.fetch('S', BYTE_SIZE) == -5 % 2 ** BYTE_SIZE
+        assert self.registers.fetch('S', BYTE_SIZE) == div
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == SF | CF
         self.alu.smod()
-        assert self.registers.fetch('S', BYTE_SIZE) == -2 % 2 ** BYTE_SIZE
+        assert self.registers.fetch('S', BYTE_SIZE) == mod
+        assert self.registers.fetch('FLAGS', BYTE_SIZE) == SF | CF
+        self.alu.sdivmod()
+        assert self.registers.fetch('S', BYTE_SIZE) == div
+        assert self.registers.fetch('R1', BYTE_SIZE) == mod
         assert self.registers.fetch('FLAGS', BYTE_SIZE) == SF | CF
 
     def test_jump(self):

@@ -3,7 +3,7 @@
 """Test case for complex CPU."""
 
 from modelmachine.cpu import AbstractCPU
-from modelmachine.cpu import BordachenkovaMM3
+from modelmachine.cpu import BordachenkovaMM3, BordachenkovaMM2
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -114,6 +114,42 @@ class TestBordachenkovaMM3:
                        "02 0103 0005 0103\n99 0000 0000 0000\n" +
                        "00000000000002\n" +
                        "[input]\n100 200\n")
+
+    def test_smoke(self, tmpdir):
+        """Smoke test."""
+        source = tmpdir.join("source.mmach")
+        source.write(self.source)
+        out = tmpdir.join("output.txt")
+        with open(str(out), 'w') as output:
+            self.cpu.run_file(str(source), output=output)
+
+        assert out.read() == "298\n"
+
+
+class TestBordachenkovaMM2:
+
+    """Smoke test for mm-2."""
+
+    cpu = None
+    source = None
+
+    def setup(self):
+        """Init state."""
+        self.cpu = BordachenkovaMM2()
+        self.source = ("[config]\n" +
+                       "input=0x101,0x102\n" +
+                       "output=0x103\n" +
+                       "[code]\n" +
+                       "01 0101 0102\n" +
+                       "00 0103 0101\n" +
+                       "05 0101 0102\n" +
+                       "86 0000 0005\n" +
+                       "02 0103 0103; never be used\n" +
+                       "02 0103 0007\n" +
+                       "99 0000 0000\n" +
+                       "0000000002\n" +
+                       "[input]\n" +
+                       "100 200\n")
 
     def test_smoke(self, tmpdir):
         """Smoke test."""

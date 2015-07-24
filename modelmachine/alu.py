@@ -123,7 +123,6 @@ class ArithmeticLogicUnit:
         self.registers.put('S', summator.get_data(), self.operand_size)
         self.set_flags(summator.get_value(), unsigned)
 
-
     def smod(self):
         """S := R1 mod R2 (signed)."""
         operand1, operand2 = self.get_signed_ops()
@@ -134,6 +133,30 @@ class ArithmeticLogicUnit:
 
         self.registers.put('S', summator.get_data(), self.operand_size)
         self.set_flags(summator.get_value(), unsigned)
+
+    def sdivmod(self):
+        """S := R1 div R2, R1 := R1 % R2 (signed)."""
+        operand1, operand2 = self.get_signed_ops()
+        div, mod = divmod(operand1, operand2)
+
+        operand1, operand2 = self.get_unsigned_ops()
+        unsigned = (operand1 // operand2).get_value()
+
+        self.registers.put('S', div.get_data(), self.operand_size)
+        self.registers.put('R1', mod.get_data(), self.operand_size)
+        self.set_flags(div.get_value(), unsigned)
+
+    def udivmod(self):
+        """S := R1 div R2, R1 := R1 % R2 (unsigned)."""
+        operand1, operand2 = self.get_unsigned_ops()
+        div, mod = divmod(operand1, operand2)
+
+        operand1, operand2 = self.get_signed_ops()
+        signed = (operand1 // operand2).get_value()
+
+        self.registers.put('S', div.get_data(), self.operand_size)
+        self.registers.put('R1', mod.get_data(), self.operand_size)
+        self.set_flags(signed, div.get_value())
 
     def udiv(self):
         """S := R1 div R2 (unsigned)."""

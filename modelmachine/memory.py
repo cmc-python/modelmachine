@@ -84,8 +84,8 @@ class AbstractMemory(dict):
         """Check that we want to read integer count of words."""
         address = address # May be usefull in successors
         if bits % self.word_size != 0:
-            raise KeyError('Cannot read not integer count of words: needs '
-                           '{bits} bits, but word size is {word_size}'
+            raise KeyError('Cannot operate with not integer count of words: '
+                           'needs {bits} bits, but word size is {word_size}'
                            .format(bits=bits, word_size=self.word_size))
 
     def fetch(self, address, bits):
