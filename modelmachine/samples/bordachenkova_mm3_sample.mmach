@@ -1,7 +1,9 @@
+bordachenkova_mm3
+
 [config]
-arch = bordachenkova_mm3
 input = 0x100,0x101
-output = 103
+output = 0x103
+
 [code]
 ; x = ((a * -21) % 50 - b) ** 2
 03 0100 0005 0103 ; x := a * -21
@@ -12,5 +14,6 @@ output = 103
 ; ---------------------
 FFFFFFFFFFFFEB ; -21
 00000000000032 ; 50
+
 [input]
-123 456
+-123 456

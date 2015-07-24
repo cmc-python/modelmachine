@@ -107,4 +107,4 @@ class BordachenkovaMM3(AbstractCPU):
         self.io_unit = InputOutputUnit(ram=self.ram,
                                        start_address=0)
 
-LIST = {'bordachenkova_mm3': BordachenkovaMM3}
+CPU_LIST = {'bordachenkova_mm3': BordachenkovaMM3}

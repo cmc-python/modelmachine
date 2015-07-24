@@ -63,15 +63,29 @@ class TestIODevice:
 
     def test_put_int(self):
         """Test load data method."""
-        address, value = 0x55, 1234
+        address, value = 0x55, 0x1234
         self.io_unit.put_int(address, value)
-        self.ram.put.assert_called_once_with(address, value, WORD_SIZE)
+        self.ram.put.assert_called_once_with(address,
+                                             value % 2 ** WORD_SIZE,
+                                             WORD_SIZE)
+
+        self.ram.put.reset_mock()
+        value *= -1
+        self.io_unit.put_int(address, value)
+        self.ram.put.assert_called_once_with(address,
+                                             value % 2 ** WORD_SIZE,
+                                             WORD_SIZE)
 
     def test_get_int(self):
         """Test load data method."""
-        address, value = 0x55, 1234
+        address, value = 0x55, 0x1234
         self.ram.fetch.return_value = value
         assert self.io_unit.get_int(address) == value
+        self.ram.fetch.assert_called_once_with(address, WORD_SIZE)
+
+        self.ram.fetch.reset_mock()
+        self.ram.fetch.return_value = -value % 2 ** WORD_SIZE
+        assert self.io_unit.get_int(address) == -value
         self.ram.fetch.assert_called_once_with(address, WORD_SIZE)
 
     def test_load_source(self):
@@ -87,7 +101,7 @@ class TestIODevice:
 
     def test_load_data(self):
         """Test load data by addresses."""
-        self.io_unit.load_data([100, 101], ["123 456\n"])
-        self.ram.put.assert_has_calls([call(100, 123, WORD_SIZE),
+        self.io_unit.load_data([100, 101], ["-123 456\n"])
+        self.ram.put.assert_has_calls([call(100, -123 % 2 ** WORD_SIZE, WORD_SIZE),
                                        call(101, 456, WORD_SIZE)])
 

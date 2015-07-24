@@ -2,6 +2,8 @@
 
 """Allow to input and output program and data."""
 
+from modelmachine.numeric import Integer
+
 class InputOutputUnit:
 
     """Allow to input and output program and data."""
@@ -13,11 +15,15 @@ class InputOutputUnit:
 
     def put_int(self, address, value):
         """Load data from string into memory by address."""
-        self.ram.put(address, value, self.ram.word_size)
+        value = Integer(value, self.ram.word_size, True)
+        self.ram.put(address, value.get_data(), self.ram.word_size)
 
     def get_int(self, address):
         """Return data by address."""
-        return self.ram.fetch(address, self.ram.word_size)
+        value = Integer(self.ram.fetch(address, self.ram.word_size),
+                        self.ram.word_size,
+                        True)
+        return value.get_value()
 
     def load_hex(self, start, source):
         """Load data from string into memory by start address."""

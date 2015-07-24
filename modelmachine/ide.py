@@ -2,10 +2,7 @@
 
 """IDE for model machine."""
 
-from modelmachine.cpu import BordachenkovaMM3
-
-import tempfile
-from configparser import ConfigParser
+from modelmachine.cpu import CPU_LIST
 
 POS = [0, 0]
 MAX_POS = [20, 20]
@@ -79,51 +76,12 @@ def start(curses):
 # import curses as cur
 # start(cur)
 
-def load_source(string_list, cpu_list):
-    """Load config and source from string array."""
-    source = [line.strip() for line in string_list]
-    code_start = source.index("[code]")
-
-    config_file = tempfile.TemporaryFile('w+')
-    config_file.write('\n'.join(source[:code_start]))
-    config_file.seek(0)
-
-    config = ConfigParser()
-    config.read_file(config_file)
-    config = config['config']
-
-    cpu = None
-    arch = config["arch"]
-
-    if arch in cpu_list:
-        cpu = cpu_list[arch]()
-        cpu.load_source(source[code_start + 1:])
+def get_cpu(source):
+    """Return empty cpu or raise the ValueError."""
+    arch = source[0].strip()
+    if arch in CPU_LIST:
+        cpu = CPU_LIST[arch]()
+        return cpu
     else:
-        raise ValueError('Unexpected arch: {arch}'.format(arch=arch))
-
-    return (config, cpu)
-
-def load_data(config, cpu):
-    """Load sequence of decimal numbers into memory."""
-    addresses = [int(index) for index in config["input"].split(",")]
-    data = [int(value) for value in data.split()]
-    for address, value in zip(addresses, data):
-        cpu.load_dec(address, value)
-
-def store_data(config, cpu):
-    """Write sequence of decimal numbers to output."""
-    addresses = [int(index) for index in config["output"].split(",")]
-    data = '\n'.join(str(cpu.get_int(address)) for address in addresses)
-    for address, value in zip(addresses, data):
-        cpu.load_dec(address, value)
-
-def run_file(filename, cpu_list):
-    """Execute all run cycle."""
-    with open(filename, 'r') as source_file:
-        source = source_file.readlines()
-    config, cpu = load_source(source, cpu_list)
-
-    with open(config["input_file"], 'r') as input_data:
-        data = ' '.join(input_data.readlines())
-    load_data(config, cpu, data)
-
+        raise ValueError('Unexpected arch (found in first line): {arch}'
+                         .format(arch=arch))

@@ -151,7 +151,7 @@ class RandomAccessMemory(AbstractMemory):
         if not 0 <= address < len(self):
             raise KeyError('Invalid address {address}, '
                            'should be 0 <= address < {memory_size}'
-                           .format(address=address,
+                           .format(address=hex(address),
                                    memory_size=len(self)))
 
     def __missing__(self, address):
@@ -160,7 +160,7 @@ class RandomAccessMemory(AbstractMemory):
         if self.is_protected:
             raise KeyError('Cannot read memory by address: {address}, '
                            'it is dirty memory, clean it first'
-                           .format(address=str(address)))
+                           .format(address=hex(address)))
         else:
             return 0
 
