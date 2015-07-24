@@ -239,19 +239,18 @@ Model machine emulator
 Знаки сравнения в таблице означают команды условного перехода. Как они
 работают читайте в книге *[1]* и ниже по тексту.
 
-|Мнемонический|Обозначение в|Расшифровка/описание             |
-|код          |таблице выше |                                 |
-|:------------|:-----------:|:--------------------------------|
-|JEQ          |      ==     |jump if equal                    |
-|JNEQ         |      !=     |jump if not equal                |
-|SJL          |     <  s    |signed jump if less              |
-|SJGEQ        |     >= s    |signed jump if greater or equal  |
-|SJLEQ        |     <= s    |signed jump if less or equal     |
-|SJG          |     >  s    |signed jump if greater           |
-|UJL          |     <  u    |unsigned jump if less            |
-|UJGEQ        |     >= u    |unsigned jump if greater or equal|
-|UJLEQ        |     <= u    |unsigned jump if less or equal   |
-|UJG          |     >  u    |unsigned jump if greater         |
+|Мнемонический код|Обозначение выше|Расшифровка/описание             |
+|:----------------|:--------------:|:--------------------------------|
+|JEQ              |      ==        |jump if equal                    |
+|JNEQ             |      !=        |jump if not equal                |
+|SJL              |     <  s       |signed jump if less              |
+|SJGEQ            |     >= s       |signed jump if greater or equal  |
+|SJLEQ            |     <= s       |signed jump if less or equal     |
+|SJG              |     >  s       |signed jump if greater           |
+|UJL              |     <  u       |unsigned jump if less            |
+|UJGEQ            |     >= u       |unsigned jump if greater or equal|
+|UJLEQ            |     <= u       |unsigned jump if less or equal   |
+|UJG              |     >  u       |unsigned jump if greater         |
 
 ### bordachenkova_mm3
 
