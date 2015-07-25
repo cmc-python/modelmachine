@@ -90,19 +90,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
         "halt": 0x99
     }
-    """
-    MOVE = 0x00
-    ADD, SUB = 0x01, 0x02
-    SMUL, SDIVMOD = 0x03, 0x04
-    UMUL, UDIVMOD = 0x13, 0x14
-    COMP = 0x05
 
-    JUMP = 0x80
-    JEQ, JNEQ = 0x81, 0x82
-    SJL, SJGEQ, SJLEQ, SJG = 0x83, 0x84, 0x85, 0x86
-    UJL, UJGEQ, UJLEQ, UJG = 0x93, 0x94, 0x95, 0x96
-    HALT = 0x99
-    """
     OPCODE_SIZE = 8
     ARITHMETIC_OPCODES = {OPCODES["add"], OPCODES["sub"],
                           OPCODES["smul"], OPCODES["sdivmod"],
@@ -168,9 +156,11 @@ class BordachenkovaControlUnit(AbstractControlUnit):
             raise ValueError('Invalid opcode `{opcode}`'
                              .format(opcode=hex(self.opcode)))
 
-    def execute_cond_jump(self):
+    def execute_jump(self):
         """Conditional jump part of execution."""
-        if self.opcode == self.OPCODES["jeq"]:
+        if self.opcode == self.OPCODES["jump"]:
+            self.alu.jump()
+        elif self.opcode == self.OPCODES["jeq"]:
             self.alu.cond_jump(True, EQUAL, True)
         elif self.opcode == self.OPCODES["jneq"]:
             self.alu.cond_jump(True, EQUAL, False)
@@ -244,17 +234,12 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
 
     def execute(self):
         """Add specific commands: conditional jumps."""
-        if  (self.opcode in self.CONDJUMP_OPCODES or
-             self.opcode == self.OPCODES["jump"]):
-
+        if self.opcode in self.JUMP_OPCODES:
             if self.opcode != self.OPCODES["jump"]:
                 self.alu.sub()
             self.registers.put('R1', self.address3, self.operand_size)
 
-            if self.opcode == self.OPCODES["jump"]:
-                self.alu.jump()
-            else: # self.opcode in self.CONDJUMP_OPCODES
-                self.execute_cond_jump()
+            self.execute_jump()
         else:
             super().execute()
 
@@ -314,10 +299,8 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
         """Add specific commands: conditional jumps and cmp."""
         if self.opcode == self.OPCODES["comp"]:
             self.alu.sub()
-        elif self.opcode == self.OPCODES["jump"]:
-            self.alu.jump()
-        elif self.opcode in self.CONDJUMP_OPCODES:
-            self.execute_cond_jump()
+        elif self.opcode in self.JUMP_OPCODES:
+            self.execute_jump()
         else:
             super().execute()
 
@@ -344,21 +327,22 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
         # dynamic instruction size
         super().__init__(ir_size, *vargs, **kvargs)
 
-        self.opcodes = (self.ARITHMETIC_OPCODES | self.CONDJUMP_OPCODES |
-                        {self.JUMP, self.MOVE, self.HALT, self.COMP})
+        self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
+                        {self.OPCODES["move"],
+                         self.OPCODES["halt"],
+                         self.OPCODES["comp"]})
 
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
         mask = 2 ** self.address_size - 1
-        two_operands = self.ARITHMETIC_OPCODES | {self.MOVE, self.COMP}
-        one_operand = self.CONDJUMP_OPCODES | {self.JUMP}
+        two_operands = self.BINAR_OPCODES | {self.OPCODES["move"]}
 
         instruction_pointer = self.registers.fetch('IP', self.address_size)
         self.opcode = self.ram.fetch(instruction_pointer, self.OPCODE_SIZE)
 
         if self.opcode in two_operands:
             instruction_size = self.OPCODE_SIZE + 2 * self.address_size
-        elif self.opcode in one_operand:
+        elif self.opcode in self.UNAR_OPCODES:
             instruction_size = self.OPCODE_SIZE + self.address_size
         else:
             instruction_size = self.OPCODE_SIZE
@@ -368,20 +352,20 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
         if self.opcode in two_operands:
             self.address1 = (instruction >> self.address_size) & mask
             self.address2 = instruction & mask
-        elif self.opcode in one_operand:
+        elif self.opcode in self.UNAR_OPCODES:
             self.address1 = instruction & mask
 
     def load(self):
         """Load registers R1 and R2."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.COMP}:
+        if self.opcode in self.BINAR_OPCODES:
             operand1 = self.ram.fetch(self.address1, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
             operand2 = self.ram.fetch(self.address2, self.operand_size)
             self.registers.put('R2', operand2, self.operand_size)
-        elif self.opcode == self.MOVE:
+        elif self.opcode == self.OPCODES["move"]:
             operand1 = self.ram.fetch(self.address1, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
-        elif self.opcode in self.CONDJUMP_OPCODES | {self.JUMP}:
+        elif self.opcode in self.JUMP_OPCODES:
             self.registers.put("R1", self.address1, self.operand_size)
 
     def execute(self):
