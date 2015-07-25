@@ -108,7 +108,7 @@ class TestBordachenkovaControlUnit:
         """Test internal constants."""
         assert isinstance(self.control_unit, AbstractControlUnit)
         assert isinstance(self.control_unit, BordachenkovaControlUnit)
-        assert self.control_unit.instruction_size == 32
+        assert self.control_unit.ir_size == 32
         assert self.control_unit.operand_size == WORD_SIZE
         assert self.control_unit.address_size == BYTE_SIZE
         assert self.control_unit.MOVE == 0x00
@@ -145,7 +145,7 @@ class TestBordachenkovaControlUnit:
         with raises(NotImplementedError):
             self.control_unit.write_back()
 
-    def test_fetch_and_decode(self):
+    def test_fetch_instruction(self):
         """Right fetch and decode is a half of business."""
         address, value = 10, 0x01020304
         self.ram.put(address, value, WORD_SIZE)
@@ -161,7 +161,7 @@ class TestBordachenkovaControlUnit:
                 return value
         self.registers.fetch.side_effect = get_register
 
-        self.control_unit.fetch_and_decode()
+        self.control_unit.fetch_instruction(WORD_SIZE)
         self.registers.fetch.assert_any_call("IP", BYTE_SIZE)
         self.registers.put.assert_has_calls([call('IR', value, WORD_SIZE),
                                              call("IP", address + 1, BYTE_SIZE)])
@@ -240,7 +240,8 @@ class TestBordachenkovaControlUnit3:
 
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
-        TestBordachenkovaControlUnit.test_fetch_and_decode(self)
+        TestBordachenkovaControlUnit.test_fetch_instruction(self)
+        self.control_unit.fetch_and_decode()
         assert self.control_unit.address1 == 0x02
         assert self.control_unit.address2 == 0x03
         assert self.control_unit.address3 == 0x04
@@ -442,7 +443,8 @@ class TestBordachenkovaControlUnit2:
 
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
-        TestBordachenkovaControlUnit.test_fetch_and_decode(self)
+        TestBordachenkovaControlUnit.test_fetch_instruction(self)
+        self.control_unit.fetch_and_decode()
         assert self.control_unit.address1 == 0x03
         assert self.control_unit.address2 == 0x04
 
