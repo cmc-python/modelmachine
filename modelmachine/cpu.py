@@ -21,7 +21,7 @@ import sys
 
 class AbstractCPU:
 
-    """CPU must have methods: load_program, print_result and run_fie"""
+    """CPU must have methods: load_program, print_result and run_fie."""
 
     ram = None
     registers = None

@@ -71,16 +71,16 @@ class Integer(Number):
                 Integer(mod, self.size, self.signed))
 
     def __floordiv__(self, other):
-        """Equals self // other."""
+        """self // other."""
         return divmod(self, other)[0]
 
 
     def __truediv__(self, other):
-        """Equals self / other."""
+        """self / other."""
         return divmod(self, other)[0]
 
     def __mod__(self, other):
-        """Equals self % other."""
+        """self % other."""
         return divmod(self, other)[1]
 
     def __eq__(self, other):

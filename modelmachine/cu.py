@@ -11,13 +11,12 @@ class AbstractControlUnit:
 
     """Abstract control unit allow to execute two methods: step and run."""
 
-    def __init__(self, registers, ram, alu, operand_size, address_size):
+    def __init__(self, registers, ram, alu, operand_size):
         """See help(type(x))."""
         self.registers = registers
         self.ram = ram
         self.alu = alu
         self.operand_size = operand_size
-        self.address_size = address_size
 
     def step(self):
         """Execution of one instruction."""
@@ -81,10 +80,11 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
     opcode = 0
 
-    def __init__(self, instruction_size, *vargs, **kvargs):
+    def __init__(self, instruction_size, address_size, *vargs, **kvargs):
         """Create necessary registers."""
         super().__init__(*vargs, **kvargs)
         self.instruction_size = instruction_size
+        self.address_size = address_size
 
         # Instruction register
         self.registers.add_register('IR', self.instruction_size)
@@ -123,6 +123,14 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         else:
             raise ValueError('Invalid opcode `{opcode}`'
                              .format(opcode=hex(self.opcode)))
+
+    def load(self):
+        """Load data to registers R1 and R2."""
+        raise NotImplementedError()
+
+    def write_back(self):
+        """Write back calculation result."""
+        raise NotImplementedError()
 
 
 class BordachenkovaControlUnit3(BordachenkovaControlUnit):
@@ -163,15 +171,8 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
 
     def execute(self):
         """Add specific commands: conditional jumps."""
-        if  (self.opcode in self.CONDJUMP_OPCODES or
-             self.opcode == self.JUMP):
-
-            if self.opcode != self.JUMP:
-                self.alu.sub()
-            self.registers.put('R1', self.address3, self.operand_size)
-
-            if self.opcode == self.JUMP:
-                self.alu.jump()
+        def _cond_jump():
+            """Conditional jump part of execution."""
             if self.opcode == self.JEQ:
                 self.alu.cond_jump(True, EQUAL, True)
             elif self.opcode == self.JNEQ:
@@ -192,6 +193,18 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
                 self.alu.cond_jump(False, LESS, True)
             elif self.opcode == self.UJG:
                 self.alu.cond_jump(False, GREATER, False)
+
+        if  (self.opcode in self.CONDJUMP_OPCODES or
+             self.opcode == self.JUMP):
+
+            if self.opcode != self.JUMP:
+                self.alu.sub()
+            self.registers.put('R1', self.address3, self.operand_size)
+
+            if self.opcode == self.JUMP:
+                self.alu.jump()
+            else: # self.opcode in self.CONDJUMP_OPCODES
+                _cond_jump()
         else:
             super().execute()
 
@@ -245,30 +258,35 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
 
     def execute(self):
         """Add specific commands: conditional jumps and cmp."""
+        def _cond_jump():
+            """Conditional jump part of execution."""
+            if self.opcode == self.JEQ:
+                self.alu.cond_jump(True, EQUAL, True)
+            elif self.opcode == self.JNEQ:
+                self.alu.cond_jump(True, EQUAL, False)
+            elif self.opcode == self.SJL:
+                self.alu.cond_jump(True, LESS, False)
+            elif self.opcode == self.SJGEQ:
+                self.alu.cond_jump(True, GREATER, True)
+            elif self.opcode == self.SJLEQ:
+                self.alu.cond_jump(True, LESS, True)
+            elif self.opcode == self.SJG:
+                self.alu.cond_jump(True, GREATER, False)
+            elif self.opcode == self.UJL:
+                self.alu.cond_jump(False, LESS, False)
+            elif self.opcode == self.UJGEQ:
+                self.alu.cond_jump(False, GREATER, True)
+            elif self.opcode == self.UJLEQ:
+                self.alu.cond_jump(False, LESS, True)
+            elif self.opcode == self.UJG:
+                self.alu.cond_jump(False, GREATER, False)
+
         if self.opcode == self.COMP:
             self.alu.sub()
         elif self.opcode == self.JUMP:
             self.alu.jump()
-        elif self.opcode == self.JEQ:
-            self.alu.cond_jump(True, EQUAL, True)
-        elif self.opcode == self.JNEQ:
-            self.alu.cond_jump(True, EQUAL, False)
-        elif self.opcode == self.SJL:
-            self.alu.cond_jump(True, LESS, False)
-        elif self.opcode == self.SJGEQ:
-            self.alu.cond_jump(True, GREATER, True)
-        elif self.opcode == self.SJLEQ:
-            self.alu.cond_jump(True, LESS, True)
-        elif self.opcode == self.SJG:
-            self.alu.cond_jump(True, GREATER, False)
-        elif self.opcode == self.UJL:
-            self.alu.cond_jump(False, LESS, False)
-        elif self.opcode == self.UJGEQ:
-            self.alu.cond_jump(False, GREATER, True)
-        elif self.opcode == self.UJLEQ:
-            self.alu.cond_jump(False, LESS, True)
-        elif self.opcode == self.UJG:
-            self.alu.cond_jump(False, GREATER, False)
+        elif self.opcode in self.CONDJUMP_OPCODES:
+            _cond_jump()
         else:
             super().execute()
 

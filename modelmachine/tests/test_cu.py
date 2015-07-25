@@ -19,7 +19,7 @@ class TestAbstractControlUnit:
 
     """Test case for abstract control unit."""
 
-    memory = None
+    ram = None
     registers = None
     alu = None
     control_unit = None
@@ -32,10 +32,8 @@ class TestAbstractControlUnit:
         self.control_unit = AbstractControlUnit(self.registers,
                                                 self.ram,
                                                 self.alu,
-                                                WORD_SIZE,
-                                                BYTE_SIZE)
+                                                WORD_SIZE)
         assert self.control_unit.operand_size == WORD_SIZE
-        assert self.control_unit.address_size == BYTE_SIZE
 
     def test_get_status(self):
         """Test halt interaction between ALU and CU."""
@@ -99,11 +97,11 @@ class TestBordachenkovaControlUnit:
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
         self.control_unit = BordachenkovaControlUnit(WORD_SIZE,
+                                                     BYTE_SIZE,
                                                      self.registers,
                                                      self.ram,
                                                      self.alu,
-                                                     WORD_SIZE,
-                                                     BYTE_SIZE)
+                                                     WORD_SIZE)
         self.test_const()
 
     def test_const(self):
@@ -140,6 +138,13 @@ class TestBordachenkovaControlUnit:
                                  0x93, 0x94, 0x95, 0x96}
         assert self.control_unit.CONDJUMP_OPCODES == self.condjump_opcodes
 
+    def test_abstract_methods(self):
+        """Abstract class."""
+        with raises(NotImplementedError):
+            self.control_unit.load()
+        with raises(NotImplementedError):
+            self.control_unit.write_back()
+
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
         address, value = 10, 0x01020304
@@ -147,14 +152,13 @@ class TestBordachenkovaControlUnit:
 
         def get_register(name, size):
             """Get address and value."""
+            assert name in {"IP", "IR"}
             if name == "IP":
                 assert size == BYTE_SIZE
                 return address
             elif name == "IR":
                 assert size == WORD_SIZE
                 return value
-            else:
-                raise ValueError()
         self.registers.fetch.side_effect = get_register
 
         self.control_unit.fetch_and_decode()
@@ -165,20 +169,6 @@ class TestBordachenkovaControlUnit:
 
     def test_execute(self):
         """Test basic operations."""
-        first = 12
-        second = 10
-
-        def get_register(name, size):
-            """Get operands."""
-            assert size == WORD_SIZE
-            assert name in {"R1", "R2"}
-            if name == "R1":
-                return first
-            else:
-                return second
-
-        self.registers.fetch.side_effect = get_register
-
         self.control_unit.opcode = self.control_unit.MOVE
         self.control_unit.execute()
         self.alu.move.assert_called_once_with()
@@ -215,6 +205,8 @@ class TestBordachenkovaControlUnit:
             self.control_unit.opcode = 0x98
             self.control_unit.execute()
 
+        assert not self.registers.fetch.called
+
 class TestBordachenkovaControlUnit3:
 
     """Test case for Bordachenkova Mode Machine 3 Control Unit."""
@@ -233,11 +225,11 @@ class TestBordachenkovaControlUnit3:
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
         self.control_unit = BordachenkovaControlUnit3(WORD_SIZE,
+                                                      BYTE_SIZE,
                                                       self.registers,
                                                       self.ram,
                                                       self.alu,
-                                                      WORD_SIZE,
-                                                      BYTE_SIZE)
+                                                      WORD_SIZE)
         TestBordachenkovaControlUnit.test_const(self)
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
@@ -343,13 +335,13 @@ class TestBordachenkovaControlUnit3:
         def get_register(name, size):
             """Get address and value."""
             assert size == WORD_SIZE
+            assert name in {"S", "R1"}
             if name == "S":
                 return second
             elif name == "R1":
                 return third
-            else:
-                raise ValueError()
         self.registers.fetch.side_effect = get_register
+
         for address in (10, 2 ** BYTE_SIZE - 1):
             self.ram.put(address, first, WORD_SIZE)
             self.control_unit.address3 = address
@@ -434,11 +426,11 @@ class TestBordachenkovaControlUnit2:
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
         self.control_unit = BordachenkovaControlUnit2(WORD_SIZE,
+                                                      BYTE_SIZE,
                                                       self.registers,
                                                       self.ram,
                                                       self.alu,
-                                                      WORD_SIZE,
-                                                      BYTE_SIZE)
+                                                      WORD_SIZE)
         TestBordachenkovaControlUnit.test_const(self)
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
@@ -544,14 +536,14 @@ class TestBordachenkovaControlUnit2:
         first, second, third = 11111111, 22222222, 33333333
         def get_register(name, size):
             """Get address and value."""
+            assert name in {"S", "R1"}
             assert size == WORD_SIZE
             if name == "S":
                 return second
             elif name == "R1":
                 return third
-            else:
-                raise ValueError()
         self.registers.fetch.side_effect = get_register
+
         for address in (10, 2 ** BYTE_SIZE - 1):
             self.ram.put(address, first, WORD_SIZE)
             self.control_unit.address1 = address

@@ -7,6 +7,9 @@ from modelmachine.cpu import CPU_LIST
 POS = [0, 0]
 MAX_POS = [20, 20]
 
+# Visual part don't work
+
+"""
 def init(curses):
     curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
@@ -73,8 +76,9 @@ def start(curses):
 
     curses.wrapper(main)
 
-# import curses as cur
-# start(cur)
+import curses as cur
+start(cur)
+"""
 
 def get_cpu(source):
     """Return empty cpu or raise the ValueError."""
