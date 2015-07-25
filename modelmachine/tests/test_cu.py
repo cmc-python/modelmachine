@@ -111,26 +111,27 @@ class TestBordachenkovaControlUnit:
         assert self.control_unit.ir_size == 32
         assert self.control_unit.operand_size == WORD_SIZE
         assert self.control_unit.address_size == BYTE_SIZE
-        assert self.control_unit.MOVE == 0x00
-        assert self.control_unit.ADD == 0x01
-        assert self.control_unit.SUB == 0x02
-        assert self.control_unit.SMUL == 0x03
-        assert self.control_unit.SDIVMOD == 0x04
-        assert self.control_unit.UMUL == 0x13
-        assert self.control_unit.UDIVMOD == 0x14
-        assert self.control_unit.COMP == 0x05
-        assert self.control_unit.JUMP == 0x80
-        assert self.control_unit.JEQ == 0x81
-        assert self.control_unit.JNEQ == 0x82
-        assert self.control_unit.SJL == 0x83
-        assert self.control_unit.SJGEQ == 0x84
-        assert self.control_unit.SJLEQ == 0x85
-        assert self.control_unit.SJG == 0x86
-        assert self.control_unit.UJL == 0x93
-        assert self.control_unit.UJGEQ == 0x94
-        assert self.control_unit.UJLEQ == 0x95
-        assert self.control_unit.UJG == 0x96
-        assert self.control_unit.HALT == 0x99
+        assert self.control_unit.OPCODE_SIZE == BYTE_SIZE
+        assert self.control_unit.OPCODES["move"] == 0x00
+        assert self.control_unit.OPCODES["add"] == 0x01
+        assert self.control_unit.OPCODES["sub"] == 0x02
+        assert self.control_unit.OPCODES["smul"] == 0x03
+        assert self.control_unit.OPCODES["sdivmod"] == 0x04
+        assert self.control_unit.OPCODES["umul"] == 0x13
+        assert self.control_unit.OPCODES["udivmod"] == 0x14
+        assert self.control_unit.OPCODES["comp"] == 0x05
+        assert self.control_unit.OPCODES["jump"] == 0x80
+        assert self.control_unit.OPCODES["jeq"] == 0x81
+        assert self.control_unit.OPCODES["jneq"] == 0x82
+        assert self.control_unit.OPCODES["sjl"] == 0x83
+        assert self.control_unit.OPCODES["sjgeq"] == 0x84
+        assert self.control_unit.OPCODES["sjleq"] == 0x85
+        assert self.control_unit.OPCODES["sjg"] == 0x86
+        assert self.control_unit.OPCODES["ujl"] == 0x93
+        assert self.control_unit.OPCODES["ujgeq"] == 0x94
+        assert self.control_unit.OPCODES["ujleq"] == 0x95
+        assert self.control_unit.OPCODES["ujg"] == 0x96
+        assert self.control_unit.OPCODES["halt"] == 0x99
 
         self.arithmetic_opcodes = {0x01, 0x02, 0x03, 0x04, 0x13, 0x14}
         assert self.control_unit.ARITHMETIC_OPCODES == self.arithmetic_opcodes
@@ -147,7 +148,7 @@ class TestBordachenkovaControlUnit:
 
     def test_fetch_instruction(self):
         """Right fetch and decode is a half of business."""
-        address, value = 10, 0x01020304
+        address, value = 10, 0x01020304 # add
         self.ram.put(address, value, WORD_SIZE)
 
         def get_register(name, size):
@@ -169,35 +170,35 @@ class TestBordachenkovaControlUnit:
 
     def test_execute(self):
         """Test basic operations."""
-        self.control_unit.opcode = self.control_unit.MOVE
+        self.control_unit.opcode = self.control_unit.OPCODES["move"]
         self.control_unit.execute()
         self.alu.move.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.ADD
+        self.control_unit.opcode = self.control_unit.OPCODES["add"]
         self.control_unit.execute()
         self.alu.add.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.SUB
+        self.control_unit.opcode = self.control_unit.OPCODES["sub"]
         self.control_unit.execute()
         self.alu.sub.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.SMUL
+        self.control_unit.opcode = self.control_unit.OPCODES["smul"]
         self.control_unit.execute()
         self.alu.smul.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.UMUL
+        self.control_unit.opcode = self.control_unit.OPCODES["umul"]
         self.control_unit.execute()
         self.alu.umul.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.SDIVMOD
+        self.control_unit.opcode = self.control_unit.OPCODES["sdivmod"]
         self.control_unit.execute()
         self.alu.sdivmod.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.UDIVMOD
+        self.control_unit.opcode = self.control_unit.OPCODES["udivmod"]
         self.control_unit.execute()
         self.alu.udivmod.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.HALT
+        self.control_unit.opcode = self.control_unit.OPCODES["halt"]
         self.control_unit.execute()
         self.alu.halt.assert_called_once_with()
 
@@ -262,13 +263,14 @@ class TestBordachenkovaControlUnit3:
             self.registers.put.assert_has_calls([call('R1', val1, WORD_SIZE),
                                                  call('R2', val2, WORD_SIZE)])
 
-        for opcode in {self.control_unit.MOVE}:
+        for opcode in {self.control_unit.OPCODES["move"]}:
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
             self.registers.put.assert_called_once_with('R1', val1, WORD_SIZE)
 
-        for opcode in {self.control_unit.JUMP, self.control_unit.HALT}:
+        for opcode in {self.control_unit.OPCODES["jump"],
+                       self.control_unit.OPCODES["halt"]}:
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
@@ -299,25 +301,27 @@ class TestBordachenkovaControlUnit3:
         self.registers.put.assert_called_once_with("R1", addr, WORD_SIZE)
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
 
-    def test_jumps_and_halt(self):
+    def test_cond_jumps(self):
         """Test for jumps."""
-        self.run_jump(self.control_unit.JEQ, True, EQUAL, True)
-        self.run_jump(self.control_unit.JNEQ, True, EQUAL, False)
-        self.run_jump(self.control_unit.SJL, True, LESS, False)
-        self.run_jump(self.control_unit.SJGEQ, True, GREATER, True)
-        self.run_jump(self.control_unit.SJLEQ, True, LESS, True)
-        self.run_jump(self.control_unit.SJG, True, GREATER, False)
-        self.run_jump(self.control_unit.UJL, False, LESS, False)
-        self.run_jump(self.control_unit.UJGEQ, False, GREATER, True)
-        self.run_jump(self.control_unit.UJLEQ, False, LESS, True)
-        self.run_jump(self.control_unit.UJG, False, GREATER, False)
+        self.run_jump(self.control_unit.OPCODES["jeq"], True, EQUAL, True)
+        self.run_jump(self.control_unit.OPCODES["jneq"], True, EQUAL, False)
+        self.run_jump(self.control_unit.OPCODES["sjl"], True, LESS, False)
+        self.run_jump(self.control_unit.OPCODES["sjgeq"], True, GREATER, True)
+        self.run_jump(self.control_unit.OPCODES["sjleq"], True, LESS, True)
+        self.run_jump(self.control_unit.OPCODES["sjg"], True, GREATER, False)
+        self.run_jump(self.control_unit.OPCODES["ujl"], False, LESS, False)
+        self.run_jump(self.control_unit.OPCODES["ujgeq"], False, GREATER, True)
+        self.run_jump(self.control_unit.OPCODES["ujleq"], False, LESS, True)
+        self.run_jump(self.control_unit.OPCODES["ujg"], False, GREATER, False)
 
+    def test_jump_halt(self):
+        """Test for jump and halt."""
         addr = 10
 
         self.alu.cond_jump.reset_mock()
         self.alu.sub.reset_mock()
         self.registers.put.reset_mock()
-        self.control_unit.opcode = self.control_unit.JUMP
+        self.control_unit.opcode = self.control_unit.OPCODES["jump"]
         self.control_unit.address3 = addr
         self.control_unit.execute()
 
@@ -325,7 +329,7 @@ class TestBordachenkovaControlUnit3:
         self.registers.put.assert_called_once_with("R1", addr, WORD_SIZE)
         self.alu.jump.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.HALT
+        self.control_unit.opcode = self.control_unit.OPCODES["halt"]
         self.control_unit.execute()
         self.alu.halt.assert_called_once_with()
 
@@ -350,8 +354,8 @@ class TestBordachenkovaControlUnit3:
             self.control_unit.write_back()
             if should:
                 assert self.ram.fetch(address, WORD_SIZE) == second
-                if opcode in {self.control_unit.SDIVMOD,
-                              self.control_unit.UDIVMOD}:
+                if opcode in {self.control_unit.OPCODES["sdivmod"],
+                              self.control_unit.OPCODES["udivmod"]}:
                     assert self.ram.fetch((address + 1) % 2 ** BYTE_SIZE,
                                           WORD_SIZE) == third
             else:
@@ -360,11 +364,12 @@ class TestBordachenkovaControlUnit3:
 
     def test_write_back(self):
         """Test write back result to the memory."""
-        for opcode in self.arithmetic_opcodes | {self.control_unit.MOVE}:
+        for opcode in self.arithmetic_opcodes | {self.control_unit.OPCODES["move"]}:
             self.run_write_back(True, opcode)
 
         for opcode in (self.condjump_opcodes |
-                       {self.control_unit.HALT, self.control_unit.JUMP}):
+                       {self.control_unit.OPCODES["halt"],
+                        self.control_unit.OPCODES["jump"]}):
             self.run_write_back(False, opcode)
 
     def test_step(self):
@@ -457,26 +462,28 @@ class TestBordachenkovaControlUnit2:
         self.control_unit.address1 = addr1
         self.control_unit.address2 = addr2
 
-        for opcode in self.arithmetic_opcodes | {self.control_unit.COMP}:
+        for opcode in (self.arithmetic_opcodes |
+                       {self.control_unit.OPCODES["comp"]}):
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
             self.registers.put.assert_has_calls([call('R1', val1, WORD_SIZE),
                                                  call('R2', val2, WORD_SIZE)])
 
-        for opcode in {self.control_unit.MOVE}:
+        for opcode in {self.control_unit.OPCODES["move"]}:
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
             self.registers.put.assert_called_once_with('R1', val2, WORD_SIZE)
 
-        for opcode in self.condjump_opcodes | {self.control_unit.JUMP}:
+        for opcode in (self.condjump_opcodes |
+                       {self.control_unit.OPCODES["jump"]}):
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
             self.registers.put.assert_called_once_with('R1', addr2, WORD_SIZE)
 
-        for opcode in {self.control_unit.HALT}:
+        for opcode in {self.control_unit.OPCODES["halt"]}:
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
@@ -498,36 +505,28 @@ class TestBordachenkovaControlUnit2:
         assert not self.registers.put.called
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
 
-    def test_jumps_and_halt(self):
+    def test_cond_jumps(self):
         """Test for jumps."""
-        self.run_jump(self.control_unit.JEQ, True, EQUAL, True)
-        self.run_jump(self.control_unit.JNEQ, True, EQUAL, False)
-        self.run_jump(self.control_unit.SJL, True, LESS, False)
-        self.run_jump(self.control_unit.SJGEQ, True, GREATER, True)
-        self.run_jump(self.control_unit.SJLEQ, True, LESS, True)
-        self.run_jump(self.control_unit.SJG, True, GREATER, False)
-        self.run_jump(self.control_unit.UJL, False, LESS, False)
-        self.run_jump(self.control_unit.UJGEQ, False, GREATER, True)
-        self.run_jump(self.control_unit.UJLEQ, False, LESS, True)
-        self.run_jump(self.control_unit.UJG, False, GREATER, False)
+        TestBordachenkovaControlUnit3.test_cond_jumps(self)
 
-
+    def test_jump_halt(self):
+        """Test for jumps."""
         self.alu.cond_jump.reset_mock()
         self.alu.sub.reset_mock()
         self.registers.put.reset_mock()
 
-        self.control_unit.opcode = self.control_unit.JUMP
+        self.control_unit.opcode = self.control_unit.OPCODES["jump"]
         self.control_unit.execute()
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.jump.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.COMP
+        self.control_unit.opcode = self.control_unit.OPCODES["comp"]
         self.control_unit.execute()
         assert not self.registers.put.called
         self.alu.sub.assert_called_once_with()
 
-        self.control_unit.opcode = self.control_unit.HALT
+        self.control_unit.opcode = self.control_unit.OPCODES["halt"]
         self.control_unit.execute()
         assert not self.registers.put.called
         self.alu.halt.assert_called_once_with()
@@ -553,8 +552,8 @@ class TestBordachenkovaControlUnit2:
             self.control_unit.write_back()
             if should:
                 assert self.ram.fetch(address, WORD_SIZE) == second
-                if opcode in {self.control_unit.SDIVMOD,
-                              self.control_unit.UDIVMOD}:
+                if opcode in {self.control_unit.OPCODES["sdivmod"],
+                              self.control_unit.OPCODES["udivmod"]}:
                     assert self.ram.fetch((address + 1) % 2 ** BYTE_SIZE,
                                           WORD_SIZE) == third
             else:
@@ -564,7 +563,7 @@ class TestBordachenkovaControlUnit2:
     def test_write_back(self):
         """Test write back result to the memory."""
         TestBordachenkovaControlUnit3.test_write_back(self)
-        self.run_write_back(False, self.control_unit.COMP)
+        self.run_write_back(False, self.control_unit.OPCODES["comp"])
 
     def test_step(self):
         """Test step cycle."""

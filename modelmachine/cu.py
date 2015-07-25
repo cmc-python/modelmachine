@@ -61,22 +61,64 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
     """Abstract Bordachenkova control unit (need to inherit to determine machine)."""
 
-    OPCODE_SIZE = 8
+    OPCODES = {
+        "move": 0x00,
 
+        "add": 0x01,
+        "sub": 0x02,
+        "smul": 0x03,
+        "sdivmod": 0x04,
+
+        "comp": 0x05,
+
+        "umul": 0x13,
+        "udivmod": 0x14,
+
+        "jump": 0x80,
+        "jeq": 0x81,
+        "jneq": 0x82,
+
+        "sjl": 0x83,
+        "sjgeq": 0x84,
+        "sjleq": 0x85,
+        "sjg": 0x86,
+
+        "ujl": 0x93,
+        "ujgeq": 0x94,
+        "ujleq": 0x95,
+        "ujg": 0x96,
+
+        "halt": 0x99
+    }
+    """
     MOVE = 0x00
     ADD, SUB = 0x01, 0x02
     SMUL, SDIVMOD = 0x03, 0x04
     UMUL, UDIVMOD = 0x13, 0x14
     COMP = 0x05
+
     JUMP = 0x80
     JEQ, JNEQ = 0x81, 0x82
     SJL, SJGEQ, SJLEQ, SJG = 0x83, 0x84, 0x85, 0x86
     UJL, UJGEQ, UJLEQ, UJG = 0x93, 0x94, 0x95, 0x96
     HALT = 0x99
+    """
+    OPCODE_SIZE = 8
+    ARITHMETIC_OPCODES = {OPCODES["add"], OPCODES["sub"],
+                          OPCODES["smul"], OPCODES["sdivmod"],
+                          OPCODES["umul"], OPCODES["udivmod"]}
+    DIVMOD_OPCODES = {OPCODES["sdivmod"], OPCODES["udivmod"]}
 
-    ARITHMETIC_OPCODES = {ADD, SUB, SMUL, SDIVMOD, UMUL, UDIVMOD}
-    CONDJUMP_OPCODES = {JEQ, JNEQ, SJL, SJGEQ, SJLEQ, SJG,
-                        UJL, UJGEQ, UJLEQ, UJG}
+    CONDJUMP_OPCODES = {OPCODES["jeq"], OPCODES["jneq"],
+                        OPCODES["sjl"], OPCODES["sjgeq"],
+                        OPCODES["sjleq"], OPCODES["sjg"],
+                        OPCODES["ujl"], OPCODES["ujgeq"],
+                        OPCODES["ujleq"], OPCODES["ujg"]}
+    JUMP_OPCODES = CONDJUMP_OPCODES | {OPCODES["jump"]}
+
+    BINAR_OPCODES = ARITHMETIC_OPCODES | {OPCODES["comp"]}
+    UNAR_OPCODES = JUMP_OPCODES
+    MONAR_OPCODES = {OPCODES["halt"]}
 
     opcode = 0
 
@@ -106,21 +148,21 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
     def execute(self):
         """Run arithmetic instructions."""
-        if self.opcode == self.MOVE:
+        if self.opcode == self.OPCODES["move"]:
             self.alu.move()
-        elif self.opcode == self.HALT:
+        elif self.opcode == self.OPCODES["halt"]:
             self.alu.halt()
-        elif self.opcode == self.ADD:
+        elif self.opcode == self.OPCODES["add"]:
             self.alu.add()
-        elif self.opcode == self.SUB:
+        elif self.opcode == self.OPCODES["sub"]:
             self.alu.sub()
-        elif self.opcode == self.SMUL:
+        elif self.opcode == self.OPCODES["smul"]:
             self.alu.smul()
-        elif self.opcode == self.UMUL:
+        elif self.opcode == self.OPCODES["umul"]:
             self.alu.umul()
-        elif self.opcode == self.SDIVMOD:
+        elif self.opcode == self.OPCODES["sdivmod"]:
             self.alu.sdivmod()
-        elif self.opcode == self.UDIVMOD:
+        elif self.opcode == self.OPCODES["udivmod"]:
             self.alu.udivmod()
         else:
             raise ValueError('Invalid opcode `{opcode}`'
@@ -128,25 +170,25 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
     def execute_cond_jump(self):
         """Conditional jump part of execution."""
-        if self.opcode == self.JEQ:
+        if self.opcode == self.OPCODES["jeq"]:
             self.alu.cond_jump(True, EQUAL, True)
-        elif self.opcode == self.JNEQ:
+        elif self.opcode == self.OPCODES["jneq"]:
             self.alu.cond_jump(True, EQUAL, False)
-        elif self.opcode == self.SJL:
+        elif self.opcode == self.OPCODES["sjl"]:
             self.alu.cond_jump(True, LESS, False)
-        elif self.opcode == self.SJGEQ:
+        elif self.opcode == self.OPCODES["sjgeq"]:
             self.alu.cond_jump(True, GREATER, True)
-        elif self.opcode == self.SJLEQ:
+        elif self.opcode == self.OPCODES["sjleq"]:
             self.alu.cond_jump(True, LESS, True)
-        elif self.opcode == self.SJG:
+        elif self.opcode == self.OPCODES["sjg"]:
             self.alu.cond_jump(True, GREATER, False)
-        elif self.opcode == self.UJL:
+        elif self.opcode == self.OPCODES["ujl"]:
             self.alu.cond_jump(False, LESS, False)
-        elif self.opcode == self.UJGEQ:
+        elif self.opcode == self.OPCODES["ujgeq"]:
             self.alu.cond_jump(False, GREATER, True)
-        elif self.opcode == self.UJLEQ:
+        elif self.opcode == self.OPCODES["ujleq"]:
             self.alu.cond_jump(False, LESS, True)
-        elif self.opcode == self.UJG:
+        elif self.opcode == self.OPCODES["ujg"]:
             self.alu.cond_jump(False, GREATER, False)
 
 
@@ -175,8 +217,9 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
         """See help(type(x))."""
         super().__init__(instruction_size, *vargs, **kvargs)
         self.instruction_size = instruction_size
-        self.opcodes = (self.ARITHMETIC_OPCODES | self.CONDJUMP_OPCODES |
-                        {self.JUMP, self.MOVE, self.HALT})
+        self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
+                        {self.OPCODES["move"],
+                         self.OPCODES["halt"]})
 
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
@@ -190,25 +233,25 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
         """Load registers R1 and R2."""
         if  (self.opcode in self.ARITHMETIC_OPCODES or
              self.opcode in self.CONDJUMP_OPCODES or
-             self.opcode == self.MOVE):
+             self.opcode == self.OPCODES["move"]):
 
             operand1 = self.ram.fetch(self.address1, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
 
-            if self.opcode != self.MOVE:
+            if self.opcode != self.OPCODES["move"]:
                 operand2 = self.ram.fetch(self.address2, self.operand_size)
                 self.registers.put('R2', operand2, self.operand_size)
 
     def execute(self):
         """Add specific commands: conditional jumps."""
         if  (self.opcode in self.CONDJUMP_OPCODES or
-             self.opcode == self.JUMP):
+             self.opcode == self.OPCODES["jump"]):
 
-            if self.opcode != self.JUMP:
+            if self.opcode != self.OPCODES["jump"]:
                 self.alu.sub()
             self.registers.put('R1', self.address3, self.operand_size)
 
-            if self.opcode == self.JUMP:
+            if self.opcode == self.OPCODES["jump"]:
                 self.alu.jump()
             else: # self.opcode in self.CONDJUMP_OPCODES
                 self.execute_cond_jump()
@@ -218,12 +261,12 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
     def write_back(self):
         """Write result back."""
         if  (self.opcode in self.ARITHMETIC_OPCODES or
-             self.opcode == self.MOVE):
+             self.opcode == self.OPCODES["move"]):
 
             value = self.registers.fetch('S', self.operand_size)
             self.ram.put(self.address3, value, self.operand_size)
 
-            if self.opcode in {self.SDIVMOD, self.UDIVMOD}:
+            if self.opcode in self.DIVMOD_OPCODES:
                 address = self.address3 + self.operand_size // self.ram.word_size
                 address %= self.ram.memory_size
                 value = self.registers.fetch('R1', self.operand_size)
@@ -242,8 +285,10 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
         self.instruction_size = instruction_size
 
         self.instruction_size = instruction_size
-        self.opcodes = (self.ARITHMETIC_OPCODES | self.CONDJUMP_OPCODES |
-                        {self.JUMP, self.MOVE, self.HALT, self.COMP})
+        self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
+                        {self.OPCODES["move"],
+                         self.OPCODES["halt"],
+                         self.OPCODES["comp"]})
 
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
@@ -254,22 +299,22 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
 
     def load(self):
         """Load registers R1 and R2."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.COMP}:
+        if self.opcode in self.BINAR_OPCODES:
             operand1 = self.ram.fetch(self.address1, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
             operand2 = self.ram.fetch(self.address2, self.operand_size)
             self.registers.put('R2', operand2, self.operand_size)
-        elif self.opcode == self.MOVE:
+        elif self.opcode == self.OPCODES["move"]:
             operand1 = self.ram.fetch(self.address2, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
-        elif self.opcode in self.CONDJUMP_OPCODES | {self.JUMP}:
+        elif self.opcode in self.JUMP_OPCODES:
             self.registers.put("R1", self.address2, self.operand_size)
 
     def execute(self):
         """Add specific commands: conditional jumps and cmp."""
-        if self.opcode == self.COMP:
+        if self.opcode == self.OPCODES["comp"]:
             self.alu.sub()
-        elif self.opcode == self.JUMP:
+        elif self.opcode == self.OPCODES["jump"]:
             self.alu.jump()
         elif self.opcode in self.CONDJUMP_OPCODES:
             self.execute_cond_jump()
@@ -278,7 +323,7 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
 
     def write_back(self):
         """Write result back."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.MOVE}:
+        if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["move"]}:
             value = self.registers.fetch('S', self.operand_size)
             self.ram.put(self.address1, value, self.operand_size)
             if self.opcode in {0x04, 0x14}:
