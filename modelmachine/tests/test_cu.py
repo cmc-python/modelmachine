@@ -108,14 +108,10 @@ def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
     test_case.registers.put.reset_mock()
 
     def get_register(name, size):
-        """Get address and value."""
-        assert name in {"IP", "IR"}
-        if name == "IP":
-            assert size == BYTE_SIZE
-            return address
-        elif name == "IR":
-            assert size == WORD_SIZE
-            return value
+        """Get IP."""
+        assert name == "IP"
+        assert size == BYTE_SIZE
+        return address
     test_case.registers.fetch.side_effect = get_register
 
     if and_decode:
@@ -186,6 +182,8 @@ class TestBordachenkovaControlUnit:
 
     def test_abstract_methods(self):
         """Abstract class."""
+        with raises(NotImplementedError):
+            self.control_unit.fetch_and_decode()
         with raises(NotImplementedError):
             self.control_unit.load()
         with raises(NotImplementedError):
