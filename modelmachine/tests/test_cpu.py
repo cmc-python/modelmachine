@@ -4,6 +4,7 @@
 
 from modelmachine.cpu import AbstractCPU
 from modelmachine.cpu import BordachenkovaMM3, BordachenkovaMM2
+from modelmachine.cpu import BordachenkovaMMV
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -147,6 +148,41 @@ class TestBordachenkovaMM2:
                        "02 0103 0103; never be used\n" +
                        "02 0103 0007\n" +
                        "99 0000 0000\n" +
+                       "0000000002\n" +
+                       "[input]\n" +
+                       "100 200\n")
+
+    def test_smoke(self, tmpdir):
+        """Smoke test."""
+        source = tmpdir.join("source.mmach")
+        source.write(self.source)
+        out = tmpdir.join("output.txt")
+        with open(str(out), 'w') as output:
+            self.cpu.run_file(str(source), output=output)
+
+        assert out.read() == "298\n"
+
+class TestBordachenkovaMMV:
+
+    """Smoke test for mm-2."""
+
+    cpu = None
+    source = None
+
+    def setup(self):
+        """Init state."""
+        self.cpu = BordachenkovaMMV()
+        self.source = ("[config]\n" +
+                       "input=0x100,0x105\n" +
+                       "output=0x10a\n" +
+                       "[code]\n" +
+                       "01 0100 0105\n" +
+                       "00 010a 0100\n" +
+                       "05 0100 0105\n" +
+                       "86 0017\n" +
+                       "02 0103 0103; never be used\n" +
+                       "02 010a 001d\n" +
+                       "99\n" +
                        "0000000002\n" +
                        "[input]\n" +
                        "100 200\n")

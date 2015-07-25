@@ -363,25 +363,23 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
             operand2 = self.ram.fetch(self.address2, self.operand_size)
             self.registers.put('R2', operand2, self.operand_size)
         elif self.opcode == self.OPCODES["move"]:
-            operand1 = self.ram.fetch(self.address1, self.operand_size)
+            operand1 = self.ram.fetch(self.address2, self.operand_size)
             self.registers.put('R1', operand1, self.operand_size)
         elif self.opcode in self.JUMP_OPCODES:
             self.registers.put("R1", self.address1, self.operand_size)
 
     def execute(self):
         """Add specific commands: conditional jumps and cmp."""
-        if self.opcode == self.COMP:
+        if self.opcode == self.OPCODES["comp"]:
             self.alu.sub()
-        elif self.opcode == self.JUMP:
-            self.alu.jump()
-        elif self.opcode in self.CONDJUMP_OPCODES:
-            self.execute_cond_jump()
+        elif self.opcode in self.JUMP_OPCODES:
+            self.execute_jump()
         else:
             super().execute()
 
     def write_back(self):
         """Write result back."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.MOVE}:
+        if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["move"]}:
             value = self.registers.fetch('S', self.operand_size)
             self.ram.put(self.address1, value, self.operand_size)
             if self.opcode in {0x04, 0x14}:

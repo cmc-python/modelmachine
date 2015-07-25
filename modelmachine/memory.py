@@ -17,23 +17,30 @@ def little_endian_decode(array, word_size):
     """Transform array of words to one integer."""
     return big_endian_decode(reversed(array), word_size)
 
-def little_endian_encode(value, word_size):
+def little_endian_encode(value, word_size, bits):
     """Transform long integer to list of small."""
+    size = bits // word_size
     if value < 0:
-        raise ValueError('Cannot save negative value: {value}'
+        raise ValueError('Cannot encode negative value: {value}'
                          .format(value=value))
     if value == 0:
-        return [0]
+        return [0] * size
     else:
         result = []
         while value != 0:
             result.append(value % 2 ** word_size)
             value //= 2 ** word_size
+
+        if len(result) * word_size > bits:
+            raise ValueError('Too long integer: {value}, expected '
+                             '{bits} bits integer'
+                             .format(value=value, bits=bits))
+        result += [0] * (size - len(result))
         return result
 
-def big_endian_encode(value, word_size):
+def big_endian_encode(value, word_size, bits):
     """Transform long integer to list of small."""
-    return list(reversed(little_endian_encode(value, word_size)))
+    return list(reversed(little_endian_encode(value, word_size, bits)))
 
 class AbstractMemory(dict):
 
@@ -111,14 +118,9 @@ class AbstractMemory(dict):
         self.check_address(address)
         self.check_bits_count(address, bits)
 
-        size = bits // self.word_size
-        enc_value = self.encode(value, self.word_size)
-        if len(enc_value) > size:
-            raise ValueError('Too long integer: {value}, expected '
-                             '{bits} bits integer'
-                             .format(value=value, bits=bits))
-        enc_value += [0] * (size - len(enc_value))
+        enc_value = self.encode(value, self.word_size, bits)
 
+        size = bits // self.word_size
         if size == 1: # Address not always is integer, sometimes string
             self[address] = value
         else:
@@ -130,12 +132,14 @@ class RandomAccessMemory(AbstractMemory):
     """Random access memory.
 
     Addresses is x: 0 <= x < memory_size.
-    If is_protected == True, you cannot read unassigned memory (usefull for debug).
+    If is_protected == True, you cannot read unassigned memory
+    (usefull for debug).
     """
 
-    def __init__(self, word_size, memory_size, endianess, is_protected=True, **other):
+    def __init__(self, word_size, memory_size, endianess,
+                 is_protected=True, *vargs, **kvargs):
         """Read help(type(x))."""
-        super().__init__(word_size, endianess=endianess, **other)
+        super().__init__(word_size, endianess=endianess, *vargs, **kvargs)
         self.memory_size = memory_size
         self.is_protected = is_protected
 

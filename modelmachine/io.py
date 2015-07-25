@@ -35,9 +35,9 @@ class InputOutputUnit:
             part = int(part, base=16)
             block = (block << part_size) | part
             block_size += part_size
-            if block_size >= self.word_size:
+            if block_size >= self.ram.word_size:
                 self.ram.put(address, block, block_size)
-                address += block_size // self.word_size
+                address += block_size // self.ram.word_size
                 block, block_size = 0, 0
         if block_size != 0:
             raise ValueError('Cannot save string, wrong size')

@@ -15,10 +15,10 @@ def test_endianess():
     """Simple test."""
     assert big_endian_decode([1, 2, 3], 8) == 1 * 2 ** 16 + 2 * 2 ** 8 + 3
     assert little_endian_decode([1, 2, 3], 8) == 3 * 2 ** 16 + 2 * 2 ** 8 + 1
-    assert big_endian_encode(1 * 2 ** 16 + 2 * 2 ** 8 + 3, 8) == [1, 2, 3]
-    assert little_endian_encode(3 * 2 ** 16 + 2 * 2 ** 8 + 1, 8) == [1, 2, 3]
-    assert big_endian_encode(0, 8) == [0]
-    assert little_endian_encode(0, 8) == [0]
+    assert big_endian_encode(1 * 2 ** 16 + 2 * 2 ** 8 + 3, 8, 24) == [1, 2, 3]
+    assert little_endian_encode(3 * 2 ** 16 + 2 * 2 ** 8 + 1, 8, 24) == [1, 2, 3]
+    assert big_endian_encode(0, 8, 24) == [0, 0, 0]
+    assert little_endian_encode(0, 8, 24) == [0, 0, 0]
 
 
 class TestAbstractMemory:
@@ -157,7 +157,15 @@ class TestRandomAccessMemory:
             self.ram[i] = i
             assert self.ram.fetch(i, WORD_SIZE) == i
         assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                0x00000005000000060000000700000008)
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
                 big_endian_decode([5, 6, 7, 8], WORD_SIZE))
+
+        self.ram[5] = 0
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                big_endian_decode([0, 6, 7, 8], WORD_SIZE))
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                0x00000000000000060000000700000008)
 
         with raises(KeyError):
             self.ram.fetch(5, 4 * WORD_SIZE - 1)
@@ -169,23 +177,26 @@ class TestRandomAccessMemory:
             self.ram[i] = i
             assert self.ram.fetch(i, WORD_SIZE) == i
         assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
+                0x00000008000000070000000600000005)
+        assert (self.ram.fetch(5, 4 * WORD_SIZE) ==
                 little_endian_decode([5, 6, 7, 8], WORD_SIZE))
 
     def test_put(self):
         """Test put operation."""
-        value = big_endian_decode([5, 6, 7, 8], WORD_SIZE)
+        value_list = [0, 6, 7, 0]
+        value = big_endian_decode(value_list, WORD_SIZE)
         self.ram.put(5, value, 4 * WORD_SIZE)
         with raises(ValueError):
             self.ram.put(5, 2 ** WORD_SIZE, WORD_SIZE)
         self.ram.put(4, 4, WORD_SIZE)
-        for i in range(4, 9):
-            assert self.ram[i] == i
+        for i in range(5, 9):
+            assert self.ram[i] == value_list[i - 5]
 
         self.ram = RandomAccessMemory(WORD_SIZE, 512, endianess="little")
-        value = little_endian_decode([5, 6, 7, 8], WORD_SIZE)
+        value = little_endian_decode(value_list, WORD_SIZE)
         self.ram.put(5, value, 4 * WORD_SIZE)
         for i in range(5, 9):
-            assert self.ram[i] == i
+            assert self.ram[i] == value_list[i - 5]
 
 class TestRegisterMemory:
 

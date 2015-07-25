@@ -21,6 +21,7 @@ class TestIODevice:
     def setup(self):
         """Init state."""
         self.ram = create_autospec(RandomAccessMemory, True, True)
+        self.ram.word_size = WORD_SIZE
         self.io_unit = InputOutputUnit(self.ram, 10, WORD_SIZE)
 
     def test_load_hex(self):
