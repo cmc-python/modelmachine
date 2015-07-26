@@ -219,46 +219,49 @@ Model machine emulator
 
 ### Таблица команд модельных машин
 
-|OPCODE|mm-3|mm-2|mm-v|
-|:-----|:--:|:--:|:--:|
-|0x00  |move|move|move|
-|0x01  |add |add |add |
-|0x02  |sub |sub |sub |
-|0x03  |smul|smul|smul|
-|0x04  |sdiv|sdiv|sdiv|
-|0x05  |    |comp|comp|
-|0x13  |umul|umul|umul|
-|0x14  |udiv|udiv|udiv|
-|0x80  |jump|jump|jump|
-|0x81  | == | == | == |
-|0x82  | != | != | != |
-|0x83  |<  s|<  s|<  s|
-|0x84  |>= s|>= s|>= s|
-|0x85  |<= s|<= s|<= s|
-|0x86  |>  s|>  s|>  s|
-|0x93  |<  u|<  u|<  u|
-|0x94  |>= u|>= u|>= u|
-|0x95  |<= u|<= u|<= u|
-|0x96  |>  u|>  u|>  u|
-|0x99  |halt|halt|halt|
+|OPCODE|mm-3 |mm-2 |mm-v |mm-1 |
+|:-----|:---:|:---:|:---:|:---:|
+|0x00  |move |move |move |load |
+|0x01  | add | add | add | add |
+|0x02  | sub | sub | sub | sub |
+|0x03  |smul |smul |smul |smul |
+|0x04  |sdiv |sdiv |sdiv |sdiv |
+|0x05  |     |comp |comp |comp |
+|0x13  |umul |umul |umul |umul |
+|0x14  |udiv |udiv |udiv |udiv |
+|0x10  |     |     |     |store|
+|0x20  |     |     |     |swap |
+|0x80  |jump |jump |jump |jump |
+|0x81  | jeq | jeq | jeq | jeq |
+|0x82  |jneq |jneq |jneq |jneq |
+|0x83  | sjl | sjl | sjl | sjl |
+|0x84  |sjgeq|sjgeq|sjneq|sjgeq|
+|0x85  |sjleq|sjleq|sjleq|sjleq|
+|0x86  | sjg | sjg | sjg | sjg |
+|0x93  | ujl | ujl | ujl | ujl |
+|0x94  |ujgeq|ujgeq|ujgeq|ujgeq|
+|0x95  |ujleq|ujleq|ujleq|ujleq|
+|0x96  | ujg | ujg | ujg | ujg |
+|0x99  |halt |halt |halt |halt |
 
 На самом деле операция `div` запускает в АЛУ схему `divmod`.
 
-Знаки сравнения в таблице означают команды условного перехода. Как они
-работают читайте в книге *[1]* и ниже по тексту.
+Ниже дана таблица команд условных переходов.
+Откуда берутся операнды для сравнения зависит от архитектуры модельной
+машины. Подробнее смотри *[1]*.
 
-|Мнемонический код|Обозначение выше|Расшифровка/описание             |
+|Мнемонический код|Условие перехода|Расшифровка/описание             |
 |:----------------|:--------------:|:--------------------------------|
-|JEQ              |      ==        |jump if equal                    |
-|JNEQ             |      !=        |jump if not equal                |
-|SJL              |     <  s       |signed jump if less              |
-|SJGEQ            |     >= s       |signed jump if greater or equal  |
-|SJLEQ            |     <= s       |signed jump if less or equal     |
-|SJG              |     >  s       |signed jump if greater           |
-|UJL              |     <  u       |unsigned jump if less            |
-|UJGEQ            |     >= u       |unsigned jump if greater or equal|
-|UJLEQ            |     <= u       |unsigned jump if less or equal   |
-|UJG              |     >  u       |unsigned jump if greater         |
+|jeq              |      ==        |jump if equal                    |
+|jneq             |      !=        |jump if not equal                |
+|sjl              |     <  s       |signed jump if less              |
+|sjgeq            |     >= s       |signed jump if greater or equal  |
+|sjleq            |     <= s       |signed jump if less or equal     |
+|sjg              |     >  s       |signed jump if greater           |
+|ujl              |     <  u       |unsigned jump if less            |
+|ujgeq            |     >= u       |unsigned jump if greater or equal|
+|ujleq            |     <= u       |unsigned jump if less or equal   |
+|ujg              |     >  u       |unsigned jump if greater         |
 
 ### bordachenkova_mm3
 
