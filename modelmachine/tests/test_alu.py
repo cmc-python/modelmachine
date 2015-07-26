@@ -178,9 +178,17 @@ class TestArithmeticLogicUnit:
 
     def test_move(self):
         """Test move command."""
-        self.registers.put('R1', 10, BYTE_SIZE)
+        self.registers.put("R1", 10, BYTE_SIZE)
         self.alu.move()
-        assert self.registers.fetch('S', BYTE_SIZE) == 10
+        assert self.registers.fetch("S", BYTE_SIZE) == 10
+
+    def test_swap(self):
+        """Test move command."""
+        self.registers.put("S", 20, BYTE_SIZE)
+        self.registers.put("R1", 10, BYTE_SIZE)
+        self.alu.swap()
+        assert self.registers.fetch("S", BYTE_SIZE) == 10
+        assert self.registers.fetch("R1", BYTE_SIZE) == 20
 
     def test_divmod(self):
         """Division test."""

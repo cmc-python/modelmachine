@@ -4,7 +4,7 @@
 
 from modelmachine.cpu import AbstractCPU
 from modelmachine.cpu import BordachenkovaMM3, BordachenkovaMM2
-from modelmachine.cpu import BordachenkovaMMV
+from modelmachine.cpu import BordachenkovaMMV, BordachenkovaMM1
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -164,7 +164,7 @@ class TestBordachenkovaMM2:
 
 class TestBordachenkovaMMV:
 
-    """Smoke test for mm-2."""
+    """Smoke test for mm-v."""
 
     cpu = None
     source = None
@@ -196,3 +196,43 @@ class TestBordachenkovaMMV:
             self.cpu.run_file(str(source), output=output)
 
         assert out.read() == "298\n"
+
+
+class TestBordachenkovaMM1:
+
+    """Smoke test for mm-1."""
+
+    cpu = None
+    source = None
+
+    def setup(self):
+        """Init state."""
+        self.cpu = BordachenkovaMM1()
+        self.source = ("[config]\n" +
+                       "input=0x101,0x102\n" +
+                       "output=0x103\n" +
+                       "[code]\n" +
+                       "00 0101\n"
+                       "01 0102\n"
+                       "05 0102\n"
+                       "86 0006\n"
+                       "02 0103; never be used\n"
+                       "10 0103\n"
+                       "02 0009\n"
+                       "10 0103\n"
+                       "99 0000\n"
+                       "000002\n" +
+                       "[input]\n" +
+                       "100 200\n")
+
+    def test_smoke(self, tmpdir):
+        """Smoke test."""
+        source = tmpdir.join("source.mmach")
+        source.write(self.source)
+        out = tmpdir.join("output.txt")
+        with open(str(out), 'w') as output:
+            self.cpu.run_file(str(source), output=output)
+
+        assert out.read() == "298\n"
+
+

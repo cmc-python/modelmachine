@@ -7,6 +7,7 @@ from modelmachine.cu import BordachenkovaControlUnit
 from modelmachine.cu import BordachenkovaControlUnit3
 from modelmachine.cu import BordachenkovaControlUnit2
 from modelmachine.cu import BordachenkovaControlUnitV
+from modelmachine.cu import BordachenkovaControlUnit1
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, HALT, LESS, GREATER, EQUAL
 
@@ -81,10 +82,13 @@ class TestAbstractControlUnit:
         self.control_unit.write_back.assert_called_once_with()
 
 OP_MOVE = 0x00
+OP_LOAD = 0x00
 OP_ADD, OP_SUB = 0x01, 0x02
 OP_SMUL, OP_SDIVMOD = 0x03, 0x04
 OP_COMP = 0x05
+OP_STORE = 0x10
 OP_UMUL, OP_UDIVMOD = 0x13, 0x14
+OP_SWAP = 0x20
 OP_JUMP = 0x80
 OP_JEQ, OP_JNEQ = 0x81, 0x82
 OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG = 0x83, 0x84, 0x85, 0x86
@@ -160,6 +164,9 @@ class TestBordachenkovaControlUnit:
         assert self.control_unit.address_size == BYTE_SIZE
         assert self.control_unit.OPCODE_SIZE == BYTE_SIZE
         assert self.control_unit.OPCODES["move"] == OP_MOVE
+        assert self.control_unit.OPCODES["load"] == OP_LOAD
+        assert self.control_unit.OPCODES["store"] == OP_STORE
+        assert self.control_unit.OPCODES["swap"] == OP_SWAP
         assert self.control_unit.OPCODES["add"] == OP_ADD
         assert self.control_unit.OPCODES["sub"] == OP_SUB
         assert self.control_unit.OPCODES["smul"] == OP_SMUL
@@ -193,11 +200,14 @@ class TestBordachenkovaControlUnit:
         """Right fetch and decode is a half of business."""
         run_fetch(self, 0x01020304, 0x01, WORD_SIZE, False)
 
-    def test_basic_execute(self):
+    def test_basic_execute(self, should_move=True):
         """Test basic operations."""
         self.control_unit.opcode = OP_MOVE
         self.control_unit.execute()
-        self.alu.move.assert_called_once_with()
+        if should_move:
+            self.alu.move.assert_called_once_with()
+        else:
+            assert not self.alu.move.called
 
         self.control_unit.opcode = OP_ADD
         self.control_unit.execute()
@@ -268,10 +278,12 @@ class TestBordachenkovaControlUnit3:
 
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
-        run_fetch(self, 0x01020304, 0x01, WORD_SIZE)
-        assert self.control_unit.address1 == 0x02
-        assert self.control_unit.address2 == 0x03
-        assert self.control_unit.address3 == 0x04
+        for opcode in self.control_unit.opcodes:
+            self.control_unit.address1, self.control_unit.address2 = None, None
+            run_fetch(self, opcode << 24 | 0x020304, opcode, WORD_SIZE)
+            assert self.control_unit.address1 == 0x02
+            assert self.control_unit.address2 == 0x03
+            assert self.control_unit.address3 == 0x04
 
     def test_load(self):
         """R1 := [A1], R2 := [A2]."""
@@ -316,9 +328,9 @@ class TestBordachenkovaControlUnit3:
             self.control_unit.load()
             assert not self.registers.put.called
 
-    def test_basic_execute(self):
+    def test_basic_execute(self, should_move=True):
         """Test basic operations."""
-        TestBordachenkovaControlUnit.test_basic_execute(self)
+        TestBordachenkovaControlUnit.test_basic_execute(self, should_move)
 
         for opcode in range(0, 256):
             if not opcode in self.control_unit.opcodes:
@@ -338,7 +350,7 @@ class TestBordachenkovaControlUnit3:
         assert not self.registers.put.called
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
 
-    def test_cond_jumps(self):
+    def test_execute_cond_jumps(self):
         """Test for jumps."""
         self.run_cond_jump(OP_JEQ, True, EQUAL, True)
         self.run_cond_jump(OP_JNEQ, True, EQUAL, False)
@@ -384,7 +396,9 @@ class TestBordachenkovaControlUnit3:
         self.registers.fetch.side_effect = get_register
 
         for address in (10, 2 ** BYTE_SIZE - size):
+            next_address = (address + size) % 2 ** BYTE_SIZE
             self.ram.put(address, first, WORD_SIZE)
+            self.ram.put(next_address, first, WORD_SIZE)
             self.control_unit.address3 = address
             self.control_unit.opcode = opcode
             self.control_unit.write_back()
@@ -392,8 +406,9 @@ class TestBordachenkovaControlUnit3:
                 assert self.ram.fetch(address, WORD_SIZE) == second
                 if opcode in {OP_SDIVMOD,
                               OP_UDIVMOD}:
-                    assert self.ram.fetch((address + size) % 2 ** BYTE_SIZE,
-                                          WORD_SIZE) == third
+                    assert self.ram.fetch(next_address, WORD_SIZE) == third
+                else:
+                    assert self.ram.fetch(next_address, WORD_SIZE) == first
             else:
                 assert self.ram.fetch(address, WORD_SIZE) == first
 
@@ -489,9 +504,11 @@ class TestBordachenkovaControlUnit2:
 
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
-        run_fetch(self, 0x01000203, 0x01, WORD_SIZE)
-        assert self.control_unit.address1 == 0x02
-        assert self.control_unit.address2 == 0x03
+        for opcode in self.control_unit.opcodes:
+            self.control_unit.address1, self.control_unit.address2 = None, None
+            run_fetch(self, opcode << 24 | 0x0203, opcode, WORD_SIZE)
+            assert self.control_unit.address1 == 0x02
+            assert self.control_unit.address2 == 0x03
 
     def test_load(self):
         """R1 := [A1], R2 := [A2]."""
@@ -545,12 +562,12 @@ class TestBordachenkovaControlUnit2:
         assert not self.registers.put.called
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
 
-    def test_cond_jumps(self):
+    def test_execute_cond_jumps(self):
         """Test for jumps."""
-        TestBordachenkovaControlUnit3.test_cond_jumps(self)
+        TestBordachenkovaControlUnit3.test_execute_cond_jumps(self)
 
-    def test_jump_halt_comp(self):
-        """Test for jump, halt and comp."""
+    def test_execute_jump_halt(self):
+        """Test for jump and halt."""
         self.alu.cond_jump.reset_mock()
         self.alu.sub.reset_mock()
         self.registers.put.reset_mock()
@@ -566,6 +583,12 @@ class TestBordachenkovaControlUnit2:
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.halt.assert_called_once_with()
+
+    def test_execute_comp(self):
+        """Test for comp."""
+        self.alu.cond_jump.reset_mock()
+        self.alu.sub.reset_mock()
+        self.registers.put.reset_mock()
 
         self.control_unit.opcode = OP_COMP
         self.control_unit.execute()
@@ -587,7 +610,9 @@ class TestBordachenkovaControlUnit2:
         self.registers.fetch.side_effect = get_register
 
         for address in (10, 2 ** BYTE_SIZE - size):
+            next_address = (address + size) % 2 ** BYTE_SIZE
             self.ram.put(address, first, WORD_SIZE)
+            self.ram.put(next_address, first, WORD_SIZE)
             self.control_unit.address1 = address
             self.control_unit.opcode = opcode
             self.control_unit.write_back()
@@ -595,8 +620,9 @@ class TestBordachenkovaControlUnit2:
                 assert self.ram.fetch(address, WORD_SIZE) == second
                 if opcode in {OP_SDIVMOD,
                               OP_UDIVMOD}:
-                    assert self.ram.fetch((address + size) % 2 ** BYTE_SIZE,
-                                          WORD_SIZE) == third
+                    assert self.ram.fetch(next_address, WORD_SIZE) == third
+                else:
+                    assert self.ram.fetch(next_address, WORD_SIZE) == first
             else:
                 assert self.ram.fetch(address, WORD_SIZE) == first
 
@@ -763,14 +789,14 @@ class TestBordachenkovaControlUnitV:
         """Run one conditional jump test."""
         TestBordachenkovaControlUnit2.run_cond_jump(self, *vargs, **kvargs)
 
-    def test_cond_jumps(self):
+    def test_execute_cond_jumps(self):
         """Test for jumps."""
-        TestBordachenkovaControlUnit2.test_cond_jumps(self)
+        TestBordachenkovaControlUnit2.test_execute_cond_jumps(self)
 
 
-    def test_jump_halt_comp(self):
+    def test_execute_jump_halt(self):
         """Test for jump, halt and comp."""
-        TestBordachenkovaControlUnit2.test_jump_halt_comp(self)
+        TestBordachenkovaControlUnit2.test_execute_jump_halt(self)
 
     def run_write_back(self, *vargs, **kvargs):
         """Like TestBordachenkovaControlUnit2.run_write_back."""
@@ -838,3 +864,245 @@ class TestBordachenkovaControlUnitV:
         assert self.registers.fetch("IP", BYTE_SIZE) == 0x15
         assert self.control_unit.get_status() == HALTED
 
+
+class TestBordachenkovaControlUnit1:
+
+    """Test case for Bordachenkova Mode Machine 1 Control Unit."""
+
+    ram = None
+    registers = None
+    alu = None
+    control_unit = None
+
+    arithmetic_opcodes = None
+    condjump_opcodes = None
+
+    def setup(self):
+        """Init state."""
+        self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
+        self.registers = create_autospec(RegisterMemory, True, True)
+        self.alu = create_autospec(ArithmeticLogicUnit, True, True)
+        self.control_unit = BordachenkovaControlUnit1(WORD_SIZE,
+                                                      BYTE_SIZE,
+                                                      self.registers,
+                                                      self.ram,
+                                                      self.alu,
+                                                      WORD_SIZE)
+        TestBordachenkovaControlUnit.test_const(self)
+        assert self.control_unit.opcodes == {0x00, 0x10, 0x20,
+                                             0x01, 0x02, 0x03, 0x04,
+                                             0x13, 0x14,
+                                             0x05,
+                                             0x80, 0x81, 0x82,
+                                             0x83, 0x84, 0x85, 0x86,
+                                             0x93, 0x94, 0x95, 0x96,
+                                             0x99}
+
+    def test_fetch_and_decode(self):
+        """Right fetch and decode is a half of business."""
+        for opcode in self.control_unit.opcodes:
+            self.control_unit.address = None
+            run_fetch(self, opcode << 24 | 0x02, opcode, WORD_SIZE)
+            assert self.control_unit.address == 0x02
+
+    def test_load(self):
+        """R1 := [A1], R2 := [A2]."""
+        addr, val = 5, 123456
+        self.ram.put(addr, val, WORD_SIZE)
+        self.control_unit.address = addr
+
+        for opcode in ARITHMETIC_OPCODES | {OP_COMP}:
+            self.registers.put.reset_mock()
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.put.assert_called_once_with("R", val, WORD_SIZE)
+
+        for opcode in {OP_LOAD}:
+            self.registers.put.reset_mock()
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.put.assert_called_once_with("S", val, WORD_SIZE)
+
+        for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
+            self.registers.put.reset_mock()
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.put.assert_called_once_with("ADDR", addr, BYTE_SIZE)
+
+        for opcode in {OP_HALT, OP_STORE, OP_SWAP}:
+            self.registers.put.reset_mock()
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            assert not self.registers.put.called
+
+    def test_basic_execute(self):
+        """Test basic operations."""
+        TestBordachenkovaControlUnit3.test_basic_execute(self, False)
+
+    def run_cond_jump(self, *vargs, **kvargs):
+        """Run one conditional jump test."""
+        TestBordachenkovaControlUnit2.run_cond_jump(self, *vargs, **kvargs)
+
+    def test_execute_cond_jumps(self):
+        """Test for jumps."""
+        TestBordachenkovaControlUnit2.test_execute_cond_jumps(self)
+
+    def test_execute_jump_halt(self):
+        """Test for jump and halt."""
+        TestBordachenkovaControlUnit2.test_execute_jump_halt(self)
+
+    def test_execute_comp(self):
+        """Test for comp."""
+        value = 123
+        self.alu.cond_jump.reset_mock()
+        self.alu.sub.reset_mock()
+        self.registers.put.reset_mock()
+        self.registers.fetch.reset_mock()
+        self.registers.fetch.return_value = value
+
+        self.control_unit.opcode = OP_COMP
+        self.control_unit.execute()
+        self.registers.fetch.assert_called_once_with("S", WORD_SIZE)
+        self.alu.sub.assert_called_once_with()
+        self.registers.put.assert_called_once_with("S", value, WORD_SIZE)
+
+    def test_execute_load_store_swap(self):
+        """Test for load, store and swap."""
+        self.alu.cond_jump.reset_mock()
+        self.alu.sub.reset_mock()
+        self.registers.put.reset_mock()
+
+        self.control_unit.opcode = OP_LOAD
+        self.control_unit.execute()
+        assert not self.alu.sub.called
+        assert not self.alu.move.called
+        assert not self.alu.jump.called
+        assert not self.alu.swap.called
+        assert not self.alu.cond_jump.called
+        assert not self.registers.put.called
+
+        self.control_unit.opcode = OP_STORE
+        self.control_unit.execute()
+        assert not self.alu.sub.called
+        assert not self.alu.move.called
+        assert not self.alu.jump.called
+        assert not self.alu.swap.called
+        assert not self.alu.cond_jump.called
+        assert not self.registers.put.called
+
+        self.control_unit.opcode = OP_SWAP
+        self.control_unit.execute()
+        assert not self.alu.sub.called
+        assert not self.alu.move.called
+        assert not self.alu.jump.called
+        assert not self.alu.cond_jump.called
+        assert not self.registers.put.called
+        self.alu.swap.assert_called_once_with()
+
+    def run_write_back(self, should, opcode):
+        """Run write back method for specific opcode."""
+        first, second = 11111111, 22222222
+        size = WORD_SIZE // self.ram.word_size
+        self.registers.fetch.return_value = second
+
+        for address in (10, 2 ** BYTE_SIZE - size):
+            self.registers.fetch.reset_mock()
+            next_address = (address + size) % 2 ** BYTE_SIZE
+            self.ram.put(address, first, WORD_SIZE)
+            self.ram.put(next_address, first, WORD_SIZE)
+            self.control_unit.address = address
+            self.control_unit.opcode = opcode
+            self.control_unit.write_back()
+            if should:
+                self.registers.fetch.assert_called_once_with("S", WORD_SIZE)
+                assert self.ram.fetch(address, WORD_SIZE) == second
+                assert self.ram.fetch(next_address, WORD_SIZE) == first
+            else:
+                assert not self.registers.fetch.called
+                assert self.ram.fetch(address, WORD_SIZE) == first
+
+    def test_write_back(self):
+        """Test write back result to the memory."""
+        for opcode in (ARITHMETIC_OPCODES | CONDJUMP_OPCODES |
+                       {OP_LOAD, OP_SWAP, OP_JUMP, OP_HALT}):
+            self.run_write_back(False, opcode)
+
+        for opcode in {OP_STORE}:
+            self.run_write_back(True, opcode)
+
+    def test_step(self):
+        """Test step cycle."""
+        self.control_unit.registers = self.registers = RegisterMemory()
+        self.registers.add_register('IR', WORD_SIZE)
+        self.alu = ArithmeticLogicUnit(self.registers,
+                                       self.control_unit.register_names,
+                                       WORD_SIZE,
+                                       BYTE_SIZE)
+        self.control_unit.alu = self.alu
+
+        self.ram.put(0x00, 0x00000004, WORD_SIZE)
+        self.ram.put(0x01, 0x01000005, WORD_SIZE)
+        self.ram.put(0x02, 0x05000006, WORD_SIZE)
+        self.ram.put(0x03, 0x86000007, WORD_SIZE)
+        self.ram.put(0x04, 12, WORD_SIZE)
+        self.ram.put(0x05, 10, WORD_SIZE)
+        self.ram.put(0x06, 20, WORD_SIZE)
+        self.ram.put(0x07, 0x10000004, WORD_SIZE)
+        self.ram.put(0x08, 0x99000000, WORD_SIZE)
+        self.registers.put("IP", 0, BYTE_SIZE)
+
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 12
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x01
+        assert self.registers.fetch("S", WORD_SIZE) == 12
+        assert self.control_unit.get_status() == RUNNING
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 12
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x02
+        assert self.registers.fetch("S", WORD_SIZE) == 22
+        assert self.control_unit.get_status() == RUNNING
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 12
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x03
+        assert self.registers.fetch("S", WORD_SIZE) == 22
+        assert self.control_unit.get_status() == RUNNING
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 12
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x07
+        assert self.registers.fetch("S", WORD_SIZE) == 22
+        assert self.control_unit.get_status() == RUNNING
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 22
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x08
+        assert self.registers.fetch("S", WORD_SIZE) == 22
+        assert self.control_unit.get_status() == RUNNING
+        self.control_unit.step()
+        assert self.ram.fetch(0x04, WORD_SIZE) == 22
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x09
+        assert self.registers.fetch("S", WORD_SIZE) == 22
+        assert self.control_unit.get_status() == HALTED
+'''
+    def test_run(self):
+        """Very simple program."""
+        self.control_unit.registers = self.registers = RegisterMemory()
+        self.registers.add_register('IR', WORD_SIZE)
+        self.alu = ArithmeticLogicUnit(self.registers,
+                                       self.control_unit.register_names,
+                                       WORD_SIZE,
+                                       BYTE_SIZE)
+        self.control_unit.alu = self.alu
+
+        self.ram.put(0x00, 0x01080c, 3 * BYTE_SIZE)
+        self.ram.put(0x03, 0x050310, 3 * BYTE_SIZE)
+        self.ram.put(0x06, 0x8614, 2 * BYTE_SIZE)
+        self.ram.put(0x08, 12, WORD_SIZE)
+        self.ram.put(0x0c, 10, WORD_SIZE)
+        self.ram.put(0x10, 20, WORD_SIZE)
+        self.ram.put(0x14, 0x99, BYTE_SIZE)
+        self.registers.put("IP", 0, BYTE_SIZE)
+
+        self.control_unit.run()
+        assert self.ram.fetch(0x08, WORD_SIZE) == 22
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x15
+        assert self.control_unit.get_status() == HALTED
+'''
