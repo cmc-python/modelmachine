@@ -18,27 +18,34 @@ class ArithmeticLogicUnit:
 
     """Arithmetic logic unit.
 
-    Require registers R1, R2, S, FLAGS with size operand_size and IP with
-    size address_size.
+    register_names - dict of register names
+
+    ALU uses registers from this list with names:
+    * R1, R2 - operands for arithmetic commands (operand_size)
+    * S, RES - summator and residual (for divmod) (operand_size)
+    * FLAGS - flag register (operand_size)
+    * ADDR - address for jump instructions (operand_size)
+    * IP - instruction pointer for jump instructions (address_size)
     """
 
-    def __init__(self, registers, operand_size, address_size):
+    def __init__(self, registers, register_names, operand_size, address_size):
         """See help(type(x))."""
         self.registers = registers
 
         self.operand_size = operand_size
         self.address_size = address_size
+        self.register_names = register_names
 
-        self.registers.add_register('R1', operand_size)
-        self.registers.add_register('R2', operand_size)
-        self.registers.add_register('S', operand_size)
-        self.registers.add_register('FLAGS', operand_size)
-        self.registers.add_register('IP', address_size)
+        for reg in {"R1", "R2", "S", "RES", "FLAGS"}:
+            self.registers.add_register(register_names[reg], operand_size)
+
+        for reg in {"IP", "ADDR"}:
+            self.registers.add_register(register_names[reg], address_size)
 
     def set_flags(self, signed, unsigned):
         """Set flags."""
         flags = 0
-        value = Integer(self.registers.fetch('S', self.operand_size),
+        value = Integer(self.registers.fetch(self.register_names["S"], self.operand_size),
                         self.operand_size, True).get_value()
         if value == 0:
             flags |= ZF
@@ -48,26 +55,26 @@ class ArithmeticLogicUnit:
         if value != signed:
             flags |= OF
 
-        value = Integer(self.registers.fetch('S', self.operand_size),
+        value = Integer(self.registers.fetch(self.register_names["S"], self.operand_size),
                         self.operand_size, False).get_value()
         if value != unsigned:
             flags |= CF
 
-        self.registers.put('FLAGS', flags, self.operand_size)
+        self.registers.put(self.register_names["FLAGS"], flags, self.operand_size)
 
     def get_signed_ops(self):
         """Read and return R1 and R2."""
-        operand1 = self.registers.fetch('R1', self.operand_size)
+        operand1 = self.registers.fetch(self.register_names["R1"], self.operand_size)
         operand1 = Integer(operand1, self.operand_size, True)
-        operand2 = self.registers.fetch('R2', self.operand_size)
+        operand2 = self.registers.fetch(self.register_names["R2"], self.operand_size)
         operand2 = Integer(operand2, self.operand_size, True)
         return (operand1, operand2)
 
     def get_unsigned_ops(self):
         """Read and return unsigned R1 and R2."""
-        operand1 = self.registers.fetch('R1', self.operand_size)
+        operand1 = self.registers.fetch(self.register_names["R1"], self.operand_size)
         operand1 = Integer(operand1, self.operand_size, False)
-        operand2 = self.registers.fetch('R2', self.operand_size)
+        operand2 = self.registers.fetch(self.register_names["R2"], self.operand_size)
         operand2 = Integer(operand2, self.operand_size, False)
         return (operand1, operand2)
 
@@ -79,7 +86,7 @@ class ArithmeticLogicUnit:
         signed = operand1.get_value() + operand2.get_value()
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = operand1.get_value() + operand2.get_value()
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, unsigned)
 
     def sub(self):
@@ -89,7 +96,7 @@ class ArithmeticLogicUnit:
         signed = operand1.get_value() - operand2.get_value()
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = operand1.get_value() - operand2.get_value()
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, unsigned)
 
     def umul(self):
@@ -99,7 +106,7 @@ class ArithmeticLogicUnit:
         unsigned = operand1.get_value() * operand2.get_value()
         operand1, operand2 = self.get_signed_ops()
         signed = operand1.get_value() * operand2.get_value()
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, unsigned)
 
     def smul(self):
@@ -109,7 +116,7 @@ class ArithmeticLogicUnit:
         signed = operand1.get_value() * operand2.get_value()
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = operand1.get_value() * operand2.get_value()
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, unsigned)
 
     def sdiv(self):
@@ -120,7 +127,7 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = (operand1 // operand2).get_value()
 
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(summator.get_value(), unsigned)
 
     def smod(self):
@@ -131,7 +138,7 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = (operand1 % operand2).get_value()
 
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(summator.get_value(), unsigned)
 
     def sdivmod(self):
@@ -142,8 +149,8 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = (operand1 // operand2).get_value()
 
-        self.registers.put('S', div.get_data(), self.operand_size)
-        self.registers.put('R1', mod.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], div.get_data(), self.operand_size)
+        self.registers.put(self.register_names["RES"], mod.get_data(), self.operand_size)
         self.set_flags(div.get_value(), unsigned)
 
     def udivmod(self):
@@ -154,8 +161,8 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_signed_ops()
         signed = (operand1 // operand2).get_value()
 
-        self.registers.put('S', div.get_data(), self.operand_size)
-        self.registers.put('R1', mod.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], div.get_data(), self.operand_size)
+        self.registers.put(self.register_names["RES"], mod.get_data(), self.operand_size)
         self.set_flags(signed, div.get_value())
 
     def udiv(self):
@@ -166,7 +173,7 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_signed_ops()
         signed = (operand1 // operand2).get_value()
 
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, summator.get_value())
 
     def umod(self):
@@ -177,13 +184,13 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_signed_ops()
         signed = (operand1 % operand2).get_value()
 
-        self.registers.put('S', summator.get_data(), self.operand_size)
+        self.registers.put(self.register_names["S"], summator.get_data(), self.operand_size)
         self.set_flags(signed, summator.get_value())
 
     def jump(self):
         """IP := R1."""
-        value = self.registers.fetch('R1', self.operand_size)
-        self.registers.put('IP', value, self.address_size)
+        addr = self.registers.fetch(self.register_names["ADDR"], self.address_size)
+        self.registers.put(self.register_names["IP"], addr, self.address_size)
 
     def cond_jump(self, signed, comparasion, equal):
         """All jumps: more, less, less_or_equal etc.
@@ -194,7 +201,7 @@ class ArithmeticLogicUnit:
 
         >>> alu.cond_jump(signed=False, comparasion=1, equal=False) # a > b
         """
-        flags = self.registers.fetch('FLAGS', self.operand_size)
+        flags = self.registers.fetch(self.register_names["FLAGS"], self.operand_size)
 
         def _signed_cond_jump():
             """Conditional jump if comparasion != 0 and signed == True."""
@@ -244,9 +251,9 @@ class ArithmeticLogicUnit:
 
     def halt(self):
         """Stop the machine."""
-        self.registers.put('FLAGS', HALT, self.operand_size)
+        self.registers.put(self.register_names["FLAGS"], HALT, self.operand_size)
 
     def move(self):
         """S := R1."""
-        value = self.registers.fetch('R1', self.operand_size)
-        self.registers.put('S', value, self.operand_size)
+        value = self.registers.fetch(self.register_names["R1"], self.operand_size)
+        self.registers.put(self.register_names["S"], value, self.operand_size)

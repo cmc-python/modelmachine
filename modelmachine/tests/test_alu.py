@@ -21,7 +21,11 @@ class TestArithmeticLogicUnit:
     def setup(self):
         """Init state."""
         self.registers = RegisterMemory()
-        self.alu = ArithmeticLogicUnit(self.registers, BYTE_SIZE, WORD_SIZE)
+        register_names = {"R1": "R1", "R2": "R2", "FLAGS": "FLAGS",
+                          "S": "S", "RES": "R1",
+                          "ADDR": "ADDR", "IP":"IP"}
+        self.alu = ArithmeticLogicUnit(self.registers, register_names,
+                                       BYTE_SIZE, WORD_SIZE)
         self.max_int = 2 ** (self.alu.operand_size - 1)
         self.min_int = -2 ** (self.alu.operand_size - 1)
         assert self.alu.registers is self.registers
@@ -223,28 +227,22 @@ class TestArithmeticLogicUnit:
 
     def test_jump(self):
         """Test jump instruction."""
-        self.registers.put('R1', 15, BYTE_SIZE)
+        self.registers.put("ADDR", 15, WORD_SIZE)
         self.alu.jump()
-        assert self.registers.fetch('IP', WORD_SIZE) == 15
-
-        self.registers.put('R1', 12, BYTE_SIZE)
-        self.registers.put('R2', 12, BYTE_SIZE)
-        self.alu.sub()
-        self.alu.cond_jump(signed=True, comparasion=EQUAL, equal=True)
-        assert self.registers.fetch('IP', WORD_SIZE) == 12
+        assert self.registers.fetch("ADDR", WORD_SIZE) == 15
 
     def run_cond_jump(self, should_jump, first, second, *vargs, **kvargs):
         """Run one conditional jump test."""
-        self.registers.put('R1', first % 2 ** BYTE_SIZE, BYTE_SIZE)
-        self.registers.put('R2', second % 2 ** BYTE_SIZE, BYTE_SIZE)
+        self.registers.put("R1", first % 2 ** BYTE_SIZE, BYTE_SIZE)
+        self.registers.put("R2", second % 2 ** BYTE_SIZE, BYTE_SIZE)
         self.alu.sub()
-        self.registers.put('IP', 1, WORD_SIZE)
-        self.registers.put('R1', 2, BYTE_SIZE)
+        self.registers.put("IP", 1, WORD_SIZE)
+        self.registers.put("ADDR", 2, WORD_SIZE)
         self.alu.cond_jump(*vargs, **kvargs)
         if should_jump:
-            assert self.registers.fetch('IP', WORD_SIZE) == 2
+            assert self.registers.fetch("IP", WORD_SIZE) == 2
         else:
-            assert self.registers.fetch('IP', WORD_SIZE) == 1
+            assert self.registers.fetch("IP", WORD_SIZE) == 1
 
     def test_cond_jump(self):
         """Test for conditional jumps."""

@@ -61,6 +61,8 @@ class BordachenkovaControlUnit(AbstractControlUnit):
 
     """Abstract Bordachenkova control unit (need to inherit to determine machine)."""
 
+    START_ADDRESS = 0x00
+
     OPCODES = {
         "move": 0x00,
 
@@ -108,6 +110,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
     UNAR_OPCODES = JUMP_OPCODES
     MONAR_OPCODES = {OPCODES["halt"]}
 
+    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR"}
     opcode = 0
 
     def __init__(self, ir_size, address_size, *vargs, **kvargs):
@@ -117,20 +120,26 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         self.address_size = address_size
 
         # Instruction register
-        self.registers.add_register('IP', self.address_size)
-        self.registers.add_register('IR', self.ir_size)
-        self.registers.put('IP', 0, self.address_size)
+        for reg in {"IP", "ADDR"}:
+            self.registers.add_register(reg, self.address_size)
+        self.registers.add_register("IR", self.ir_size)
+        self.registers.put("IP", self.START_ADDRESS, self.address_size)
 
 
     def fetch_instruction(self, instruction_size):
         """Read instruction and fetch opcode."""
-        instruction_pointer = self.registers.fetch('IP', self.address_size)
+        instruction_pointer = self.registers.fetch(self.register_names["IP"],
+                                                   self.address_size)
         instruction = self.ram.fetch(instruction_pointer, instruction_size)
-        self.registers.put('IR', instruction, self.ir_size)
+        self.registers.put(self.register_names["IR"],
+                           instruction,
+                           self.ir_size)
         self.opcode = instruction >> (instruction_size - self.OPCODE_SIZE)
 
         instruction_pointer += instruction_size // self.ram.word_size
-        self.registers.put('IP', instruction_pointer, self.address_size)
+        self.registers.put(self.register_names["IP"],
+                           instruction_pointer,
+                           self.address_size)
 
         return instruction
 
@@ -203,6 +212,11 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
     address2 = 0
     address3 = 0
 
+    # TODO: Add {**x, **y} syntax, when python 3.5 comes
+    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+                      "R1": "R1", "R2": "R2", "S": "S", "RES": "R1",
+                      "FLAGS": "FLAGS"}
+
     def __init__(self, instruction_size, *vargs, **kvargs):
         """See help(type(x))."""
         super().__init__(instruction_size, *vargs, **kvargs)
@@ -210,6 +224,9 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
         self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
                         {self.OPCODES["move"],
                          self.OPCODES["halt"]})
+
+        for reg in {"R1", "R2", "FLAGS"}:
+            self.registers.add_register(reg, self.operand_size)
 
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
@@ -226,18 +243,26 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
              self.opcode == self.OPCODES["move"]):
 
             operand1 = self.ram.fetch(self.address1, self.operand_size)
-            self.registers.put('R1', operand1, self.operand_size)
+            self.registers.put(self.register_names["R1"],
+                               operand1,
+                               self.operand_size)
 
             if self.opcode != self.OPCODES["move"]:
                 operand2 = self.ram.fetch(self.address2, self.operand_size)
-                self.registers.put('R2', operand2, self.operand_size)
+                self.registers.put(self.register_names["R2"],
+                                   operand2,
+                                   self.operand_size)
+
+        if self.opcode in self.JUMP_OPCODES:
+            self.registers.put(self.register_names["ADDR"],
+                               self.address3,
+                               self.address_size)
 
     def execute(self):
         """Add specific commands: conditional jumps."""
         if self.opcode in self.JUMP_OPCODES:
             if self.opcode != self.OPCODES["jump"]:
                 self.alu.sub()
-            self.registers.put('R1', self.address3, self.operand_size)
 
             self.execute_jump()
         else:
@@ -248,13 +273,15 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
         if  (self.opcode in self.ARITHMETIC_OPCODES or
              self.opcode == self.OPCODES["move"]):
 
-            value = self.registers.fetch('S', self.operand_size)
+            value = self.registers.fetch(self.register_names["S"],
+                                         self.operand_size)
             self.ram.put(self.address3, value, self.operand_size)
 
             if self.opcode in self.DIVMOD_OPCODES:
                 address = self.address3 + self.operand_size // self.ram.word_size
                 address %= self.ram.memory_size
-                value = self.registers.fetch('R1', self.operand_size)
+                value = self.registers.fetch(self.register_names["RES"],
+                                             self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
 class BordachenkovaControlUnit2(BordachenkovaControlUnit):
@@ -263,6 +290,11 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
 
     address1 = 0
     address2 = 0
+
+    # TODO: Add {**x, **y} syntax, when python 3.5 comes
+    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+                      "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
+                      "FLAGS": "FLAGS"}
 
     def __init__(self, instruction_size, *vargs, **kvargs):
         """See help(type(x))."""
@@ -275,6 +307,11 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
                          self.OPCODES["halt"],
                          self.OPCODES["comp"]})
 
+        for reg in {"R1", "R2", "FLAGS"}:
+            self.registers.add_register(reg, self.operand_size)
+        for reg in {"IP"}:
+            self.registers.add_register(reg, self.address_size)
+
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
         instruction = self.fetch_instruction(self.instruction_size)
@@ -286,14 +323,21 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
         """Load registers R1 and R2."""
         if self.opcode in self.BINAR_OPCODES:
             operand1 = self.ram.fetch(self.address1, self.operand_size)
-            self.registers.put('R1', operand1, self.operand_size)
+            self.registers.put(self.register_names["R1"],
+                               operand1,
+                               self.operand_size)
             operand2 = self.ram.fetch(self.address2, self.operand_size)
-            self.registers.put('R2', operand2, self.operand_size)
+            self.registers.put(self.register_names["R2"],
+                               operand2, self.operand_size)
         elif self.opcode == self.OPCODES["move"]:
             operand1 = self.ram.fetch(self.address2, self.operand_size)
-            self.registers.put('R1', operand1, self.operand_size)
+            self.registers.put(self.register_names["R1"],
+                               operand1,
+                               self.operand_size)
         elif self.opcode in self.JUMP_OPCODES:
-            self.registers.put("R1", self.address2, self.operand_size)
+            self.registers.put(self.register_names["ADDR"],
+                               self.address2,
+                               self.address_size)
 
     def execute(self):
         """Add specific commands: conditional jumps and cmp."""
@@ -307,12 +351,14 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
     def write_back(self):
         """Write result back."""
         if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["move"]}:
-            value = self.registers.fetch('S', self.operand_size)
+            value = self.registers.fetch(self.register_names["S"],
+                                         self.operand_size)
             self.ram.put(self.address1, value, self.operand_size)
-            if self.opcode in {0x04, 0x14}:
+            if self.opcode in self.DIVMOD_OPCODES:
                 address = self.address1 + self.operand_size // self.ram.word_size
                 address %= self.ram.memory_size
-                value = self.registers.fetch('R1', self.operand_size)
+                value = self.registers.fetch(self.register_names["RES"],
+                                             self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
 class BordachenkovaControlUnitV(BordachenkovaControlUnit):
@@ -321,6 +367,10 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
 
     address1 = 0
     address2 = 0
+
+    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+                      "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
+                      "FLAGS": "FLAGS"}
 
     def __init__(self, ir_size, *vargs, **kvargs):
         """See help(type(x))."""
@@ -332,12 +382,18 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
                          self.OPCODES["halt"],
                          self.OPCODES["comp"]})
 
+        for reg in {"R1", "R2", "FLAGS"}:
+            self.registers.add_register(reg, self.operand_size)
+        for reg in {"IP", "ADDR"}:
+            self.registers.add_register(reg, self.address_size)
+
     def fetch_and_decode(self):
         """Fetch 3 addresses."""
         mask = 2 ** self.address_size - 1
         two_operands = self.BINAR_OPCODES | {self.OPCODES["move"]}
 
-        instruction_pointer = self.registers.fetch('IP', self.address_size)
+        instruction_pointer = self.registers.fetch(self.register_names["IP"],
+                                                   self.address_size)
         self.opcode = self.ram.fetch(instruction_pointer, self.OPCODE_SIZE)
 
         if self.opcode in two_operands:
@@ -359,14 +415,22 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
         """Load registers R1 and R2."""
         if self.opcode in self.BINAR_OPCODES:
             operand1 = self.ram.fetch(self.address1, self.operand_size)
-            self.registers.put('R1', operand1, self.operand_size)
+            self.registers.put(self.register_names["R1"],
+                               operand1,
+                               self.operand_size)
             operand2 = self.ram.fetch(self.address2, self.operand_size)
-            self.registers.put('R2', operand2, self.operand_size)
+            self.registers.put(self.register_names["R2"],
+                               operand2,
+                               self.operand_size)
         elif self.opcode == self.OPCODES["move"]:
             operand1 = self.ram.fetch(self.address2, self.operand_size)
-            self.registers.put('R1', operand1, self.operand_size)
+            self.registers.put(self.register_names["R1"],
+                               operand1,
+                               self.operand_size)
         elif self.opcode in self.JUMP_OPCODES:
-            self.registers.put("R1", self.address1, self.operand_size)
+            self.registers.put(self.register_names["ADDR"],
+                               self.address1,
+                               self.address_size)
 
     def execute(self):
         """Add specific commands: conditional jumps and cmp."""
@@ -380,11 +444,13 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
     def write_back(self):
         """Write result back."""
         if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["move"]}:
-            value = self.registers.fetch('S', self.operand_size)
+            value = self.registers.fetch(self.register_names["S"],
+                                         self.operand_size)
             self.ram.put(self.address1, value, self.operand_size)
-            if self.opcode in {0x04, 0x14}:
+            if self.opcode in self.DIVMOD_OPCODES:
                 address = self.address1 + self.operand_size // self.ram.word_size
                 address %= self.ram.memory_size
-                value = self.registers.fetch('R1', self.operand_size)
+                value = self.registers.fetch(self.register_names["RES"],
+                                             self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 

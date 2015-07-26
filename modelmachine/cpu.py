@@ -98,6 +98,7 @@ class BordachenkovaMM3(AbstractCPU):
                                       is_protected=True)
         self.registers = RegisterMemory()
         self.alu = ArithmeticLogicUnit(registers=self.registers,
+                                       register_names=BCU3.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
         self.control_unit = BCU3(instruction_size=word_size,
@@ -125,6 +126,7 @@ class BordachenkovaMM2(AbstractCPU):
                                       is_protected=True)
         self.registers = RegisterMemory()
         self.alu = ArithmeticLogicUnit(registers=self.registers,
+                                       register_names=BCU2.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
         self.control_unit = BCU2(instruction_size=word_size,
@@ -153,6 +155,7 @@ class BordachenkovaMMV(AbstractCPU):
                                       is_protected=True)
         self.registers = RegisterMemory()
         self.alu = ArithmeticLogicUnit(registers=self.registers,
+                                       register_names=BCUV.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
         self.control_unit = BCUV(ir_size=word_size,
