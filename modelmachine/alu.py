@@ -283,21 +283,21 @@ class ArithmeticLogicUnit:
         """Stop the machine."""
         self.registers.put(self.register_names["FLAGS"], HALT, self.operand_size)
 
-    def move(self):
-        """S := R1."""
-        value = self.registers.fetch(self.register_names["R1"], self.operand_size)
-        self.registers.put(self.register_names["S"], value, self.operand_size)
+    def move(self, source="R1", dest="S"):
+        """dest := source."""
+        value = self.registers.fetch(self.register_names[source], self.operand_size)
+        self.registers.put(self.register_names[dest], value, self.operand_size)
 
-    def swap(self):
+    def swap(self, reg1="R1", reg2="S"):
         """S := R1."""
-        s_value = self.registers.fetch(self.register_names["S"],
-                                       self.operand_size)
-        res_value = self.registers.fetch(self.register_names["RES"],
-                                         self.operand_size)
+        reg1_value = self.registers.fetch(self.register_names[reg1],
+                                          self.operand_size)
+        reg2_value = self.registers.fetch(self.register_names[reg2],
+                                          self.operand_size)
 
-        self.registers.put(self.register_names["S"],
-                           res_value,
+        self.registers.put(self.register_names[reg1],
+                           reg2_value,
                            self.operand_size)
-        self.registers.put(self.register_names["RES"],
-                           s_value,
+        self.registers.put(self.register_names[reg2],
+                           reg1_value,
                            self.operand_size)

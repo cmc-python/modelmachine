@@ -19,6 +19,7 @@ def little_endian_decode(array, word_size):
 
 def little_endian_encode(value, word_size, bits):
     """Transform long integer to list of small."""
+    copy_value = value
     size = bits // word_size
     if value < 0:
         raise ValueError('Cannot encode negative value: {value}'
@@ -34,7 +35,7 @@ def little_endian_encode(value, word_size, bits):
         if len(result) * word_size > bits:
             raise ValueError('Too long integer: {value}, expected '
                              '{bits} bits integer'
-                             .format(value=value, bits=bits))
+                             .format(value=copy_value, bits=bits))
         result += [0] * (size - len(result))
         return result
 
