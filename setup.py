@@ -7,7 +7,7 @@ Read the doc: <https://github.com/vslutov/modelmachine>
 
 from setuptools import setup, find_packages
 
-VERSION = "0.0.1" # Don't forget fix in __main__.py
+VERSION = "0.0.6" # Don't forget fix in __main__.py
 
 setup(name='modelmachine',
       version=VERSION,
@@ -17,7 +17,7 @@ setup(name='modelmachine',
       url='https://github.com/vslutov/modelmachine',
       license='WTFPL',
       platforms=['any'],
-      classifiers=["Development Status :: 1 - Planning",
+      classifiers=["Development Status :: 2 - Pre-Alpha",
                    "Environment :: Console",
                    "Intended Audience :: Education",
                    "Natural Language :: Russian",
