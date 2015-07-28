@@ -7,7 +7,7 @@ Read the doc: <https://github.com/vslutov/modelmachine>
 
 from setuptools import setup, find_packages
 
-VERSION = "0.0.5" # Don't forget fix in __main__.py
+VERSION = "0.0.6" # Don't forget fix in __main__.py
 
 setup(name='modelmachine',
       version=VERSION,

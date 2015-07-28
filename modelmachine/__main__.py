@@ -5,7 +5,7 @@
 from modelmachine.ide import get_program, get_cpu, debug
 import pytest, os, sys
 
-VERSION = "0.0.5" # Don't forget fix in setup.py
+VERSION = "0.0.6" # Don't forget fix in setup.py
 
 USAGE = '''Usage: modelmachine command [file]
 Available commands:
