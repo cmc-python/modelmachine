@@ -80,6 +80,73 @@ import curses as cur
 start(cur)
 """
 
+def print_registers(cpu):
+    """Print contents of registers."""
+    registers = {cpu.register_names[name]  for name in cpu.register_names}
+    for reg in sorted(list(registers)):
+        print('  ' + reg + ' : ' + hex(cpu.registers[reg]))
+
+INSTRUCTION = ('Enter\n'
+               '  `(s)tep [count]` to start execution\n'
+               '  `(r)un` to run the program to the end\n'
+               '  `(p)rint` registers state\n'
+               '  `(m)emory <begin> <end>` to view random access memory\n'
+               '  `(q)uit` to quit\n')
+
+def debug(cpu):
+    """Debug cycle."""
+    print('Wellcome to interactive debug mode.\n'
+          'Beware: now every error breaks the debugger.')
+    need_quit = False
+    need_help = True
+    step = 0
+
+    while not need_quit:
+        if need_help:
+            print(INSTRUCTION)
+            need_help = False
+        command = input() + " " # length > 0
+
+        if command[0] == "s":
+            command = command.split()
+            if len(command) == 2:
+                count = int(command[1], 0)
+            elif len(command) == 1:
+                count = 1
+            else:
+                need_help = True
+                continue
+
+            for i in range(count):
+                i = i # pylint hack
+                step += 1
+                cpu.control_unit.step()
+                print('step {step}:'.format(step=step))
+                print_registers(cpu)
+
+        elif command[0] == "r":
+            cpu.control_unit.run()
+
+        elif command[0] == "p":
+            print("Register states:")
+            print_registers(cpu)
+
+        elif command[0] == "m":
+            command = command.split()
+            if len(command) == 3:
+                begin = int(command[1], 0)
+                end = int(command[2], 0)
+                print(cpu.io_unit.store_hex(begin,
+                                            (end - begin) * cpu.ram.word_size))
+            else:
+                need_help = True
+
+        elif command[0] == "q":
+            need_quit = True
+
+        else:
+            need_help = True
+
 def get_cpu(source):
     """Return empty cpu or raise the ValueError."""
     arch = source[0].strip()
@@ -89,3 +156,11 @@ def get_cpu(source):
     else:
         raise ValueError('Unexpected arch (found in first line): {arch}'
                          .format(arch=arch))
+
+def get_program(filename):
+    """Read model machine program."""
+    with open(filename, 'r') as source_file:
+        source = source_file.readlines()
+        cpu = get_cpu(source)
+        cpu.load_program(source)
+        return cpu

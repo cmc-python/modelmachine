@@ -6,6 +6,7 @@ Model machine emulator
 * УМ-Р (регистровая)
 * УМ с модификацией адресов ???
 
+* Добавить test.alu.swap
 * Работа с плавающей запятой
 * Подумать о mock в тестах
 * Подумать о команде остановки halt
@@ -34,6 +35,10 @@ Model machine emulator
 программы для модельных машин. Запуск программы делается командой:
 
     $ modelmachine run program.mmach
+
+Также доступна пошаговая отладка командой:
+
+    $ modelmachine debug program.mmach
 
 ### Пример
 

@@ -288,7 +288,7 @@ class ArithmeticLogicUnit:
         value = self.registers.fetch(self.register_names[source], self.operand_size)
         self.registers.put(self.register_names[dest], value, self.operand_size)
 
-    def swap(self, reg1="R1", reg2="S"):
+    def swap(self, reg1="S", reg2="RES"):
         """S := R1."""
         reg1_value = self.registers.fetch(self.register_names[reg1],
                                           self.operand_size)
