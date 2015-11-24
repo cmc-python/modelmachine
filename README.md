@@ -1,6 +1,8 @@
 # modelmachine
 Model machine emulator
 
+[![Build Status](https://travis-ci.org/vslutov/modelmachine.svg?branch=master)](https://travis-ci.org/vslutov/modelmachine)
+
 ## TODO
 
 * УМ-Р (регистровая)
