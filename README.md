@@ -1,6 +1,8 @@
 # modelmachine
 Model machine emulator
 
+[![Build Status](https://travis-ci.org/cmc-python/modelmachine.svg?branch=master)](https://travis-ci.org/cmc-python/modelmachine)
+
 ## TODO
 
 * УМ-Р (регистровая)
