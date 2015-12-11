@@ -96,6 +96,7 @@ INSTRUCTION = ('Enter\n'
 
 def debug(cpu):
     """Debug cycle."""
+    import readline
     print('Wellcome to interactive debug mode.\n'
           'Beware: now every error breaks the debugger.')
     need_quit = False
@@ -107,9 +108,8 @@ def debug(cpu):
             print(INSTRUCTION)
             need_help = False
 
-        print('> ', end='')
         try:
-            command = input() + " " # length > 0
+            command = input('> ') + " " # length > 0
         except EOFError:
             command = 'quit'
             print(command)
@@ -133,6 +133,9 @@ def debug(cpu):
                     cpu.control_unit.step()
                     print('step {step}:'.format(step=step))
                     print_registers(cpu)
+                    if cpu.control_unit.get_status() == HALTED:
+                        print('machine has halted')
+                        break
 
         elif command[0] == "c":
             if cpu.control_unit.get_status() == HALTED:
