@@ -70,13 +70,15 @@ class AbstractCPU:
 
         self.io_unit.load_source(code)
 
-        input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
-        self.io_unit.load_data(input_addresses, data)
+        if 'input' in self.config:
+            input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
+            self.io_unit.load_data(input_addresses, data)
 
     def print_result(self, output=sys.stdout):
         """Print calculation result."""
-        for address in (int(x, 0) for x in self.config['output'].split(',')):
-            print(self.io_unit.get_int(address), file=output)
+        if 'output' in self.config:
+            for address in (int(x, 0) for x in self.config['output'].split(',')):
+                print(self.io_unit.get_int(address), file=output)
 
     def run_file(self, filename, output=sys.stdout):
         """Run all execution cycle."""
@@ -90,7 +92,7 @@ class BordachenkovaMM3(AbstractCPU):
 
     """Bordachenkova model machine 3."""
 
-    def __init__(self):
+    def __init__(self, protect_memory):
         """See help(type(x))."""
         word_size = 7 * 8
         address_size = 2 * 8
@@ -98,7 +100,7 @@ class BordachenkovaMM3(AbstractCPU):
         self.ram = RandomAccessMemory(word_size=word_size,
                                       memory_size=memory_size,
                                       endianess='big', # Unused
-                                      is_protected=True)
+                                      is_protected=protect_memory)
         self.registers = RegisterMemory()
         self.register_names = BCU3.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,
@@ -119,7 +121,7 @@ class BordachenkovaMM2(AbstractCPU):
 
     """Bordachenkova model machine 2."""
 
-    def __init__(self):
+    def __init__(self, protect_memory):
         """See help(type(x))."""
         word_size = 5 * 8
         address_size = 2 * 8
@@ -127,7 +129,7 @@ class BordachenkovaMM2(AbstractCPU):
         self.ram = RandomAccessMemory(word_size=word_size,
                                       memory_size=memory_size,
                                       endianess='big', # Unused
-                                      is_protected=True)
+                                      is_protected=protect_memory)
         self.registers = RegisterMemory()
         self.register_names = BCU2.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,
@@ -148,7 +150,7 @@ class BordachenkovaMMV(AbstractCPU):
 
     """Bordachenkova variable model machine."""
 
-    def __init__(self):
+    def __init__(self, protect_memory):
         """See help(type(x))."""
         byte_size = 8
         word_size = 5 * byte_size
@@ -157,7 +159,7 @@ class BordachenkovaMMV(AbstractCPU):
         self.ram = RandomAccessMemory(word_size=byte_size,
                                       memory_size=memory_size,
                                       endianess='big',
-                                      is_protected=True)
+                                      is_protected=protect_memory)
         self.registers = RegisterMemory()
         self.register_names = BCUV.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,
@@ -178,7 +180,7 @@ class BordachenkovaMM1(AbstractCPU):
 
     """Bordachenkova model machine 1."""
 
-    def __init__(self):
+    def __init__(self, protect_memory):
         """See help(type(x))."""
         word_size = 3 * 8
         address_size = 2 * 8
@@ -186,7 +188,7 @@ class BordachenkovaMM1(AbstractCPU):
         self.ram = RandomAccessMemory(word_size=word_size,
                                       memory_size=memory_size,
                                       endianess='big', # Unused
-                                      is_protected=True)
+                                      is_protected=protect_memory)
         self.registers = RegisterMemory()
         self.register_names = BCU1.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,
@@ -208,7 +210,7 @@ class BordachenkovaMMS(AbstractCPU):
 
     """Bordachenkova stack model machine."""
 
-    def __init__(self):
+    def __init__(self, protect_memory):
         """See help(type(x))."""
         byte_size = 8
         word_size = 3 * byte_size
@@ -217,7 +219,7 @@ class BordachenkovaMMS(AbstractCPU):
         self.ram = RandomAccessMemory(word_size=byte_size,
                                       memory_size=memory_size,
                                       endianess='big', # Unused
-                                      is_protected=True)
+                                      is_protected=protect_memory)
         self.registers = RegisterMemory()
         self.register_names = BCUS.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,

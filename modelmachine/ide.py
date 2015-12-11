@@ -147,20 +147,20 @@ def debug(cpu):
         else:
             need_help = True
 
-def get_cpu(source):
+def get_cpu(source, protect_memory):
     """Return empty cpu or raise the ValueError."""
     arch = source[0].strip()
     if arch in CPU_LIST:
-        cpu = CPU_LIST[arch]()
+        cpu = CPU_LIST[arch](protect_memory)
         return cpu
     else:
         raise ValueError('Unexpected arch (found in first line): {arch}'
                          .format(arch=arch))
 
-def get_program(filename):
+def get_program(filename, protect_memory):
     """Read model machine program."""
     with open(filename, 'r') as source_file:
         source = source_file.readlines()
-        cpu = get_cpu(source)
+        cpu = get_cpu(source, protect_memory)
         cpu.load_program(source)
         return cpu
