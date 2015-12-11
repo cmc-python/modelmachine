@@ -3,6 +3,7 @@
 """IDE for model machine."""
 
 from modelmachine.cpu import CPU_LIST
+from modelmachine.cu import HALTED
 
 POS = [0, 0]
 MAX_POS = [20, 20]
@@ -88,7 +89,7 @@ def print_registers(cpu):
 
 INSTRUCTION = ('Enter\n'
                '  `(s)tep [count]` to start execution\n'
-               '  `(r)un` to run the program to the end\n'
+               '  `(c)ontinue` to continue the program to the end\n'
                '  `(p)rint` registers state\n'
                '  `(m)emory <begin> <end>` to view random access memory\n'
                '  `(q)uit` to quit\n')
@@ -105,27 +106,40 @@ def debug(cpu):
         if need_help:
             print(INSTRUCTION)
             need_help = False
-        command = input() + " " # length > 0
+
+        print('> ', end='')
+        try:
+            command = input() + " " # length > 0
+        except EOFError:
+            command = 'quit'
+            print(command)
 
         if command[0] == "s":
-            command = command.split()
-            if len(command) == 2:
-                count = int(command[1], 0)
-            elif len(command) == 1:
-                count = 1
+            if cpu.control_unit.get_status() == HALTED:
+                print('cannot execute command: machine has been halted')
             else:
-                need_help = True
-                continue
+                command = command.split()
+                if len(command) == 2:
+                    count = int(command[1], 0)
+                elif len(command) == 1:
+                    count = 1
+                else:
+                    need_help = True
+                    continue
 
-            for i in range(count):
-                i = i # pylint hack
-                step += 1
-                cpu.control_unit.step()
-                print('step {step}:'.format(step=step))
-                print_registers(cpu)
+                for i in range(count):
+                    i = i # pylint hack
+                    step += 1
+                    cpu.control_unit.step()
+                    print('step {step}:'.format(step=step))
+                    print_registers(cpu)
 
-        elif command[0] == "r":
-            cpu.control_unit.run()
+        elif command[0] == "c":
+            if cpu.control_unit.get_status() == HALTED:
+                print('cannot execute command: machine has been halted')
+            else:
+                cpu.control_unit.run()
+                print('machine has halted')
 
         elif command[0] == "p":
             print("Register states:")
