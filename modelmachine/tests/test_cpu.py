@@ -109,7 +109,7 @@ class TestBordachenkovaMM3:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM3()
+        self.cpu = BordachenkovaMM3(protect_memory=False)
         self.source = ("[config]\ninput=0x101,0x102\noutput=0x103\n" +
                        "[code]\n01 0101 0102 0103\n80 0000 0000 0003\n" +
                        "02 0103 0103 0103; never be used\n" +
@@ -137,7 +137,7 @@ class TestBordachenkovaMM2:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM2()
+        self.cpu = BordachenkovaMM2(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x101,0x102\n" +
                        "output=0x103\n" +
@@ -172,7 +172,7 @@ class TestBordachenkovaMMV:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMMV()
+        self.cpu = BordachenkovaMMV(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x100,0x105\n" +
                        "output=0x10a\n" +
@@ -208,7 +208,7 @@ class TestBordachenkovaMM1:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM1()
+        self.cpu = BordachenkovaMM1(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x101,0x102\n" +
                        "output=0x103\n" +
@@ -246,7 +246,7 @@ class TestBordachenkovaMMS:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMMS()
+        self.cpu = BordachenkovaMMS(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x100,0x103\n" +
                        "output=0x106\n" +
