@@ -114,55 +114,58 @@ def debug(cpu):
             command = 'quit'
             print(command)
 
-        if command[0] == "s":
-            if cpu.control_unit.get_status() == HALTED:
-                print('cannot execute command: machine has been halted')
-            else:
+        try:
+            if command[0] == "s":
+                if cpu.control_unit.get_status() == HALTED:
+                    print('cannot execute command: machine has been halted')
+                else:
+                    command = command.split()
+                    if len(command) == 2:
+                        count = int(command[1], 0)
+                    elif len(command) == 1:
+                        count = 1
+                    else:
+                        need_help = True
+                        continue
+
+                    for i in range(count):
+                        i = i # pylint hack
+                        step += 1
+                        cpu.control_unit.step()
+                        print('step {step}:'.format(step=step))
+                        print_registers(cpu)
+                        if cpu.control_unit.get_status() == HALTED:
+                            print('machine has halted')
+                            break
+
+            elif command[0] == "c":
+                if cpu.control_unit.get_status() == HALTED:
+                    print('cannot execute command: machine has been halted')
+                else:
+                    cpu.control_unit.run()
+                    print('machine has halted')
+
+            elif command[0] == "p":
+                print("Register states:")
+                print_registers(cpu)
+
+            elif command[0] == "m":
                 command = command.split()
-                if len(command) == 2:
-                    count = int(command[1], 0)
-                elif len(command) == 1:
-                    count = 1
+                if len(command) == 3:
+                    begin = int(command[1], 0)
+                    end = int(command[2], 0)
+                    print(cpu.io_unit.store_hex(begin,
+                                                (end - begin) * cpu.ram.word_size))
                 else:
                     need_help = True
-                    continue
 
-                for i in range(count):
-                    i = i # pylint hack
-                    step += 1
-                    cpu.control_unit.step()
-                    print('step {step}:'.format(step=step))
-                    print_registers(cpu)
-                    if cpu.control_unit.get_status() == HALTED:
-                        print('machine has halted')
-                        break
+            elif command[0] == "q":
+                need_quit = True
 
-        elif command[0] == "c":
-            if cpu.control_unit.get_status() == HALTED:
-                print('cannot execute command: machine has been halted')
-            else:
-                cpu.control_unit.run()
-                print('machine has halted')
-
-        elif command[0] == "p":
-            print("Register states:")
-            print_registers(cpu)
-
-        elif command[0] == "m":
-            command = command.split()
-            if len(command) == 3:
-                begin = int(command[1], 0)
-                end = int(command[2], 0)
-                print(cpu.io_unit.store_hex(begin,
-                                            (end - begin) * cpu.ram.word_size))
             else:
                 need_help = True
-
-        elif command[0] == "q":
-            need_quit = True
-
-        else:
-            need_help = True
+        except KeyError as e:
+            print('memory error:', e.args[0])
 
 def get_cpu(source, protect_memory):
     """Return empty cpu or raise the ValueError."""

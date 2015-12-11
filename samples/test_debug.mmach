@@ -1,0 +1,10 @@
+bordachenkova_mm1
+
+[config]
+
+[code]
+; x = ((a * -21) % 50 - b) ** 2 == 178929
+00 0100 ; S := a
+99 0000 ; halt
+
+[input]
