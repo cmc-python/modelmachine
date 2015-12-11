@@ -103,7 +103,7 @@ class TestBordachenkovaControlUnitV(TBCU2):
     def test_step(self):
         """Test step cycle."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register('IR', WORD_SIZE)
+        self.registers.add_register('RI', WORD_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
                                        self.control_unit.register_names,
                                        WORD_SIZE,
@@ -117,27 +117,27 @@ class TestBordachenkovaControlUnitV(TBCU2):
         self.ram.put(0x0c, 10, WORD_SIZE)
         self.ram.put(0x10, 20, WORD_SIZE)
         self.ram.put(0x14, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.step()
         assert self.ram.fetch(0x08, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x03
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x03
         assert self.control_unit.get_status() == RUNNING
         self.control_unit.step()
         assert self.ram.fetch(0x08, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x06
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x06
         assert self.control_unit.get_status() == RUNNING
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x14
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x14
         assert self.control_unit.get_status() == RUNNING
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x15
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x15
         assert self.control_unit.get_status() == HALTED
 
     def test_run(self):
         """Very simple program."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register('IR', WORD_SIZE)
+        self.registers.add_register('RI', WORD_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
                                        self.control_unit.register_names,
                                        WORD_SIZE,
@@ -151,17 +151,17 @@ class TestBordachenkovaControlUnitV(TBCU2):
         self.ram.put(0x0c, 10, WORD_SIZE)
         self.ram.put(0x10, 20, WORD_SIZE)
         self.ram.put(0x14, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.run()
         assert self.ram.fetch(0x08, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x15
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x15
         assert self.control_unit.get_status() == HALTED
 
     def test_minimal_run(self):
         """Minimal program."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register('IR', WORD_SIZE)
+        self.registers.add_register('RI', WORD_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
                                        self.control_unit.register_names,
                                        WORD_SIZE,
@@ -169,10 +169,10 @@ class TestBordachenkovaControlUnitV(TBCU2):
         self.control_unit.alu = self.alu
 
         self.ram.put(0x00, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.run()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x01
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x01
         assert self.control_unit.get_status() == HALTED
 
 
@@ -387,7 +387,7 @@ class TestBordachenkovaControlUnitS(TBCU2):
         size = WORD_SIZE // 8
 
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register("IR", WORD_SIZE)
+        self.registers.add_register("RI", WORD_SIZE)
         self.registers.add_register("SP", BYTE_SIZE)
         self.registers.put("SP", 0, BYTE_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
@@ -408,45 +408,45 @@ class TestBordachenkovaControlUnitS(TBCU2):
         self.ram.put(0x13, 20, WORD_SIZE)
         self.ram.put(0x17, 0x5b0b, 2 * BYTE_SIZE)
         self.ram.put(0x19, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x02
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x02
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - size
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x04
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x04
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - 2 * size
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x05
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x05
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - size
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x06
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x06
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - 2 * size
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x08
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x08
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - 3 * size
         self.control_unit.step()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x09
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x09
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - size
         self.control_unit.step()
         assert self.ram.fetch(0x0b, WORD_SIZE) == 12
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x17
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x17
         assert self.registers.fetch("SP", BYTE_SIZE) == 2 ** BYTE_SIZE - size
         self.control_unit.step()
         assert self.ram.fetch(0x0b, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x19
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x19
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == RUNNING
         self.control_unit.step()
         assert self.ram.fetch(0x0b, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x1a
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x1a
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED
 
     def test_run(self):
         """Very simple program."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register("IR", WORD_SIZE)
+        self.registers.add_register("RI", WORD_SIZE)
         self.registers.add_register("SP", BYTE_SIZE)
         self.registers.put("SP", 0, BYTE_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
@@ -467,18 +467,18 @@ class TestBordachenkovaControlUnitS(TBCU2):
         self.ram.put(0x13, 20, WORD_SIZE)
         self.ram.put(0x17, 0x5b0b, 2 * BYTE_SIZE)
         self.ram.put(0x19, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.run()
         assert self.ram.fetch(0x0b, WORD_SIZE) == 22
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x1a
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x1a
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED
 
     def test_minimal_run(self):
         """Very simple program."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        self.registers.add_register("IR", WORD_SIZE)
+        self.registers.add_register("RI", WORD_SIZE)
         self.registers.add_register("SP", BYTE_SIZE)
         self.registers.put("SP", 0, BYTE_SIZE)
         self.alu = ArithmeticLogicUnit(self.registers,
@@ -488,9 +488,9 @@ class TestBordachenkovaControlUnitS(TBCU2):
         self.control_unit.alu = self.alu
 
         self.ram.put(0x00, 0x99, BYTE_SIZE)
-        self.registers.put("IP", 0, BYTE_SIZE)
+        self.registers.put("PC", 0, BYTE_SIZE)
 
         self.control_unit.run()
-        assert self.registers.fetch("IP", BYTE_SIZE) == 0x01
+        assert self.registers.fetch("PC", BYTE_SIZE) == 0x01
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED

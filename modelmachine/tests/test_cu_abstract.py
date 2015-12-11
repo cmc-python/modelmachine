@@ -43,8 +43,8 @@ def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
     test_case.registers.put.reset_mock()
 
     def get_register(name, size):
-        """Get IP."""
-        assert name == "IP"
+        """Get PC."""
+        assert name == "PC"
         assert size == BYTE_SIZE
         return address
     test_case.registers.fetch.side_effect = get_register
@@ -53,9 +53,9 @@ def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
         test_case.control_unit.fetch_and_decode()
     else:
         test_case.control_unit.fetch_instruction(instruction_size)
-    test_case.registers.fetch.assert_any_call("IP", BYTE_SIZE)
-    test_case.registers.put.assert_has_calls([call("IR", value, WORD_SIZE),
-                                              call("IP", address + increment,
+    test_case.registers.fetch.assert_any_call("PC", BYTE_SIZE)
+    test_case.registers.put.assert_has_calls([call("RI", value, WORD_SIZE),
+                                              call("PC", address + increment,
                                                    BYTE_SIZE)])
     assert test_case.control_unit.opcode == opcode
 
