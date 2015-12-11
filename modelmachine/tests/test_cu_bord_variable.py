@@ -26,7 +26,7 @@ class TestBordachenkovaControlUnitV(TBCU2):
     def setup(self):
         """Init state."""
         super().setup()
-        self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big')
+        self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big', is_protected=True)
         self.control_unit = BordachenkovaControlUnitV(WORD_SIZE,
                                                       BYTE_SIZE,
                                                       self.registers,
@@ -158,6 +158,23 @@ class TestBordachenkovaControlUnitV(TBCU2):
         assert self.registers.fetch("IP", BYTE_SIZE) == 0x15
         assert self.control_unit.get_status() == HALTED
 
+    def test_minimal_run(self):
+        """Minimal program."""
+        self.control_unit.registers = self.registers = RegisterMemory()
+        self.registers.add_register('IR', WORD_SIZE)
+        self.alu = ArithmeticLogicUnit(self.registers,
+                                       self.control_unit.register_names,
+                                       WORD_SIZE,
+                                       BYTE_SIZE)
+        self.control_unit.alu = self.alu
+
+        self.ram.put(0x00, 0x99, BYTE_SIZE)
+        self.registers.put("IP", 0, BYTE_SIZE)
+
+        self.control_unit.run()
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x01
+        assert self.control_unit.get_status() == HALTED
+
 
 class TestBordachenkovaControlUnitS(TBCU2):
 
@@ -166,7 +183,7 @@ class TestBordachenkovaControlUnitS(TBCU2):
     def setup(self):
         """Init state."""
         super().setup()
-        self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big')
+        self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big', is_protected=True)
         self.control_unit = BordachenkovaControlUnitS(WORD_SIZE,
                                                       BYTE_SIZE,
                                                       self.registers,
@@ -455,5 +472,25 @@ class TestBordachenkovaControlUnitS(TBCU2):
         self.control_unit.run()
         assert self.ram.fetch(0x0b, WORD_SIZE) == 22
         assert self.registers.fetch("IP", BYTE_SIZE) == 0x1a
+        assert self.registers.fetch("SP", BYTE_SIZE) == 0
+        assert self.control_unit.get_status() == HALTED
+
+    def test_minimal_run(self):
+        """Very simple program."""
+        self.control_unit.registers = self.registers = RegisterMemory()
+        self.registers.add_register("IR", WORD_SIZE)
+        self.registers.add_register("SP", BYTE_SIZE)
+        self.registers.put("SP", 0, BYTE_SIZE)
+        self.alu = ArithmeticLogicUnit(self.registers,
+                                       self.control_unit.register_names,
+                                       WORD_SIZE,
+                                       BYTE_SIZE)
+        self.control_unit.alu = self.alu
+
+        self.ram.put(0x00, 0x99, BYTE_SIZE)
+        self.registers.put("IP", 0, BYTE_SIZE)
+
+        self.control_unit.run()
+        assert self.registers.fetch("IP", BYTE_SIZE) == 0x01
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED

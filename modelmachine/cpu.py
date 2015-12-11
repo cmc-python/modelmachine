@@ -70,13 +70,15 @@ class AbstractCPU:
 
         self.io_unit.load_source(code)
 
-        input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
-        self.io_unit.load_data(input_addresses, data)
+        if 'input' in self.config:
+            input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
+            self.io_unit.load_data(input_addresses, data)
 
     def print_result(self, output=sys.stdout):
         """Print calculation result."""
-        for address in (int(x, 0) for x in self.config['output'].split(',')):
-            print(self.io_unit.get_int(address), file=output)
+        if 'output' in self.config:
+            for address in (int(x, 0) for x in self.config['output'].split(',')):
+                print(self.io_unit.get_int(address), file=output)
 
     def run_file(self, filename, output=sys.stdout):
         """Run all execution cycle."""
