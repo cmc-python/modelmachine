@@ -5,6 +5,8 @@
 Word is long integer.
 """
 
+import warnings
+
 def big_endian_decode(array, word_size):
     """Transform array of words to one integer."""
     result = 0
@@ -167,6 +169,9 @@ class RandomAccessMemory(AbstractMemory):
                            'it is dirty memory, clean it first'
                            .format(address=hex(address)))
         else:
+            warnings.warn('Read memory by address: {address}, '
+                          'it is dirty memory, clean it first'
+                          .format(address=hex(address)), stacklevel=4)
             return 0
 
 class RegisterMemory(AbstractMemory):

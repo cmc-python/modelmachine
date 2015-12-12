@@ -3,9 +3,9 @@
 """Test case for complex CPU."""
 
 from modelmachine.cpu import AbstractCPU
-from modelmachine.cpu import BordachenkovaMM3, BordachenkovaMM2
-from modelmachine.cpu import BordachenkovaMMV, BordachenkovaMM1
-from modelmachine.cpu import BordachenkovaMMS
+from modelmachine.cpu import CPUMM3, CPUMM2
+from modelmachine.cpu import CPUMMV, CPUMM1
+from modelmachine.cpu import CPUMMS
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -100,7 +100,7 @@ class TestAbstractCPU:
         assert out.read() == "789\n"
 
 
-class TestBordachenkovaMM3:
+class TestCPUMM3:
 
     """Smoke test for mm-3."""
 
@@ -109,7 +109,7 @@ class TestBordachenkovaMM3:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM3()
+        self.cpu = CPUMM3(protect_memory=False)
         self.source = ("[config]\ninput=0x101,0x102\noutput=0x103\n" +
                        "[code]\n01 0101 0102 0103\n80 0000 0000 0003\n" +
                        "02 0103 0103 0103; never be used\n" +
@@ -128,7 +128,7 @@ class TestBordachenkovaMM3:
         assert out.read() == "298\n"
 
 
-class TestBordachenkovaMM2:
+class TestCPUMM2:
 
     """Smoke test for mm-2."""
 
@@ -137,7 +137,7 @@ class TestBordachenkovaMM2:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM2()
+        self.cpu = CPUMM2(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x101,0x102\n" +
                        "output=0x103\n" +
@@ -163,7 +163,7 @@ class TestBordachenkovaMM2:
 
         assert out.read() == "298\n"
 
-class TestBordachenkovaMMV:
+class TestCPUMMV:
 
     """Smoke test for mm-v."""
 
@@ -172,7 +172,7 @@ class TestBordachenkovaMMV:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMMV()
+        self.cpu = CPUMMV(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x100,0x105\n" +
                        "output=0x10a\n" +
@@ -199,7 +199,7 @@ class TestBordachenkovaMMV:
         assert out.read() == "298\n"
 
 
-class TestBordachenkovaMM1:
+class TestCPUMM1:
 
     """Smoke test for mm-1."""
 
@@ -208,7 +208,7 @@ class TestBordachenkovaMM1:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMM1()
+        self.cpu = CPUMM1(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x101,0x102\n" +
                        "output=0x103\n" +
@@ -237,7 +237,7 @@ class TestBordachenkovaMM1:
         assert out.read() == "298\n"
 
 
-class TestBordachenkovaMMS:
+class TestCPUMMS:
 
     """Smoke test for mm-s."""
 
@@ -246,7 +246,7 @@ class TestBordachenkovaMMS:
 
     def setup(self):
         """Init state."""
-        self.cpu = BordachenkovaMMS()
+        self.cpu = CPUMMS(protect_memory=False)
         self.source = ("[config]\n" +
                        "input=0x100,0x103\n" +
                        "output=0x106\n" +

@@ -3,7 +3,7 @@ GENERATED = build dist *.egg-info
 
 all : test lint pep257 dist
 
-twine :
+twine : dist
 	twine upload dist/*
 
 clean :

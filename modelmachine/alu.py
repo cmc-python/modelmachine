@@ -25,7 +25,7 @@ class ArithmeticLogicUnit:
     * S, RES - summator and residual (for divmod) (operand_size)
     * FLAGS - flag register (operand_size)
     * ADDR - address for jump instructions (operand_size)
-    * IP - instruction pointer for jump instructions (address_size)
+    * PC - instruction pointer for jump instructions (address_size)
     """
 
     def __init__(self, registers, register_names, operand_size, address_size):
@@ -39,7 +39,7 @@ class ArithmeticLogicUnit:
         for reg in {"R1", "R2", "S", "RES", "FLAGS"}:
             self.registers.add_register(register_names[reg], operand_size)
 
-        for reg in {"IP", "ADDR"}:
+        for reg in {"PC", "ADDR"}:
             self.registers.add_register(register_names[reg], address_size)
 
     def set_flags(self, signed, unsigned):
@@ -218,9 +218,9 @@ class ArithmeticLogicUnit:
         self.set_flags(signed, div.get_value())
 
     def jump(self):
-        """IP := R1."""
+        """PC := R1."""
         addr = self.registers.fetch(self.register_names["ADDR"], self.address_size)
-        self.registers.put(self.register_names["IP"], addr, self.address_size)
+        self.registers.put(self.register_names["PC"], addr, self.address_size)
 
     def cond_jump(self, signed, comparasion, equal):
         """All jumps: more, less, less_or_equal etc.

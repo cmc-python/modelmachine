@@ -38,7 +38,7 @@ class AbstractControlUnit:
             self.step()
 
     def fetch_and_decode(self):
-        """Fetch instruction and decode them. At last, method should increment IP.
+        """Fetch instruction and decode them. At last, method should increment PC.
 
         Recommendation: set up address registers A1, A2, AS for loading
         into operation registers R1, R2, S.
@@ -57,9 +57,9 @@ class AbstractControlUnit:
         """Save result of calculation to memory."""
         raise NotImplementedError()
 
-class BordachenkovaControlUnit(AbstractControlUnit):
+class ControlUnit(AbstractControlUnit):
 
-    """Abstract Bordachenkova control unit (need to inherit to determine machine)."""
+    """Abstract control unit (need to inherit to determine machine)."""
 
     START_ADDRESS = 0x00
 
@@ -121,7 +121,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
     BINAR_OPCODES = ARITHMETIC_OPCODES | {OPCODES["comp"]}
     MONAR_OPCODES = {OPCODES["halt"]}
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR"}
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI"}
     opcode = 0
     opcodes = None
 
@@ -132,18 +132,18 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         self.address_size = address_size
 
         # Instruction register
-        for reg in {"IP", "ADDR"}:
+        for reg in {"PC", "ADDR"}:
             self.registers.add_register(reg, self.address_size)
-        self.registers.add_register("IR", self.ir_size)
-        self.registers.put("IP", self.START_ADDRESS, self.address_size)
+        self.registers.add_register("RI", self.ir_size)
+        self.registers.put("PC", self.START_ADDRESS, self.address_size)
 
 
     def fetch_instruction(self, instruction_size):
         """Read instruction and fetch opcode."""
-        instruction_pointer = self.registers.fetch(self.register_names["IP"],
+        instruction_pointer = self.registers.fetch(self.register_names["PC"],
                                                    self.address_size)
         instruction = self.ram.fetch(instruction_pointer, instruction_size)
-        self.registers.put(self.register_names["IR"],
+        self.registers.put(self.register_names["RI"],
                            instruction,
                            self.ir_size)
         self.opcode = instruction >> (instruction_size - self.OPCODE_SIZE)
@@ -152,7 +152,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
                              .format(opcode=hex(self.opcode)))
 
         instruction_pointer += instruction_size // self.ram.word_size
-        self.registers.put(self.register_names["IP"],
+        self.registers.put(self.register_names["PC"],
                            instruction_pointer,
                            self.address_size)
 
@@ -219,7 +219,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         raise NotImplementedError()
 
 
-class BordachenkovaControlUnit3(BordachenkovaControlUnit):
+class ControlUnit3(ControlUnit):
 
     """Control unit for model-machine-3."""
 
@@ -227,7 +227,7 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
     address2 = 0
     address3 = 0
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI",
                       "R1": "R1", "R2": "R2", "S": "S", "RES": "R1",
                       "FLAGS": "FLAGS"}
 
@@ -298,14 +298,14 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnit2(BordachenkovaControlUnit):
+class ControlUnit2(ControlUnit):
 
     """Control unit for model-machine-2."""
 
     address1 = 0
     address2 = 0
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI",
                       "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
                       "FLAGS": "FLAGS"}
 
@@ -372,14 +372,14 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnitV(BordachenkovaControlUnit):
+class ControlUnitV(ControlUnit):
 
     """Control unit for model-machine-variable."""
 
     address1 = 0
     address2 = 0
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI",
                       "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
                       "FLAGS": "FLAGS"}
 
@@ -401,7 +401,7 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
         mask = 2 ** self.address_size - 1
         two_operands = self.BINAR_OPCODES | {self.OPCODES["move"]}
 
-        instruction_pointer = self.registers.fetch(self.register_names["IP"],
+        instruction_pointer = self.registers.fetch(self.register_names["PC"],
                                                    self.address_size)
         self.opcode = self.ram.fetch(instruction_pointer, self.OPCODE_SIZE)
 
@@ -463,13 +463,13 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnit1(BordachenkovaControlUnit):
+class ControlUnit1(ControlUnit):
 
     """Control unit for model machine 1."""
 
     address = 0
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR",
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI",
                       "R1": "S", "R2": "R", "S": "S", "RES": "S1",
                       "FLAGS": "FLAGS"}
 
@@ -537,13 +537,13 @@ class BordachenkovaControlUnit1(BordachenkovaControlUnit):
                                          self.operand_size)
             self.ram.put(self.address, value, self.operand_size)
 
-class BordachenkovaControlUnitS(BordachenkovaControlUnit):
+class ControlUnitS(ControlUnit):
 
     """Control unit for stack model machine."""
 
     address = None
 
-    register_names = {"IP": "IP", "ADDR": "ADDR", "IR": "IR", "SP": "SP",
+    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI", "SP": "SP",
                       "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
                       "FLAGS": "FLAGS"}
 
@@ -593,7 +593,7 @@ class BordachenkovaControlUnitS(BordachenkovaControlUnit):
         one_operand = self.JUMP_OPCODES | {self.OPCODES["stpush"],
                                            self.OPCODES["stpop"]}
 
-        instruction_pointer = self.registers.fetch(self.register_names["IP"],
+        instruction_pointer = self.registers.fetch(self.register_names["PC"],
                                                    self.address_size)
         self.opcode = self.ram.fetch(instruction_pointer, self.OPCODE_SIZE)
 
