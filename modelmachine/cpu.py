@@ -12,11 +12,11 @@ CPU includes:
 """
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
-from modelmachine.cu import BordachenkovaControlUnit3 as BCU3
-from modelmachine.cu import BordachenkovaControlUnit2 as BCU2
-from modelmachine.cu import BordachenkovaControlUnitV as BCUV
-from modelmachine.cu import BordachenkovaControlUnit1 as BCU1
-from modelmachine.cu import BordachenkovaControlUnitS as BCUS
+from modelmachine.cu import ControlUnit3 as BCU3
+from modelmachine.cu import ControlUnit2 as BCU2
+from modelmachine.cu import ControlUnitV as BCUV
+from modelmachine.cu import ControlUnit1 as BCU1
+from modelmachine.cu import ControlUnitS as BCUS
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
 
@@ -88,9 +88,9 @@ class AbstractCPU:
         self.control_unit.run()
         self.print_result(output=output)
 
-class BordachenkovaMM3(AbstractCPU):
+class CPUMM3(AbstractCPU):
 
-    """Bordachenkova model machine 3."""
+    """CPU model machine 3."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
@@ -117,9 +117,9 @@ class BordachenkovaMM3(AbstractCPU):
                                        start_address=0,
                                        word_size=word_size)
 
-class BordachenkovaMM2(AbstractCPU):
+class CPUMM2(AbstractCPU):
 
-    """Bordachenkova model machine 2."""
+    """CPU model machine 2."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
@@ -146,9 +146,9 @@ class BordachenkovaMM2(AbstractCPU):
                                        start_address=0,
                                        word_size=word_size)
 
-class BordachenkovaMMV(AbstractCPU):
+class CPUMMV(AbstractCPU):
 
-    """Bordachenkova variable model machine."""
+    """CPU variable model machine."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
@@ -176,9 +176,9 @@ class BordachenkovaMMV(AbstractCPU):
                                        start_address=0,
                                        word_size=word_size)
 
-class BordachenkovaMM1(AbstractCPU):
+class CPUMM1(AbstractCPU):
 
-    """Bordachenkova model machine 1."""
+    """CPU model machine 1."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
@@ -206,9 +206,9 @@ class BordachenkovaMM1(AbstractCPU):
                                        word_size=word_size)
 
 
-class BordachenkovaMMS(AbstractCPU):
+class CPUMMS(AbstractCPU):
 
-    """Bordachenkova stack model machine."""
+    """CPU stack model machine."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
@@ -237,8 +237,8 @@ class BordachenkovaMMS(AbstractCPU):
                                        word_size=word_size)
 
 
-CPU_LIST = {'bordachenkova_mm3': BordachenkovaMM3,
-            'bordachenkova_mm2': BordachenkovaMM2,
-            'bordachenkova_mmv': BordachenkovaMMV,
-            'bordachenkova_mm1': BordachenkovaMM1,
-            'bordachenkova_mms': BordachenkovaMMS}
+CPU_LIST = {'mm3': CPUMM3,
+            'mm2': CPUMM2,
+            'mmv': CPUMMV,
+            'mm1': CPUMM1,
+            'mms': CPUMMS}

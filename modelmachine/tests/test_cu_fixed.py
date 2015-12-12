@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""Test case for bordachenkova control unit with fixed command length."""
+"""Test case for control unit with fixed command length."""
 
 from modelmachine.cu import RUNNING, HALTED
-from modelmachine.cu import BordachenkovaControlUnit3
-from modelmachine.cu import BordachenkovaControlUnit2
-from modelmachine.cu import BordachenkovaControlUnit1
+from modelmachine.cu import ControlUnit3
+from modelmachine.cu import ControlUnit2
+from modelmachine.cu import ControlUnit1
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, LESS, GREATER, EQUAL
 
@@ -18,22 +18,22 @@ from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_SDIVMOD,
                                OP_JNEQ, OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG,
                                OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG, OP_HALT,
                                ARITHMETIC_OPCODES, CONDJUMP_OPCODES, run_fetch)
-from .test_cu_abstract import TestBordachenkovaControlUnit as TBCU
+from .test_cu_abstract import TestControlUnit as TBCU
 
-class TestBordachenkovaControlUnit3(TBCU):
+class TestControlUnit3(TBCU):
 
-    """Test case for Bordachenkova Mode Machine 3 Control Unit."""
+    """Test case for  Mode Machine 3 Control Unit."""
 
     def setup(self):
         """Init state."""
         super().setup()
         self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
-        self.control_unit = BordachenkovaControlUnit3(WORD_SIZE,
-                                                      BYTE_SIZE,
-                                                      self.registers,
-                                                      self.ram,
-                                                      self.alu,
-                                                      WORD_SIZE)
+        self.control_unit = ControlUnit3(WORD_SIZE,
+                                         BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
                                              0x80, 0x81, 0x82,
@@ -239,19 +239,19 @@ class TestBordachenkovaControlUnit3(TBCU):
         assert self.control_unit.get_status() == HALTED
 
 
-class TestBordachenkovaControlUnit2(TestBordachenkovaControlUnit3):
+class TestControlUnit2(TestControlUnit3):
 
-    """Test case for Bordachenkova Mode Machine 3 Control Unit."""
+    """Test case for  Mode Machine 3 Control Unit."""
 
     def setup(self):
         """Init state."""
         super().setup()
-        self.control_unit = BordachenkovaControlUnit2(WORD_SIZE,
-                                                      BYTE_SIZE,
-                                                      self.registers,
-                                                      self.ram,
-                                                      self.alu,
-                                                      WORD_SIZE)
+        self.control_unit = ControlUnit2(WORD_SIZE,
+                                         BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
                                              0x05,
@@ -446,19 +446,19 @@ class TestBordachenkovaControlUnit2(TestBordachenkovaControlUnit3):
         assert self.control_unit.get_status() == HALTED
 
 
-class TestBordachenkovaControlUnit1(TestBordachenkovaControlUnit2):
+class TestControlUnit1(TestControlUnit2):
 
-    """Test case for Bordachenkova Mode Machine 1 Control Unit."""
+    """Test case for  Mode Machine 1 Control Unit."""
 
     def setup(self):
         """Init state."""
         super().setup()
-        self.control_unit = BordachenkovaControlUnit1(WORD_SIZE,
-                                                      BYTE_SIZE,
-                                                      self.registers,
-                                                      self.ram,
-                                                      self.alu,
-                                                      WORD_SIZE)
+        self.control_unit = ControlUnit1(WORD_SIZE,
+                                         BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
         assert self.control_unit.opcodes == {0x00, 0x10, 0x20,
                                              0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Test case for bordachenkova control unit with variable command length."""
+"""Test case for control unit with variable command length."""
 
 from modelmachine.cu import RUNNING, HALTED
-from modelmachine.cu import BordachenkovaControlUnitV
-from modelmachine.cu import BordachenkovaControlUnitS
+from modelmachine.cu import ControlUnitV
+from modelmachine.cu import ControlUnitS
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit
 
@@ -16,23 +16,23 @@ from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_COMP,
                                OP_STPUSH, OP_STPOP,
                                OP_STDUP, OP_STSWAP, OP_JUMP, OP_HALT,
                                ARITHMETIC_OPCODES, CONDJUMP_OPCODES, run_fetch)
-from .test_cu_bord_fixed import TestBordachenkovaControlUnit2 as TBCU2
+from .test_cu_fixed import TestControlUnit2 as TBCU2
 
 
-class TestBordachenkovaControlUnitV(TBCU2):
+class TestControlUnitV(TBCU2):
 
-    """Test case for Bordachenkova Model Machine Variable Control Unit."""
+    """Test case for  Model Machine Variable Control Unit."""
 
     def setup(self):
         """Init state."""
         super().setup()
         self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big', is_protected=True)
-        self.control_unit = BordachenkovaControlUnitV(WORD_SIZE,
-                                                      BYTE_SIZE,
-                                                      self.registers,
-                                                      self.ram,
-                                                      self.alu,
-                                                      WORD_SIZE)
+        self.control_unit = ControlUnitV(WORD_SIZE,
+                                         BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
                                              0x05,
@@ -176,20 +176,20 @@ class TestBordachenkovaControlUnitV(TBCU2):
         assert self.control_unit.get_status() == HALTED
 
 
-class TestBordachenkovaControlUnitS(TBCU2):
+class TestControlUnitS(TBCU2):
 
-    """Test case for Bordachenkova Stack Model Machine Control Unit."""
+    """Test case for  Stack Model Machine Control Unit."""
 
     def setup(self):
         """Init state."""
         super().setup()
         self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big', is_protected=True)
-        self.control_unit = BordachenkovaControlUnitS(WORD_SIZE,
-                                                      BYTE_SIZE,
-                                                      self.registers,
-                                                      self.ram,
-                                                      self.alu,
-                                                      WORD_SIZE)
+        self.control_unit = ControlUnitS(WORD_SIZE,
+                                         BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
         assert self.control_unit.opcodes == {0x01, 0x02, 0x03, 0x04,
                                              0x13, 0x14,
                                              0x05,
