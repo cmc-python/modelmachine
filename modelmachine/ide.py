@@ -81,13 +81,6 @@ MAX_POS = [20, 20]
 # import curses as cur
 # start(cur)
 
-def print_registers(cpu):
-    """Print contents of registers."""
-    registers = {cpu.register_names[name]  for name in cpu.register_names}
-    for reg in sorted(list(registers)):
-        size = cpu.registers.register_sizes[reg]
-        data = '0x' + hex(cpu.registers[reg])[2:].rjust(size // 4, '0')
-        print('  ' + reg + ' : ' + data)
 
 INSTRUCTION = ('Enter\n'
                '  `(s)tep [count]` to start execution\n'
@@ -96,70 +89,97 @@ INSTRUCTION = ('Enter\n'
                '  `(m)emory <begin> <end>` to view random access memory\n'
                '  `(q)uit` to quit\n')
 
-def exec_command(cpu, step, command):
-    """Exec one command and generate step, need_help and need_quit variables."""
+def exec_step(cpu, step, command):
+    """Exec debug step command."""
+    need_help = False
 
-    need_help = need_quit = False
-
-    if command[0] == "s":
-        if cpu.control_unit.get_status() == HALTED:
-            print('cannot execute command: machine has been halted')
-        else:
-            command = command.split()
-            try:
-                if len(command) == 2:
-                    count = int(command[1], 0) # may be raised value error
-                elif len(command) == 1:
-                    count = 1
-                else:
-                    raise ValueError()
-
-            except ValueError:
-                need_help = True
-                count = None
-
-            else:
-                for i in range(count):
-                    i = i # pylint hack
-                    step += 1
-                    cpu.control_unit.step()
-                    print('step {step}:'.format(step=step))
-                    print_registers(cpu)
-                    if cpu.control_unit.get_status() == HALTED:
-                        print('machine has halted')
-                        break
-
-    elif command[0] == "c":
-        if cpu.control_unit.get_status() == HALTED:
-            print('cannot execute command: machine has halted')
-        else:
-            cpu.control_unit.run()
-            print('machine has halted')
-
-    elif command[0] == "p":
-        print("Register states:")
-        print_registers(cpu)
-
-    elif command[0] == "m":
+    if cpu.control_unit.get_status() == HALTED:
+        print('cannot execute command: machine has been halted')
+    else:
         command = command.split()
-        if len(command) == 3:
-            try:
-                begin = int(command[1], 0)
-                end = int(command[2], 0)
-                print(cpu.io_unit.store_hex(begin,
-                                            (end - begin) * cpu.ram.word_size))
-            except ValueError:
-                need_help = True
-        else:
+        try:
+            if len(command) == 2:
+                count = int(command[1], 0) # may be raised value error
+            elif len(command) == 1:
+                count = 1
+            else:
+                raise ValueError()
+
+        except ValueError:
             need_help = True
+            count = None
 
-    elif command[0] == "q":
-        need_quit = True
+        else:
+            for i in range(count):
+                i = i # pylint hack
+                step += 1
+                cpu.control_unit.step()
+                print('step {step}:'.format(step=step))
+                exec_print(cpu, step)
+                if cpu.control_unit.get_status() == HALTED:
+                    print('machine has halted')
+                    break
 
+    return step, need_help, False
+
+def exec_continue(cpu, step):
+    """Exec debug continue command."""
+
+    if cpu.control_unit.get_status() == HALTED:
+        print('cannot execute command: machine has halted')
+    else:
+        cpu.control_unit.run()
+        print('machine has halted')
+
+    return step, False, False
+
+def exec_print(cpu, step):
+    """Print contents of registers."""
+
+    print("Register states:")
+    registers = {cpu.register_names[name]  for name in cpu.register_names}
+    for reg in sorted(list(registers)):
+        size = cpu.registers.register_sizes[reg]
+        data = '0x' + hex(cpu.registers[reg])[2:].rjust(size // 4, '0')
+        print('  ' + reg + ' : ' + data)
+
+    return step, False, False
+
+def exec_memory(cpu, step, command):
+    """Print contents of RAM."""
+    need_help = False
+
+    command = command.split()
+    if len(command) == 3:
+        try:
+            begin = int(command[1], 0)
+            end = int(command[2], 0)
+        except ValueError:
+            need_help = True
+        else:
+            print(cpu.io_unit.store_hex(begin,
+                                        (end - begin) * cpu.ram.word_size))
     else:
         need_help = True
 
-    return step, need_help, need_quit
+    return step, need_help, False
+
+def exec_command(cpu, step, command):
+    """Exec one command and generate step, need_help and need_quit variables."""
+
+    if command[0] == "s":
+        return exec_step(cpu, step, command)
+    elif command[0] == "c":
+        return exec_continue(cpu, step)
+    elif command[0] == "p":
+        return exec_print(cpu, step)
+    elif command[0] == "m":
+        return exec_memory(cpu, step, command)
+    elif command[0] == "q":
+        return step, False, True
+    else:
+        return step, True, False
+
 
 def debug(cpu):
     """Debug cycle."""
@@ -175,6 +195,7 @@ def debug(cpu):
     while not need_quit:
         if need_help:
             print(INSTRUCTION)
+            need_help = False
 
         try:
             command = input('> ') + " " # length > 0
@@ -192,7 +213,7 @@ def debug(cpu):
                     print('Warning:', warn.message)
 
         except Exception as e:
-            print('Error:', e)
+            print('Error:', e.args[0])
             cpu.alu.halt()
             print('machine has halted')
 
