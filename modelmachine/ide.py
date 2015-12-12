@@ -5,6 +5,8 @@
 from modelmachine.cpu import CPU_LIST
 from modelmachine.cu import HALTED
 
+import warnings
+
 POS = [0, 0]
 MAX_POS = [20, 20]
 
@@ -94,9 +96,76 @@ INSTRUCTION = ('Enter\n'
                '  `(m)emory <begin> <end>` to view random access memory\n'
                '  `(q)uit` to quit\n')
 
+def exec_command(cpu, step, command):
+    """Exec one command and generate step, need_help and need_quit variables."""
+
+    need_help = need_quit = False
+
+    if command[0] == "s":
+        if cpu.control_unit.get_status() == HALTED:
+            print('cannot execute command: machine has been halted')
+        else:
+            command = command.split()
+            try:
+                if len(command) == 2:
+                    count = int(command[1], 0) # may be raised value error
+                elif len(command) == 1:
+                    count = 1
+                else:
+                    raise ValueError()
+
+            except ValueError:
+                need_help = True
+                count = None
+
+            else:
+                for i in range(count):
+                    i = i # pylint hack
+                    step += 1
+                    cpu.control_unit.step()
+                    print('step {step}:'.format(step=step))
+                    print_registers(cpu)
+                    if cpu.control_unit.get_status() == HALTED:
+                        print('machine has halted')
+                        break
+
+    elif command[0] == "c":
+        if cpu.control_unit.get_status() == HALTED:
+            print('cannot execute command: machine has halted')
+        else:
+            cpu.control_unit.run()
+            print('machine has halted')
+
+    elif command[0] == "p":
+        print("Register states:")
+        print_registers(cpu)
+
+    elif command[0] == "m":
+        command = command.split()
+        if len(command) == 3:
+            try:
+                begin = int(command[1], 0)
+                end = int(command[2], 0)
+                print(cpu.io_unit.store_hex(begin,
+                                            (end - begin) * cpu.ram.word_size))
+            except ValueError:
+                need_help = True
+        else:
+            need_help = True
+
+    elif command[0] == "q":
+        need_quit = True
+
+    else:
+        need_help = True
+
+    return step, need_help, need_quit
+
 def debug(cpu):
     """Debug cycle."""
     import readline
+    readline = readline
+
     print('Wellcome to interactive debug mode.\n'
           'Beware: now every error breaks the debugger.')
     need_quit = False
@@ -106,7 +175,6 @@ def debug(cpu):
     while not need_quit:
         if need_help:
             print(INSTRUCTION)
-            need_help = False
 
         try:
             command = input('> ') + " " # length > 0
@@ -115,57 +183,18 @@ def debug(cpu):
             print(command)
 
         try:
-            if command[0] == "s":
-                if cpu.control_unit.get_status() == HALTED:
-                    print('cannot execute command: machine has been halted')
-                else:
-                    command = command.split()
-                    if len(command) == 2:
-                        count = int(command[1], 0)
-                    elif len(command) == 1:
-                        count = 1
-                    else:
-                        need_help = True
-                        continue
+            with warnings.catch_warnings(record=True) as warns:
+                warnings.simplefilter("always")
 
-                    for i in range(count):
-                        i = i # pylint hack
-                        step += 1
-                        cpu.control_unit.step()
-                        print('step {step}:'.format(step=step))
-                        print_registers(cpu)
-                        if cpu.control_unit.get_status() == HALTED:
-                            print('machine has halted')
-                            break
+                step, need_help, need_quit = exec_command(cpu, step, command)
 
-            elif command[0] == "c":
-                if cpu.control_unit.get_status() == HALTED:
-                    print('cannot execute command: machine has been halted')
-                else:
-                    cpu.control_unit.run()
-                    print('machine has halted')
+                for warn in warns:
+                    print('Warning:', warn.message)
 
-            elif command[0] == "p":
-                print("Register states:")
-                print_registers(cpu)
-
-            elif command[0] == "m":
-                command = command.split()
-                if len(command) == 3:
-                    begin = int(command[1], 0)
-                    end = int(command[2], 0)
-                    print(cpu.io_unit.store_hex(begin,
-                                                (end - begin) * cpu.ram.word_size))
-                else:
-                    need_help = True
-
-            elif command[0] == "q":
-                need_quit = True
-
-            else:
-                need_help = True
-        except KeyError as e:
-            print('memory error:', e.args[0])
+        except Exception as e:
+            print('Error:', e)
+            cpu.alu.halt()
+            print('machine has halted')
 
 def get_cpu(source, protect_memory):
     """Return empty cpu or raise the ValueError."""
