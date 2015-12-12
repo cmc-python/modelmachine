@@ -57,9 +57,9 @@ class AbstractControlUnit:
         """Save result of calculation to memory."""
         raise NotImplementedError()
 
-class BordachenkovaControlUnit(AbstractControlUnit):
+class ControlUnit(AbstractControlUnit):
 
-    """Abstract Bordachenkova control unit (need to inherit to determine machine)."""
+    """Abstract control unit (need to inherit to determine machine)."""
 
     START_ADDRESS = 0x00
 
@@ -219,7 +219,7 @@ class BordachenkovaControlUnit(AbstractControlUnit):
         raise NotImplementedError()
 
 
-class BordachenkovaControlUnit3(BordachenkovaControlUnit):
+class ControlUnit3(ControlUnit):
 
     """Control unit for model-machine-3."""
 
@@ -298,7 +298,7 @@ class BordachenkovaControlUnit3(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnit2(BordachenkovaControlUnit):
+class ControlUnit2(ControlUnit):
 
     """Control unit for model-machine-2."""
 
@@ -372,7 +372,7 @@ class BordachenkovaControlUnit2(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnitV(BordachenkovaControlUnit):
+class ControlUnitV(ControlUnit):
 
     """Control unit for model-machine-variable."""
 
@@ -463,7 +463,7 @@ class BordachenkovaControlUnitV(BordachenkovaControlUnit):
                                              self.operand_size)
                 self.ram.put(address, value, self.operand_size)
 
-class BordachenkovaControlUnit1(BordachenkovaControlUnit):
+class ControlUnit1(ControlUnit):
 
     """Control unit for model machine 1."""
 
@@ -537,7 +537,7 @@ class BordachenkovaControlUnit1(BordachenkovaControlUnit):
                                          self.operand_size)
             self.ram.put(self.address, value, self.operand_size)
 
-class BordachenkovaControlUnitS(BordachenkovaControlUnit):
+class ControlUnitS(ControlUnit):
 
     """Control unit for stack model machine."""
 

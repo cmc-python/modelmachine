@@ -3,7 +3,7 @@
 """Test case for abstract control units."""
 
 from modelmachine.cu import AbstractControlUnit, RUNNING, HALTED
-from modelmachine.cu import BordachenkovaControlUnit
+from modelmachine.cu import ControlUnit
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, HALT
 
@@ -125,7 +125,7 @@ class TestAbstractControlUnit:
         self.control_unit.write_back.assert_called_once_with()
 
 
-class TestBordachenkovaControlUnit:
+class TestControlUnit:
 
     """Test case for abstract bordachenkova control unit."""
 
@@ -142,18 +142,18 @@ class TestBordachenkovaControlUnit:
         self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.control_unit = BordachenkovaControlUnit(WORD_SIZE,
-                                                     BYTE_SIZE,
-                                                     self.registers,
-                                                     self.ram,
-                                                     self.alu,
-                                                     WORD_SIZE)
+        self.control_unit = ControlUnit(WORD_SIZE,
+                                        BYTE_SIZE,
+                                        self.registers,
+                                        self.ram,
+                                        self.alu,
+                                        WORD_SIZE)
         self.test_const()
 
     def test_const(self):
         """Test internal constants."""
         assert isinstance(self.control_unit, AbstractControlUnit)
-        assert isinstance(self.control_unit, BordachenkovaControlUnit)
+        assert isinstance(self.control_unit, ControlUnit)
         assert self.control_unit.ir_size == 32
         assert self.control_unit.operand_size == WORD_SIZE
         assert self.control_unit.address_size == BYTE_SIZE

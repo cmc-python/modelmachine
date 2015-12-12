@@ -45,7 +45,7 @@ Model machine emulator
 
 ### Пример
 
-    bordachenkova_mm3
+    mm3
 
     [config]
     input = 0x100,0x101
@@ -273,7 +273,7 @@ Model machine emulator
 |ujleq            |     <= u       |unsigned jump if less or equal   |
 |ujg              |     >  u       |unsigned jump if greater         |
 
-### bordachenkova_mm3
+### mm3
 
 Архитектура трехадресной модельной машины.
 
@@ -311,7 +311,7 @@ Model machine emulator
   происходит `IP := A3`.
 * Команда пересылки `move`: [A3] := R1.
 
-### bordachenkova_mm2
+### mm2
 
 Архитектура двухадресной модельной машины.
 
@@ -338,7 +338,7 @@ Model machine emulator
 * `move A1 A2`: `[A1] := [A2]`
 * Команда останова `halt` взводит флаг `HALT` в регистре `FLAGS`
 
-### bordachenkova_mmv
+### mmv
 
 Архитектура модельной машины с переменным (variable) фарматом команд.
 
@@ -392,7 +392,7 @@ Model machine emulator
 * `move A1 A2`: `[A1] := [A2]`
 * Команда останова `halt` взводит флаг `HALT` в регистре `FLAGS`
 
-### bordachenkova_mm1
+### mm1
 
 Архитектура одноадресной модельной машины.
 
@@ -429,7 +429,7 @@ Model machine emulator
 * `swap`: `S, S1 := S1, S`
 * Команда останова `halt` взводит флаг `HALT` в регистре `FLAGS`
 
-### bordachenkova_mmst
+### mmst
 
 Архитектура стековой (stack) модельной машины.
 
