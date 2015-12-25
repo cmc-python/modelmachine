@@ -21,6 +21,11 @@ OP_COMP = 0x05
 OP_STORE = 0x10
 OP_UMUL, OP_UDIVMOD = 0x13, 0x14
 OP_SWAP = 0x20
+OP_RMOVE = 0x20
+OP_RADD, OP_RSUB = 0x21, 0x22
+OP_RSMUL, OP_RSDIVMOD = 0x23, 0x24
+OP_RCOMP = 0x25
+OP_RUMUL, OP_RUDIVMOD = 0x33, 0x34
 OP_STPUSH, OP_STPOP, OP_STDUP, OP_STSWAP = 0x5A, 0x5B, 0x5C, 0x5D
 OP_JUMP = 0x80
 OP_JEQ, OP_JNEQ = 0x81, 0x82
@@ -32,8 +37,12 @@ ARITHMETIC_OPCODES = {OP_ADD, OP_SUB, OP_SMUL, OP_SDIVMOD, OP_UMUL, OP_UDIVMOD}
 CONDJUMP_OPCODES = {OP_JEQ, OP_JNEQ,
                     OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG,
                     OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG}
+JUMP_OPCODES = CONDJUMP_OPCODES | {OP_JUMP}
+REGISTER_OPCODES = {OP_RMOVE, OP_RADD, OP_RSUB, OP_RSMUL,
+                    OP_RSDIVMOD, OP_RCOMP, OP_RUMUL, OP_RUDIVMOD}
 
-def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
+def run_fetch(test_case, value, opcode, instruction_size, and_decode=True,
+              address_size=BYTE_SIZE, ir_size=WORD_SIZE):
     """Run one fetch test."""
     address = 10
     test_case.ram.put(address, value, instruction_size)
@@ -45,7 +54,7 @@ def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
     def get_register(name, size):
         """Get PC."""
         assert name == "PC"
-        assert size == BYTE_SIZE
+        assert size == address_size
         return address
     test_case.registers.fetch.side_effect = get_register
 
@@ -53,10 +62,10 @@ def run_fetch(test_case, value, opcode, instruction_size, and_decode=True):
         test_case.control_unit.fetch_and_decode()
     else:
         test_case.control_unit.fetch_instruction(instruction_size)
-    test_case.registers.fetch.assert_any_call("PC", BYTE_SIZE)
-    test_case.registers.put.assert_has_calls([call("RI", value, WORD_SIZE),
+    test_case.registers.fetch.assert_any_call("PC", address_size)
+    test_case.registers.put.assert_has_calls([call("RI", value, ir_size),
                                               call("PC", address + increment,
-                                                   BYTE_SIZE)])
+                                                   address_size)])
     assert test_case.control_unit.opcode == opcode
 
 

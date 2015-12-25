@@ -5,6 +5,7 @@
 from modelmachine.cu import RUNNING, HALTED
 from modelmachine.cu import ControlUnitV
 from modelmachine.cu import ControlUnitS
+from modelmachine.cu import ControlUnitM
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit
 
@@ -14,8 +15,10 @@ from pytest import raises
 from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_COMP,
                                OP_SDIVMOD, OP_UDIVMOD,
                                OP_STPUSH, OP_STPOP,
+                               OP_LOAD, OP_STORE,
                                OP_STDUP, OP_STSWAP, OP_JUMP, OP_HALT,
-                               ARITHMETIC_OPCODES, CONDJUMP_OPCODES, run_fetch)
+                               ARITHMETIC_OPCODES, CONDJUMP_OPCODES,
+                               JUMP_OPCODES, REGISTER_OPCODES, run_fetch)
 from .test_cu_fixed import TestControlUnit2 as TBCU2
 
 
@@ -494,3 +497,211 @@ class TestControlUnitS(TBCU2):
         assert self.registers.fetch("PC", BYTE_SIZE) == 0x01
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED
+
+class TestControlUnitM(TBCU2):
+
+    """Test case for Address Modification Model Machine Control Unit."""
+
+    def setup(self):
+        """Init state."""
+        super().setup()
+        self.ram = RandomAccessMemory(2 * BYTE_SIZE, 2 ** WORD_SIZE, 'big', is_protected=True)
+        self.control_unit = ControlUnitM(WORD_SIZE,
+                                         2 * BYTE_SIZE,
+                                         self.registers,
+                                         self.ram,
+                                         self.alu,
+                                         WORD_SIZE)
+        assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                             0x10, 0x13, 0x14,
+                                             0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
+                                             0x33, 0x34,
+                                             0x80, 0x81, 0x82,
+                                             0x83, 0x84, 0x85, 0x86,
+                                             0x93, 0x94, 0x95, 0x96,
+                                             0x99}
+
+    def run_fetch(self, value, opcode, instruction_size, r2=True):
+        """Run one fetch test."""
+        address1 = 10
+        address2=42
+        self.ram.put(address1, value, instruction_size)
+        increment = instruction_size // self.ram.word_size
+
+        self.registers.fetch.reset_mock()
+        self.registers.put.reset_mock()
+
+        def get_register(name, size):
+            """Get PC."""
+            if name == "PC":
+                assert size == 2 * BYTE_SIZE
+                return address1
+            elif name=="R2":
+                assert size == WORD_SIZE
+                return address2
+            else:
+                raise KeyError()
+
+        self.registers.fetch.side_effect = get_register
+
+        self.control_unit.fetch_and_decode()
+        if r2:
+            self.registers.fetch.assert_has_calls([call("PC", 2 * BYTE_SIZE),
+                                                   call("R2", WORD_SIZE)])
+        else:
+            self.registers.fetch.assert_any_call("PC", 2 * BYTE_SIZE)
+        self.registers.put.assert_has_calls([call("RI", value, WORD_SIZE),
+                                                  call("PC", address1 + increment,
+                                                       2 * BYTE_SIZE)])
+        assert self.control_unit.opcode == opcode
+
+    def test_fetch_and_decode(self):
+        """Right fetch and decode is a half of business."""
+        for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
+            with raises(ValueError):
+                self.run_fetch(opcode << BYTE_SIZE, opcode, 2 * BYTE_SIZE)
+
+        for opcode in ARITHMETIC_OPCODES | JUMP_OPCODES | {OP_COMP, OP_LOAD, OP_STORE}:
+            self.control_unit.register1 = None
+            self.control_unit.register2 = None
+            self.control_unit.address = None
+
+            self.run_fetch(opcode << 24 | 0x120014, opcode, 32)
+
+            assert self.control_unit.register1 == 'R1'
+            assert self.control_unit.register2 is None
+            assert self.control_unit.address == 0x14 + 42
+
+        for opcode in REGISTER_OPCODES:
+            self.control_unit.register1 = None
+            self.control_unit.register2 = None
+            self.control_unit.address = None
+
+            self.run_fetch(opcode << 8 | 0x12, opcode, 16, r2=False)
+
+            assert self.control_unit.register1 == 'R1'
+            assert self.control_unit.register2 == 'R2'
+            assert self.control_unit.address is None
+
+        for opcode in {OP_HALT}:
+            self.control_unit.register1 = None
+            self.control_unit.register2 = None
+            self.control_unit.address = None
+
+            self.run_fetch(opcode << 8 | 0x12, opcode, 16, r2=False)
+
+
+            assert self.control_unit.register1 is None
+            assert self.control_unit.register2 is None
+            assert self.control_unit.address is None
+
+#     def test_load(self):
+#         """R1 := [A1], R2 := [A2]."""
+#         addr1, val1 = 5, 123456
+#         addr2, val2 = 10, 654321
+#         self.ram.put(addr1, val1, WORD_SIZE)
+#         self.ram.put(addr2, val2, WORD_SIZE)
+#         self.control_unit.address1 = addr1
+#         self.control_unit.address2 = addr2
+#
+#         for opcode in ARITHMETIC_OPCODES | {OP_COMP}:
+#             self.registers.put.reset_mock()
+#             self.control_unit.opcode = opcode
+#             self.control_unit.load()
+#             self.registers.put.assert_has_calls([call("R1", val1, WORD_SIZE),
+#                                                  call("R2", val2, WORD_SIZE)])
+#
+#         for opcode in {OP_MOVE}:
+#             self.registers.put.reset_mock()
+#             self.control_unit.opcode = opcode
+#             self.control_unit.load()
+#             self.registers.put.assert_called_once_with("R1", val2, WORD_SIZE)
+#
+#         for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
+#             self.registers.put.reset_mock()
+#             self.control_unit.opcode = opcode
+#             self.control_unit.load()
+#             self.registers.put.assert_called_once_with("ADDR", addr1, BYTE_SIZE)
+#
+#         for opcode in {OP_HALT}:
+#             self.registers.put.reset_mock()
+#             self.control_unit.opcode = opcode
+#             self.control_unit.load()
+#             assert not self.registers.put.called
+#
+#     def test_step(self):
+#         """Test step cycle."""
+#         self.control_unit.registers = self.registers = RegisterMemory()
+#         self.registers.add_register('RI', WORD_SIZE)
+#         self.alu = ArithmeticLogicUnit(self.registers,
+#                                        self.control_unit.register_names,
+#                                        WORD_SIZE,
+#                                        BYTE_SIZE)
+#         self.control_unit.alu = self.alu
+#
+#         self.ram.put(0x00, 0x01080c, 3 * BYTE_SIZE)
+#         self.ram.put(0x03, 0x050310, 3 * BYTE_SIZE)
+#         self.ram.put(0x06, 0x8614, 2 * BYTE_SIZE)
+#         self.ram.put(0x08, 12, WORD_SIZE)
+#         self.ram.put(0x0c, 10, WORD_SIZE)
+#         self.ram.put(0x10, 20, WORD_SIZE)
+#         self.ram.put(0x14, 0x99, BYTE_SIZE)
+#         self.registers.put("PC", 0, BYTE_SIZE)
+#
+#         self.control_unit.step()
+#         assert self.ram.fetch(0x08, WORD_SIZE) == 22
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x03
+#         assert self.control_unit.get_status() == RUNNING
+#         self.control_unit.step()
+#         assert self.ram.fetch(0x08, WORD_SIZE) == 22
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x06
+#         assert self.control_unit.get_status() == RUNNING
+#         self.control_unit.step()
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x14
+#         assert self.control_unit.get_status() == RUNNING
+#         self.control_unit.step()
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x15
+#         assert self.control_unit.get_status() == HALTED
+#
+#     def test_run(self):
+#         """Very simple program."""
+#         self.control_unit.registers = self.registers = RegisterMemory()
+#         self.registers.add_register('RI', WORD_SIZE)
+#         self.alu = ArithmeticLogicUnit(self.registers,
+#                                        self.control_unit.register_names,
+#                                        WORD_SIZE,
+#                                        BYTE_SIZE)
+#         self.control_unit.alu = self.alu
+#
+#         self.ram.put(0x00, 0x01080c, 3 * BYTE_SIZE)
+#         self.ram.put(0x03, 0x050310, 3 * BYTE_SIZE)
+#         self.ram.put(0x06, 0x8614, 2 * BYTE_SIZE)
+#         self.ram.put(0x08, 12, WORD_SIZE)
+#         self.ram.put(0x0c, 10, WORD_SIZE)
+#         self.ram.put(0x10, 20, WORD_SIZE)
+#         self.ram.put(0x14, 0x99, BYTE_SIZE)
+#         self.registers.put("PC", 0, BYTE_SIZE)
+#
+#         self.control_unit.run()
+#         assert self.ram.fetch(0x08, WORD_SIZE) == 22
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x15
+#         assert self.control_unit.get_status() == HALTED
+#
+#     def test_minimal_run(self):
+#         """Minimal program."""
+#         self.control_unit.registers = self.registers = RegisterMemory()
+#         self.registers.add_register('RI', WORD_SIZE)
+#         self.alu = ArithmeticLogicUnit(self.registers,
+#                                        self.control_unit.register_names,
+#                                        WORD_SIZE,
+#                                        BYTE_SIZE)
+#         self.control_unit.alu = self.alu
+#
+#         self.ram.put(0x00, 0x99, BYTE_SIZE)
+#         self.registers.put("PC", 0, BYTE_SIZE)
+#
+#         self.control_unit.run()
+#         assert self.registers.fetch("PC", BYTE_SIZE) == 0x01
+#         assert self.control_unit.get_status() == HALTED
+
+
