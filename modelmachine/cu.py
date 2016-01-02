@@ -744,7 +744,7 @@ class ControlUnitM(ControlUnit):
 
         if self.opcode in self.opcodes - (self.REGISTER_OPCODES | {self.OPCODES["halt"]}):
             instruction_size = self.OPCODE_SIZE + 2 * self.reg_addr_size + self.address_size
-        else: # if self.opcode in self.opcodes error will be raises in fetch_instruction
+        else:
             instruction_size = self.OPCODE_SIZE + 2 * self.reg_addr_size
 
         instruction = self.fetch_instruction(instruction_size)
@@ -768,17 +768,7 @@ class ControlUnitM(ControlUnit):
 
     def load(self):
         """Load registers R1 and R2."""
-        if self.opcode == self.OPCODES["rmove"]:
-            operand1 = self.registers.fetch(self.register2, self.operand_size)
-            self.registers.put(self.register_names["R1"],
-                               operand1,
-                               self.operand_size)
-        elif self.opcode == self.OPCODES["load"]:
-            operand1 = self.ram.fetch(self.address, self.operand_size)
-            self.registers.put(self.register_names["R1"],
-                               operand1,
-                               self.operand_size)
-        elif self.opcode == self.OPCODES["store"]:
+        if self.opcode == self.OPCODES["store"]:
             operand1 = self.registers.fetch(self.register1, self.operand_size)
             self.registers.put(self.register_names["R1"],
                                operand1,
@@ -792,7 +782,8 @@ class ControlUnitM(ControlUnit):
             self.registers.put(self.register_names["R2"],
                                operand2,
                                self.operand_size)
-        elif self.opcode in self.ARITHMETIC_OPCODES:
+        elif self.opcode in (self.ARITHMETIC_OPCODES |
+                             {self.OPCODES["comp"], self.OPCODES["load"]}):
             operand1 = self.registers.fetch(self.register1, self.operand_size)
             self.registers.put(self.register_names["R1"],
                                operand1,
@@ -813,8 +804,10 @@ class ControlUnitM(ControlUnit):
         """Add specific commands: conditional jumps and cmp."""
         if self.opcode == self.OPCODES["comp"]:
             self.alu.sub()
+        elif self.opcode == self.OPCODES["load"]:
+            self.alu.move("R2", "S")
         elif self.opcode == self.OPCODES["store"]:
-            self.alu.move()
+            self.alu.move("R1", "S")
         elif self.opcode in self.JUMP_OPCODES:
             self.execute_jump()
         else:

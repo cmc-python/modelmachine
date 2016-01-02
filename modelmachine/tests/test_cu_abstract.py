@@ -41,32 +41,6 @@ JUMP_OPCODES = CONDJUMP_OPCODES | {OP_JUMP}
 REGISTER_OPCODES = {OP_RMOVE, OP_RADD, OP_RSUB, OP_RSMUL,
                     OP_RSDIVMOD, OP_RCOMP, OP_RUMUL, OP_RUDIVMOD}
 
-def run_fetch(test_case, value, opcode, instruction_size, and_decode=True,
-              address_size=BYTE_SIZE, ir_size=WORD_SIZE):
-    """Run one fetch test."""
-    address = 10
-    test_case.ram.put(address, value, instruction_size)
-    increment = instruction_size // test_case.ram.word_size
-
-    test_case.registers.fetch.reset_mock()
-    test_case.registers.put.reset_mock()
-
-    def get_register(name, size):
-        """Get PC."""
-        assert name == "PC"
-        assert size == address_size
-        return address
-    test_case.registers.fetch.side_effect = get_register
-
-    if and_decode:
-        test_case.control_unit.fetch_and_decode()
-    else:
-        test_case.control_unit.fetch_instruction(instruction_size)
-    test_case.registers.fetch.assert_any_call("PC", address_size)
-    test_case.registers.put.assert_has_calls([call("RI", value, ir_size),
-                                              call("PC", address + increment,
-                                                   address_size)])
-    assert test_case.control_unit.opcode == opcode
 
 
 class TestAbstractControlUnit:
@@ -146,6 +120,10 @@ class TestControlUnit:
     arithmetic_opcodes = None
     condjump_opcodes = None
 
+    ir_size = 32
+    operand_size = WORD_SIZE
+    address_size = BYTE_SIZE
+
     def setup(self):
         """Init state."""
         self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
@@ -163,9 +141,9 @@ class TestControlUnit:
         """Test internal constants."""
         assert isinstance(self.control_unit, AbstractControlUnit)
         assert isinstance(self.control_unit, ControlUnit)
-        assert self.control_unit.ir_size == 32
-        assert self.control_unit.operand_size == WORD_SIZE
-        assert self.control_unit.address_size == BYTE_SIZE
+        assert self.control_unit.ir_size == self.ir_size
+        assert self.control_unit.operand_size == self.operand_size
+        assert self.control_unit.address_size == self.address_size
         assert self.control_unit.OPCODE_SIZE == BYTE_SIZE
         assert self.control_unit.OPCODES["move"] == OP_MOVE
         assert self.control_unit.OPCODES["load"] == OP_LOAD
@@ -210,9 +188,36 @@ class TestControlUnit:
         with raises(NotImplementedError):
             self.control_unit.write_back()
 
+    def run_fetch(self, value, opcode, instruction_size, and_decode=True,
+                  address_size=BYTE_SIZE, ir_size=WORD_SIZE):
+        """Run one fetch test."""
+        address = 10
+        self.ram.put(address, value, instruction_size)
+        increment = instruction_size // self.ram.word_size
+
+        self.registers.fetch.reset_mock()
+        self.registers.put.reset_mock()
+
+        def get_register(name, size):
+            """Get PC."""
+            assert name == "PC"
+            assert size == self.control_unit.address_size
+            return address
+        self.registers.fetch.side_effect = get_register
+
+        if and_decode:
+            self.control_unit.fetch_and_decode()
+        else:
+            self.control_unit.fetch_instruction(instruction_size)
+        self.registers.fetch.assert_any_call("PC", address_size)
+        self.registers.put.assert_has_calls([call("RI", value, ir_size),
+                                                  call("PC", address + increment,
+                                                       address_size)])
+        assert self.control_unit.opcode == opcode
+
     def test_fetch_instruction(self):
         """Right fetch and decode is a half of business."""
-        run_fetch(self, 0x01020304, 0x01, WORD_SIZE, False)
+        self.run_fetch(0x01020304, 0x01, WORD_SIZE, False)
 
     def test_basic_execute(self, should_move=True):
         """Test basic operations."""

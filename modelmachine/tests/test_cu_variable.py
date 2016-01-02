@@ -15,11 +15,14 @@ from pytest import raises
 from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_COMP,
                                OP_SDIVMOD, OP_UDIVMOD,
                                OP_STPUSH, OP_STPOP,
-                               OP_LOAD, OP_STORE,
+                               OP_LOAD, OP_STORE, OP_RMOVE,
+                               OP_RADD, OP_RSUB, OP_RSMUL, OP_RSDIVMOD,
+                               OP_RCOMP, OP_RUMUL, OP_RUDIVMOD,
                                OP_STDUP, OP_STSWAP, OP_JUMP, OP_HALT,
                                ARITHMETIC_OPCODES, CONDJUMP_OPCODES,
-                               JUMP_OPCODES, REGISTER_OPCODES, run_fetch)
+                               JUMP_OPCODES, REGISTER_OPCODES)
 from .test_cu_fixed import TestControlUnit2 as TBCU2
+from .test_cu_abstract import TestControlUnit as TBCU
 
 
 class TestControlUnitV(TBCU2):
@@ -48,23 +51,23 @@ class TestControlUnitV(TBCU2):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
             with raises(ValueError):
-                run_fetch(self, opcode, opcode, BYTE_SIZE)
+                self.run_fetch(opcode, opcode, BYTE_SIZE)
 
         for opcode in ARITHMETIC_OPCODES | {OP_COMP, OP_MOVE}:
             self.control_unit.address1, self.control_unit.address2 = None, None
-            run_fetch(self, opcode << 16 | 0x0203, opcode, 24)
+            self.run_fetch(opcode << 16 | 0x0203, opcode, 24)
             assert self.control_unit.address1 == 0x02
             assert self.control_unit.address2 == 0x03
 
         for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
             self.control_unit.address1, self.control_unit.address2 = None, None
-            run_fetch(self, opcode << 8 | 0x02, opcode, 16)
+            self.run_fetch(opcode << 8 | 0x02, opcode, 16)
             assert self.control_unit.address1 == 0x02
             assert self.control_unit.address2 == None
 
         for opcode in {OP_HALT}:
             self.control_unit.address1, self.control_unit.address2 = None, None
-            run_fetch(self, opcode, opcode, 8)
+            self.run_fetch(opcode, opcode, 8)
             assert self.control_unit.address1 == None
             assert self.control_unit.address2 == None
 
@@ -206,18 +209,18 @@ class TestControlUnitS(TBCU2):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
             with raises(ValueError):
-                run_fetch(self, opcode, opcode, BYTE_SIZE)
+                self.run_fetch(opcode, opcode, BYTE_SIZE)
 
         for opcode in ARITHMETIC_OPCODES | {OP_COMP, OP_STDUP, OP_STSWAP,
                                             OP_HALT}:
 
             self.control_unit.address = None
-            run_fetch(self, opcode, opcode, BYTE_SIZE)
+            self.run_fetch(opcode, opcode, BYTE_SIZE)
             assert self.control_unit.address == None
 
         for opcode in CONDJUMP_OPCODES | {OP_STPUSH, OP_STPOP, OP_JUMP}:
             self.control_unit.address = None
-            run_fetch(self, opcode << 8 | 0x02, opcode, 16)
+            self.run_fetch(opcode << 8 | 0x02, opcode, 16)
             assert self.control_unit.address == 0x02
 
     def test_push(self):
@@ -498,7 +501,7 @@ class TestControlUnitS(TBCU2):
         assert self.registers.fetch("SP", BYTE_SIZE) == 0
         assert self.control_unit.get_status() == HALTED
 
-class TestControlUnitM(TBCU2):
+class TestControlUnitM(TBCU):
 
     """Test case for Address Modification Model Machine Control Unit."""
 
@@ -512,6 +515,8 @@ class TestControlUnitM(TBCU2):
                                          self.ram,
                                          self.alu,
                                          WORD_SIZE)
+        self.operand_size = WORD_SIZE
+        self.address_size = 2 * BYTE_SIZE
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
                                              0x10, 0x13, 0x14,
                                              0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
@@ -520,6 +525,17 @@ class TestControlUnitM(TBCU2):
                                              0x83, 0x84, 0x85, 0x86,
                                              0x93, 0x94, 0x95, 0x96,
                                              0x99}
+
+    def test_const(self):
+        super().test_const()
+        assert self.control_unit.OPCODES["rmove"] == OP_RMOVE
+        assert self.control_unit.OPCODES["radd"] == OP_RADD
+        assert self.control_unit.OPCODES["rsub"] == OP_RSUB
+        assert self.control_unit.OPCODES["rsmul"] == OP_RSMUL
+        assert self.control_unit.OPCODES["rsdivmod"] == OP_RSDIVMOD
+        assert self.control_unit.OPCODES["rcomp"] == OP_RCOMP
+        assert self.control_unit.OPCODES["rumul"] == OP_RUMUL
+        assert self.control_unit.OPCODES["rudivmod"] == OP_RUDIVMOD
 
     def run_fetch(self, value, opcode, instruction_size, r2=True):
         """Run one fetch test."""
@@ -595,40 +611,78 @@ class TestControlUnitM(TBCU2):
             assert self.control_unit.register2 is None
             assert self.control_unit.address is None
 
-#     def test_load(self):
-#         """R1 := [A1], R2 := [A2]."""
-#         addr1, val1 = 5, 123456
-#         addr2, val2 = 10, 654321
-#         self.ram.put(addr1, val1, WORD_SIZE)
-#         self.ram.put(addr2, val2, WORD_SIZE)
-#         self.control_unit.address1 = addr1
-#         self.control_unit.address2 = addr2
-#
-#         for opcode in ARITHMETIC_OPCODES | {OP_COMP}:
-#             self.registers.put.reset_mock()
-#             self.control_unit.opcode = opcode
-#             self.control_unit.load()
-#             self.registers.put.assert_has_calls([call("R1", val1, WORD_SIZE),
-#                                                  call("R2", val2, WORD_SIZE)])
-#
-#         for opcode in {OP_MOVE}:
-#             self.registers.put.reset_mock()
-#             self.control_unit.opcode = opcode
-#             self.control_unit.load()
-#             self.registers.put.assert_called_once_with("R1", val2, WORD_SIZE)
-#
-#         for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
-#             self.registers.put.reset_mock()
-#             self.control_unit.opcode = opcode
-#             self.control_unit.load()
-#             self.registers.put.assert_called_once_with("ADDR", addr1, BYTE_SIZE)
-#
-#         for opcode in {OP_HALT}:
-#             self.registers.put.reset_mock()
-#             self.control_unit.opcode = opcode
-#             self.control_unit.load()
-#             assert not self.registers.put.called
-#
+    def test_load(self):
+        """R1 := [A1], R2 := [A2]."""
+        register1, val1 = 'R3', 123456
+        register2, val2 = 'R4', 654321
+        address, val3 = 10, 111111
+
+        def get_register(name, size):
+            """Get PC."""
+            assert size == WORD_SIZE
+            if name == register1:
+                return val1
+            elif name == register2:
+                return val2
+            else:
+                raise KeyError()
+
+        self.registers.fetch.side_effect = get_register
+        self.control_unit.address = address
+        self.control_unit.register1 = register1
+        self.control_unit.register2 = register2
+        self.ram.put(address, val3, WORD_SIZE)
+
+        for opcode in ARITHMETIC_OPCODES | {OP_LOAD, OP_COMP}:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.fetch.assert_called_once_with(register1, WORD_SIZE)
+            self.registers.put.assert_has_calls([call("S", val1, WORD_SIZE),
+                                                 call("RZ", val3, WORD_SIZE)])
+
+        for opcode in {OP_STORE}:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.fetch.assert_called_once_with(register1, WORD_SIZE)
+            self.registers.put.assert_called_once_with("S", val1, WORD_SIZE)
+
+        for opcode in REGISTER_OPCODES:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            self.registers.fetch.assert_has_calls([call(register1, WORD_SIZE),
+                                                   call(register2, WORD_SIZE)])
+            self.registers.put.assert_has_calls([call("S", val1, WORD_SIZE),
+                                                 call("RZ", val2, WORD_SIZE)])
+
+        for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+
+            assert not self.registers.fetch.called
+            self.registers.put.assert_called_once_with("ADDR", address, 2 * BYTE_SIZE)
+
+        for opcode in {OP_HALT}:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+
+            self.control_unit.load()
+            assert not self.registers.fetch.called
+            assert not self.registers.put.called
+
 #     def test_step(self):
 #         """Test step cycle."""
 #         self.control_unit.registers = self.registers = RegisterMemory()
