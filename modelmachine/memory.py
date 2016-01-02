@@ -58,6 +58,7 @@ class AbstractMemory(dict):
 
         super().__init__(addresses)
         self.word_size = word_size
+        self.access_count = 0
 
         if endianess == "big":
             self.decode, self.encode = big_endian_decode, big_endian_encode
@@ -106,6 +107,8 @@ class AbstractMemory(dict):
         self.check_address(address)
         self.check_bits_count(address, bits)
 
+        self.access_count += 1
+
         size = bits // self.word_size
         if size == 1: # Address not always is integer, sometimes string
             return self[address]
@@ -122,6 +125,8 @@ class AbstractMemory(dict):
         self.check_bits_count(address, bits)
 
         enc_value = self.encode(value, self.word_size, bits)
+
+        self.access_count += 1
 
         size = bits // self.word_size
         if size == 1: # Address not always is integer, sometimes string

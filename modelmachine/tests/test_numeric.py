@@ -211,3 +211,21 @@ class TestNumeric:
         assert dic[self.first] == 10
         assert dic[self.second] == 11
         assert dic[third] == 10
+
+    def test_getitem(self):
+        """Test if we can get Integer bits."""
+        assert self.first[0] == Integer(0, 1, False)
+        assert self.first[1] == Integer(1, 1, False)
+        assert self.first[2] == Integer(0, 1, False)
+        assert self.first[3] == Integer(1, 1, False)
+        assert self.first[4] == Integer(0, 1, False)
+        assert self.first[5] == Integer(0, 1, False)
+        assert self.second[0] == Integer(0, 1, False)
+        assert self.second[1] == Integer(0, 1, False)
+        assert self.second[2] == Integer(1, 1, False)
+        assert self.second[3] == Integer(1, 1, False)
+        assert self.second[4] == Integer(0, 1, False)
+        assert self.second[5] == Integer(0, 1, False)
+        assert self.first[0:6] == Integer(10, 6, False)
+        assert self.first[:6] == Integer(10, 6, False)
+        assert self.first[3:] == Integer(1, 32 - 3, False)

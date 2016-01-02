@@ -5,7 +5,7 @@
 from modelmachine.ide import get_program, get_cpu, debug
 import pytest, os, sys, argparse
 
-VERSION = "0.0.6" # Don't forget fix in setup.py
+VERSION = "0.1.0" # Don't forget fix in setup.py
 
 def run_program(args):
     cpu = get_program(args.filename, args.protect_memory)
@@ -32,7 +32,7 @@ def main(argv, stdout):
                        help='print version and exit')
 
     parser.add_argument('-m', '--protect_memory', action='store_true', default=False,
-                        help='raise an error if try to read dirty memory')
+                        help='raise an error, if program tries read dirty memory')
     subparsers = parser.add_subparsers(title='commands',
                                        help='commands for model machine emulator')
 

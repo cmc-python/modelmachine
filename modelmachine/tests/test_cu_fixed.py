@@ -17,7 +17,7 @@ from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_SDIVMOD,
                                OP_LOAD, OP_STORE, OP_SWAP,
                                OP_JNEQ, OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG,
                                OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG, OP_HALT,
-                               ARITHMETIC_OPCODES, CONDJUMP_OPCODES, run_fetch)
+                               ARITHMETIC_OPCODES, CONDJUMP_OPCODES)
 from .test_cu_abstract import TestControlUnit as TBCU
 
 class TestControlUnit3(TBCU):
@@ -45,13 +45,13 @@ class TestControlUnit3(TBCU):
         """Right fetch and decode is a half of business."""
         for opcode in self.control_unit.opcodes:
             self.control_unit.address1, self.control_unit.address2 = None, None
-            run_fetch(self, opcode << 24 | 0x020304, opcode, WORD_SIZE)
+            self.run_fetch(opcode << 24 | 0x020304, opcode, WORD_SIZE)
             assert self.control_unit.address1 == 0x02
             assert self.control_unit.address2 == 0x03
             assert self.control_unit.address3 == 0x04
         for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
             with raises(ValueError):
-                run_fetch(self, opcode << 24 | 0x020304, opcode, WORD_SIZE)
+                self.run_fetch(opcode << 24 | 0x020304, opcode, WORD_SIZE)
 
     def test_load(self):
         """R1 := [A1], R2 := [A2]."""
@@ -131,14 +131,14 @@ class TestControlUnit3(TBCU):
         self.run_cond_jump(OP_UJLEQ, False, LESS, True)
         self.run_cond_jump(OP_UJG, False, GREATER, False)
 
-    def test_jump_halt(self):
+    def test_execute_jump_halt(self):
         """Test for jump and halt."""
         self.alu.cond_jump.reset_mock()
         self.alu.sub.reset_mock()
         self.registers.put.reset_mock()
+
         self.control_unit.opcode = OP_JUMP
         self.control_unit.execute()
-
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.jump.assert_called_once_with()
@@ -264,12 +264,12 @@ class TestControlUnit2(TestControlUnit3):
         """Right fetch and decode is a half of business."""
         for opcode in self.control_unit.opcodes:
             self.control_unit.address1, self.control_unit.address2 = None, None
-            run_fetch(self, opcode << 24 | 0x0203, opcode, WORD_SIZE)
+            self.run_fetch(opcode << 24 | 0x0203, opcode, WORD_SIZE)
             assert self.control_unit.address1 == 0x02
             assert self.control_unit.address2 == 0x03
         for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
             with raises(ValueError):
-                run_fetch(self, opcode << 24 | 0x0203, opcode, WORD_SIZE)
+                self.run_fetch(opcode << 24 | 0x0203, opcode, WORD_SIZE)
 
     def test_load(self):
         """R1 := [A1], R2 := [A2]."""
@@ -318,24 +318,6 @@ class TestControlUnit2(TestControlUnit3):
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
-
-    def test_execute_jump_halt(self):
-        """Test for jump and halt."""
-        self.alu.cond_jump.reset_mock()
-        self.alu.sub.reset_mock()
-        self.registers.put.reset_mock()
-
-        self.control_unit.opcode = OP_JUMP
-        self.control_unit.execute()
-        assert not self.alu.sub.called
-        assert not self.registers.put.called
-        self.alu.jump.assert_called_once_with()
-
-        self.control_unit.opcode = OP_HALT
-        self.control_unit.execute()
-        assert not self.alu.sub.called
-        assert not self.registers.put.called
-        self.alu.halt.assert_called_once_with()
 
     def test_execute_comp(self):
         """Test for comp."""
@@ -472,11 +454,11 @@ class TestControlUnit1(TestControlUnit2):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2 ** BYTE_SIZE)) - self.control_unit.opcodes:
             with raises(ValueError):
-                run_fetch(self, opcode << 24, opcode, WORD_SIZE)
+                self.run_fetch(opcode << 24, opcode, WORD_SIZE)
 
         for opcode in self.control_unit.opcodes:
             self.control_unit.address = None
-            run_fetch(self, opcode << 24 | 0x02, opcode, WORD_SIZE)
+            self.run_fetch(opcode << 24 | 0x02, opcode, WORD_SIZE)
             assert self.control_unit.address == 0x02
 
     def test_load(self):
