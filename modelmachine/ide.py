@@ -136,6 +136,7 @@ def exec_continue(cpu, step):
 def exec_print(cpu, step):
     """Print contents of registers."""
 
+    print("RAM access count:", cpu.ram.access_count)
     print("Register states:")
     registers = {cpu.register_names[name]  for name in cpu.register_names}
     for reg in sorted(list(registers)):

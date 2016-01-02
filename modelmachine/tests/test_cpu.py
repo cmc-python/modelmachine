@@ -5,7 +5,7 @@
 from modelmachine.cpu import AbstractCPU
 from modelmachine.cpu import CPUMM3, CPUMM2
 from modelmachine.cpu import CPUMMV, CPUMM1
-from modelmachine.cpu import CPUMMS
+from modelmachine.cpu import CPUMMM
 
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -236,35 +236,30 @@ class TestCPUMM1:
 
         assert out.read() == "298\n"
 
+class TestCPUMMM:
 
-class TestCPUMMS:
-
-    """Smoke test for mm-s."""
+    """Smoke test for mm-m."""
 
     cpu = None
     source = None
 
     def setup(self):
         """Init state."""
-        self.cpu = CPUMMS(protect_memory=False)
+        self.cpu = CPUMMM(protect_memory=False)
         self.source = ("[config]\n" +
-                       "input=0x100,0x103\n" +
-                       "output=0x106\n" +
+                       "input=0x100,0x102\n" +
+                       "output=0x104\n" +
                        "[code]\n" +
-                       "5A 0100\n" +
-                       "5A 0103\n" +
-                       "01\n" +
-                       "5C\n" +
-                       "5A 0103\n" +
-                       "05\n" +
-                       "86 0011\n" +
-                       "5C\n" +
-                       "02 ; never be used\n" +
-                       "5A 001b\n" +
-                       "02\n" +
-                       "5B 0106\n" +
-                       "99 0000\n" +
-                       "000002\n" +
+                       "00 0 0 0100\n" +
+                       "03 0 0 000C\n" +
+                       "04 0 0 000E\n" +
+                       "02 1 0 0102\n" +
+                       "23 1 1; coment never be used\n" +
+                       "10 1 0 0104\n" +
+                       "99 0 0\n" +
+                       "; -----------\n"
+                       "ffffffeb\n" +
+                       "00000032\n" +
                        "[input]\n" +
                        "100 200\n")
 
@@ -276,5 +271,5 @@ class TestCPUMMS:
         with open(str(out), 'w') as output:
             self.cpu.run_file(str(source), output=output)
 
-        assert out.read() == "298\n"
+        assert out.read() == "40000\n"
 

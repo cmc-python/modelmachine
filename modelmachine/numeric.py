@@ -87,3 +87,20 @@ class Integer(Number):
         """Test if two integer is equal."""
         self.check_compability(other)
         return self.get_value() == other.get_value()
+
+    def __getitem__(self, key):
+        """Get bits of unsigned representation.
+
+        Zero-indexed bit is minor.
+        """
+        representation = [(self.value >> i) & 1 for i in range(self.size)]
+        representation = representation[key]
+        if isinstance(representation, int):
+            return Integer(representation, 1, False)
+        elif isinstance(representation, list):
+            value = 0
+            for i in range(len(representation)):
+                value += representation[i] << i
+            return Integer(value, len(representation), False)
+        else:
+            raise TypeError("Integer indeces must be integers")

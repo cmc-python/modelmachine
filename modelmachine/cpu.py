@@ -16,7 +16,7 @@ from modelmachine.cu import ControlUnit3 as BCU3
 from modelmachine.cu import ControlUnit2 as BCU2
 from modelmachine.cu import ControlUnitV as BCUV
 from modelmachine.cu import ControlUnit1 as BCU1
-from modelmachine.cu import ControlUnitS as BCUS
+from modelmachine.cu import ControlUnitM as BCUM
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
 
@@ -107,7 +107,7 @@ class CPUMM3(AbstractCPU):
                                        register_names=self.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
-        self.control_unit = BCU3(instruction_size=word_size,
+        self.control_unit = BCU3(ir_size=word_size,
                                  registers=self.registers,
                                  ram=self.ram,
                                  alu=self.alu,
@@ -136,7 +136,7 @@ class CPUMM2(AbstractCPU):
                                        register_names=self.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
-        self.control_unit = BCU2(instruction_size=word_size,
+        self.control_unit = BCU2(ir_size=word_size,
                                  registers=self.registers,
                                  ram=self.ram,
                                  alu=self.alu,
@@ -195,7 +195,7 @@ class CPUMM1(AbstractCPU):
                                        register_names=self.register_names,
                                        operand_size=word_size,
                                        address_size=address_size)
-        self.control_unit = BCU1(instruction_size=word_size,
+        self.control_unit = BCU1(ir_size=word_size,
                                  registers=self.registers,
                                  ram=self.ram,
                                  alu=self.alu,
@@ -206,39 +206,39 @@ class CPUMM1(AbstractCPU):
                                        word_size=word_size)
 
 
-class CPUMMS(AbstractCPU):
+class CPUMMM(AbstractCPU):
 
-    """CPU stack model machine."""
+    """CPU address modification model machine."""
 
     def __init__(self, protect_memory):
         """See help(type(x))."""
         byte_size = 8
-        word_size = 3 * byte_size
-        address_size = 2 * byte_size
+        address_size = word_size = 2 * byte_size
+        operand_size = ir_size = 4 * byte_size
         memory_size = 2 ** address_size
-        self.ram = RandomAccessMemory(word_size=byte_size,
+        self.ram = RandomAccessMemory(word_size=word_size,
                                       memory_size=memory_size,
                                       endianess='big', # Unused
                                       is_protected=protect_memory)
         self.registers = RegisterMemory()
-        self.register_names = BCUS.register_names
+        self.register_names = BCUM.register_names
         self.alu = ArithmeticLogicUnit(registers=self.registers,
                                        register_names=self.register_names,
-                                       operand_size=word_size,
+                                       operand_size=operand_size,
                                        address_size=address_size)
-        self.control_unit = BCUS(ir_size=word_size,
+        self.control_unit = BCUM(ir_size=ir_size,
                                  registers=self.registers,
                                  ram=self.ram,
                                  alu=self.alu,
-                                 operand_size=word_size,
+                                 operand_size=operand_size,
                                  address_size=address_size)
         self.io_unit = InputOutputUnit(ram=self.ram,
                                        start_address=0,
-                                       word_size=word_size)
+                                       word_size=operand_size)
 
 
 CPU_LIST = {'mm3': CPUMM3,
             'mm2': CPUMM2,
             'mmv': CPUMMV,
             'mm1': CPUMM1,
-            'mms': CPUMMS}
+            'mmm': CPUMMM}
