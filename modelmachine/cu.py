@@ -240,10 +240,11 @@ class ControlUnit3(ControlUnit):
                       "R1": "R1", "R2": "R2", "S": "S", "RES": "R1",
                       "FLAGS": "FLAGS"}
 
-    def __init__(self, instruction_size, *vargs, **kvargs):
+    def __init__(self, ir_size, *vargs, **kvargs):
         """See help(type(x))."""
-        super().__init__(instruction_size, *vargs, **kvargs)
-        self.instruction_size = instruction_size
+        super().__init__(ir_size, *vargs, **kvargs)
+
+        self.instruction_size = ir_size
         self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
                         {self.OPCODES["move"],
                          self.OPCODES["halt"]})
@@ -318,12 +319,11 @@ class ControlUnit2(ControlUnit):
                       "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
                       "FLAGS": "FLAGS"}
 
-    def __init__(self, instruction_size, *vargs, **kvargs):
+    def __init__(self, ir_size, *vargs, **kvargs):
         """See help(type(x))."""
-        super().__init__(instruction_size, *vargs, **kvargs)
-        self.instruction_size = instruction_size
+        super().__init__(ir_size, *vargs, **kvargs)
 
-        self.instruction_size = instruction_size
+        self.instruction_size = ir_size
         self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
                         {self.OPCODES["move"],
                          self.OPCODES["halt"],
@@ -482,12 +482,11 @@ class ControlUnit1(ControlUnit):
                       "R1": "S", "R2": "R", "S": "S", "RES": "S1",
                       "FLAGS": "FLAGS"}
 
-    def __init__(self, instruction_size, *vargs, **kvargs):
+    def __init__(self, ir_size, *vargs, **kvargs):
         """See help(type(x))."""
-        super().__init__(instruction_size, *vargs, **kvargs)
-        self.instruction_size = instruction_size
+        super().__init__(ir_size, *vargs, **kvargs)
 
-        self.instruction_size = instruction_size
+        self.instruction_size = ir_size
         self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
                         {self.OPCODES["load"],
                          self.OPCODES["store"],
@@ -546,139 +545,6 @@ class ControlUnit1(ControlUnit):
                                          self.operand_size)
             self.ram.put(self.address, value, self.operand_size)
 
-class ControlUnitS(ControlUnit):
-
-    """Control unit for stack model machine."""
-
-    address = None
-
-    register_names = {"PC": "PC", "ADDR": "ADDR", "RI": "RI", "SP": "SP",
-                      "R1": "R1", "R2": "R2", "S": "R1", "RES": "R2",
-                      "FLAGS": "FLAGS"}
-
-    def __init__(self, ir_size, *vargs, **kvargs):
-        """See help(type(x))."""
-        # dynamic instruction size
-        super().__init__(ir_size, *vargs, **kvargs)
-
-        self.opcodes = (self.ARITHMETIC_OPCODES | self.JUMP_OPCODES |
-                        {self.OPCODES["stpush"], self.OPCODES["stpop"],
-                         self.OPCODES["stdup"], self.OPCODES["stswap"],
-                         self.OPCODES["halt"],
-                         self.OPCODES["comp"]})
-
-        for reg in {"R1", "R2", "FLAGS"}:
-            self.registers.add_register(reg, self.operand_size)
-        for reg in {"SP"}:
-            self.registers.add_register(reg, self.address_size)
-        self.registers.put("SP", 0, self.address_size)
-
-    def push(self, value):
-        """Push value to stack."""
-        stack_pointer = self.registers.fetch(self.register_names["SP"],
-                                             self.address_size)
-        stack_pointer -= self.operand_size // self.ram.word_size
-        stack_pointer %= self.ram.memory_size
-        self.registers.put(self.register_names["SP"],
-                           stack_pointer,
-                           self.address_size)
-        self.ram.put(stack_pointer, value, self.operand_size)
-
-    def pop(self):
-        """Pop value from the stack."""
-        stack_pointer = self.registers.fetch(self.register_names["SP"],
-                                             self.address_size)
-        value = self.ram.fetch(stack_pointer, self.operand_size)
-        stack_pointer += self.operand_size // self.ram.word_size
-        stack_pointer %= self.ram.memory_size
-        self.registers.put(self.register_names["SP"],
-                           stack_pointer,
-                           self.address_size)
-        return value
-
-    def fetch_and_decode(self):
-        """Fetch 3 addresses."""
-        mask = 2 ** self.address_size - 1
-        one_operand = self.JUMP_OPCODES | {self.OPCODES["stpush"],
-                                           self.OPCODES["stpop"]}
-
-        instruction_pointer = self.registers.fetch(self.register_names["PC"],
-                                                   self.address_size)
-        self.opcode = self.ram.fetch(instruction_pointer, self.OPCODE_SIZE)
-
-        if self.opcode in one_operand:
-            instruction_size = self.OPCODE_SIZE + self.address_size
-        else:
-            instruction_size = self.OPCODE_SIZE
-
-        instruction = self.fetch_instruction(instruction_size)
-
-        if self.opcode in one_operand:
-            self.address = instruction & mask
-
-    def load(self):
-        """Load registers R1 and R2."""
-        if self.opcode in self.BINAR_OPCODES | {self.OPCODES["stswap"]}:
-            operand2 = self.pop()
-            self.registers.put(self.register_names["R2"],
-                               operand2,
-                               self.operand_size)
-            operand1 = self.pop()
-            self.registers.put(self.register_names["R1"],
-                               operand1,
-                               self.operand_size)
-
-        elif self.opcode == self.OPCODES["stpush"]:
-            operand = self.ram.fetch(self.address, self.operand_size)
-            self.registers.put(self.register_names["R1"],
-                               operand,
-                               self.operand_size)
-        elif self.opcode in {self.OPCODES["stdup"], self.OPCODES["stpop"]}:
-            operand = self.pop()
-            self.registers.put(self.register_names["R1"],
-                               operand,
-                               self.operand_size)
-        elif self.opcode in self.JUMP_OPCODES:
-            self.registers.put(self.register_names["ADDR"],
-                               self.address,
-                               self.address_size)
-
-    def execute(self):
-        """Add specific commands: conditional jumps and cmp."""
-        if self.opcode == self.OPCODES["comp"]:
-            self.alu.sub()
-        elif self.opcode in self.JUMP_OPCODES:
-            self.execute_jump()
-        elif self.opcode == self.OPCODES["stswap"]:
-            self.alu.swap()
-        elif self.opcode == self.OPCODES["stdup"]:
-            self.alu.move(source="R1", dest="R2")
-        elif self.opcode in self.STACK_OPCODES:
-            pass
-        elif self.opcode == self.OPCODES["move"]:
-            raise ValueError('Invalid opcode `{opcode}`'
-                             .format(opcode=hex(self.opcode)))
-        else:
-            super().execute()
-
-    def write_back(self):
-        """Write result back."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["stpush"],
-                                                     self.OPCODES["stswap"],
-                                                     self.OPCODES["stdup"]}:
-            value = self.registers.fetch(self.register_names["S"],
-                                         self.operand_size)
-            self.push(value)
-            if self.opcode in self.DIVMOD_OPCODES | {self.OPCODES["stswap"],
-                                                     self.OPCODES["stdup"]}:
-                value = self.registers.fetch(self.register_names["RES"],
-                                             self.operand_size)
-                self.push(value)
-        elif self.opcode == self.OPCODES["stpop"]:
-            value = self.registers.fetch(self.register_names["R1"],
-                                         self.operand_size)
-            self.ram.put(self.address, value, self.operand_size)
-
 class ControlUnitM(ControlUnit):
 
     """Control unit for address modification model machine."""
@@ -709,11 +575,11 @@ class ControlUnitM(ControlUnit):
                              ControlUnit.OPCODES["rumul"],
                              ControlUnit.OPCODES["rudivmod"]})
 
-    def __init__(self, instruction_size, *vargs, **kvargs):
+    def __init__(self, ir_size, *vargs, **kvargs):
         """See help(type(x))."""
         # dynamic instruction size
-        super().__init__(instruction_size, *vargs, **kvargs)
-        self.instruction_size = instruction_size
+        super().__init__(ir_size, *vargs, **kvargs)
+
         self.reg_addr_size = 4
 
         self.opcodes = (self.ARITHMETIC_OPCODES

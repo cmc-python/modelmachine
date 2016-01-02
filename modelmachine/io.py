@@ -44,11 +44,11 @@ class InputOutputUnit:
 
     def store_hex(self, start, size):
         """Save data to string."""
-        if size % self.word_size != 0:
+        if size % self.ram.word_size != 0:
             raise KeyError('Cannot save {size} bits, word size is {word_size}'
-                           .format(size=size, word_size=self.word_size))
+                           .format(size=size, word_size=self.ram.word_size))
         result = []
-        block_size = self.word_size
+        block_size = self.ram.word_size
         size //= block_size
         for i in range(start, start + size):
             data = self.ram.fetch(i, block_size)
