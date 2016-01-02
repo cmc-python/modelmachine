@@ -131,14 +131,14 @@ class TestControlUnit3(TBCU):
         self.run_cond_jump(OP_UJLEQ, False, LESS, True)
         self.run_cond_jump(OP_UJG, False, GREATER, False)
 
-    def test_jump_halt(self):
+    def test_execute_jump_halt(self):
         """Test for jump and halt."""
         self.alu.cond_jump.reset_mock()
         self.alu.sub.reset_mock()
         self.registers.put.reset_mock()
+
         self.control_unit.opcode = OP_JUMP
         self.control_unit.execute()
-
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.jump.assert_called_once_with()
@@ -318,24 +318,6 @@ class TestControlUnit2(TestControlUnit3):
         assert not self.alu.sub.called
         assert not self.registers.put.called
         self.alu.cond_jump.assert_called_once_with(signed, mol, equal)
-
-    def test_execute_jump_halt(self):
-        """Test for jump and halt."""
-        self.alu.cond_jump.reset_mock()
-        self.alu.sub.reset_mock()
-        self.registers.put.reset_mock()
-
-        self.control_unit.opcode = OP_JUMP
-        self.control_unit.execute()
-        assert not self.alu.sub.called
-        assert not self.registers.put.called
-        self.alu.jump.assert_called_once_with()
-
-        self.control_unit.opcode = OP_HALT
-        self.control_unit.execute()
-        assert not self.alu.sub.called
-        assert not self.registers.put.called
-        self.alu.halt.assert_called_once_with()
 
     def test_execute_comp(self):
         """Test for comp."""

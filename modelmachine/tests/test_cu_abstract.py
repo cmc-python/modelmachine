@@ -41,8 +41,6 @@ JUMP_OPCODES = CONDJUMP_OPCODES | {OP_JUMP}
 REGISTER_OPCODES = {OP_RMOVE, OP_RADD, OP_RSUB, OP_RSMUL,
                     OP_RSDIVMOD, OP_RCOMP, OP_RUMUL, OP_RUDIVMOD}
 
-
-
 class TestAbstractControlUnit:
 
     """Test case for abstract control unit."""
