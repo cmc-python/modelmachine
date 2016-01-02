@@ -307,7 +307,7 @@ class TestControlUnitS(TBCU2):
 
     def test_basic_execute(self, should_move=None):
         """Test basic operations."""
-        super().test_basic_execute(should_move)
+        super().test_basic_execute(should_move=should_move)
 
     def test_execute_stack(self):
         """stpush, stpop, stdup and stswap."""
@@ -683,6 +683,84 @@ class TestControlUnitM(TBCU):
             assert not self.registers.fetch.called
             assert not self.registers.put.called
 
+    def test_basic_execute(self, should_move=None):
+        """Test basic operations."""
+        super().test_basic_execute(should_move=should_move)
+
+        self.control_unit.opcode = OP_MOVE
+        self.alu.move.reset_mock()
+        self.control_unit.execute()
+        self.alu.move.assert_called_once_with('R2', 'S')
+
+
+    def run_write_back(self, should, opcode):
+        """Run write back method for specific opcode."""
+
+        print(hex(opcode))
+
+        register1, next_register1, register2 = 'R5', 'R6', 'R8'
+        res_register1, val1 = 'S', 123456
+        res_register2, val2 = 'RZ', 654321
+        address, canary = 10, 0
+
+        def get_register(name, size):
+            """Get PC."""
+            assert size == self.operand_size
+            if name == res_register1:
+                return val1
+            elif name == res_register2:
+                return val2
+            else:
+                raise KeyError()
+
+        self.registers.fetch.side_effect = get_register
+        self.control_unit.address = address
+        self.control_unit.register1 = register1
+        self.control_unit.register2 = register2
+        self.ram.put(address, canary, self.operand_size)
+
+        self.registers.fetch.reset_mock()
+        self.registers.put.reset_mock()
+
+        self.control_unit.opcode = opcode
+        self.control_unit.write_back()
+
+        if should == 'two_registers':
+            self.registers.fetch.assert_has_calls([call(res_register1, self.operand_size),
+                                                   call(res_register2, self.operand_size)])
+            self.registers.put.assert_has_calls([call(register1, val1, self.operand_size),
+                                                 call(next_register1, val2, self.operand_size)])
+            assert self.ram.fetch(address, self.operand_size) == canary
+
+        elif should == 'register':
+            self.registers.fetch.assert_called_once_with(res_register1, self.operand_size)
+            self.registers.put.assert_called_once_with(register1, val1, self.operand_size)
+            assert self.ram.fetch(address, self.operand_size) == canary
+
+        elif should == 'memory':
+            self.registers.fetch.assert_called_once_with(res_register1, self.operand_size)
+            assert not self.registers.put.called
+            assert self.ram.fetch(address, self.operand_size) == val1
+
+        else:
+            assert not self.registers.fetch.called
+            assert not self.registers.put.called
+            assert self.ram.fetch(address, self.operand_size) == canary
+
+    def test_write_back(self):
+        """Test write back result to the memory."""
+        for opcode in {OP_SDIVMOD, OP_UDIVMOD}:
+            self.run_write_back('two_registers', opcode)
+
+        for opcode in (ARITHMETIC_OPCODES | {OP_LOAD}) - {OP_SDIVMOD, OP_UDIVMOD}:
+            self.run_write_back('register', opcode)
+
+        for opcode in {OP_STORE}:
+            self.run_write_back('memory', opcode)
+
+        for opcode in (CONDJUMP_OPCODES |
+                       {OP_HALT, OP_JUMP, OP_COMP}):
+            self.run_write_back('nothing', opcode)
 #     def test_step(self):
 #         """Test step cycle."""
 #         self.control_unit.registers = self.registers = RegisterMemory()
