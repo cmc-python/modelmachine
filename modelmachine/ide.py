@@ -138,8 +138,8 @@ def exec_print(cpu, step):
 
     print("RAM access count:", cpu.ram.access_count)
     print("Register states:")
-    registers = {cpu.register_names[name]  for name in cpu.register_names}
-    for reg in sorted(list(registers)):
+    registers = sorted(list(cpu.registers.keys()))
+    for reg in registers:
         size = cpu.registers.register_sizes[reg]
         data = '0x' + hex(cpu.registers[reg])[2:].rjust(size // 4, '0')
         print('  ' + reg + ' : ' + data)
