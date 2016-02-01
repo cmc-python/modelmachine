@@ -5,7 +5,7 @@
 from modelmachine.ide import get_program, get_cpu, debug
 import pytest, os, sys, argparse
 
-VERSION = "0.1.0" # Don't forget fix in setup.py
+__version__ = "0.1.0" # Don't forget fix in setup.py
 
 def run_program(args):
     cpu = get_program(args.filename, args.protect_memory)
@@ -22,14 +22,7 @@ def run_tests(args):
 
 def main(argv, stdout):
     """Execute, when user call modelmachine."""
-    parser = argparse.ArgumentParser(description='Run modelmachine.', add_help=False)
-
-    group = parser.add_mutually_exclusive_group()
-
-    group.add_argument('-h', '--help', action='store_true', default=False,
-                       help='show this help message and exit')
-    group.add_argument('-v', '--version', action='store_true', default=False,
-                       help='print version and exit')
+    parser = argparse.ArgumentParser(description='Modelmachine ' + __version__)
 
     parser.add_argument('-m', '--protect_memory', action='store_true', default=False,
                         help='raise an error, if program tries read dirty memory')
@@ -49,9 +42,7 @@ def main(argv, stdout):
 
     args = parser.parse_args(argv[1:])
 
-    if args.version:
-        print("ModelMachine", VERSION, file=stdout)
-    elif args.help:
+    if 'func' not in args:
         parser.print_help(stdout)
     else:
         args.func(args)
