@@ -1,0 +1,25 @@
+mmm
+
+[config]
+input = 0x100, 0x102, 0x104, 0x106, 0x108
+output = 0x10A
+
+[code]
+; output = sum(input)
+0020 0012 ; load R2, SIZE_WORD
+00F0 0014 ; load RF, SIZE_ARRAY
+0050 0010 ; load R5, ZERO
+2266 ; rsub R6, R6
+0156 0100 ; add R5, array(R6)
+2162 ; radd R6, R5
+256F ; rcomp R6, RF
+8200 0007 ; jneq RPT
+1050 010A ; store R5, SUM
+9900 ; halt
+; ---------------------
+00000000 ; ZERO = 0
+00000002 ; SIZE_WORD = 2
+0000000A ; SIZE_ARRAY = 5
+
+[input]
+1 2 3 4 5
