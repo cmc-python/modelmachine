@@ -7,7 +7,7 @@ from modelmachine.io import InputOutputUnit
 
 from ply import lex, yacc
 
-import sys
+import sys, re
 
 class g:
     lexer = None
@@ -62,10 +62,9 @@ preproc_instructions = {
 tokens = [
     'COMMENT',
 
+    'LABEL',
     'NUMBER',
     'REGISTER',
-
-    'LABEL',
 ] + [op.upper() for op in opcodes.keys()] + list(preproc_instructions.values())
 
 def find_column(lexpos):
@@ -91,12 +90,6 @@ def lexer():
         t.value = int(t.value, 0)
         return t
 
-    # Get register number
-    def t_REGISTER(t):
-        r'r[\da-f]'
-        t.value = int(t.value[1], 16)
-        return t
-
     def t_PREPROCINSTR(t):
         r'\.[a-z]+'
         if t.value in preproc_instructions:
@@ -110,6 +103,9 @@ def lexer():
         r'[a-z_][\da-z_]*'
         if t.value in opcodes:
             t.type = t.value.upper()
+        elif re.compile('^r[0-9a-f]$').match(t.value) is not None:
+            t.type = 'REGISTER'
+            t.value = int(t.value[1], 16)
         else:
             t.type = 'LABEL'
         return t
