@@ -15,6 +15,12 @@ class g:
     error_list = []
     mapper = [] # Will fulled at last step
     output = []
+    pos = 0
+    label_table = dict()
+    ram = RandomAccessMemory(word_size=16,
+                             memory_size=2 ** 16,
+                             endianess='big',
+                             is_protected=False)
 
 literals = ['(', ')', ':', ',', '\n']
 
@@ -85,29 +91,25 @@ def lexer():
     t_ignore_COMMENT = r';.*'
 
     # A regular expression rule with some action code
-    def t_NUMBER(t):
-        r'(?:0x[\da-f]+)|(?:0b[01]+)|(?:0o[0-7]+)|(?:\d+)'
-        t.value = int(t.value, 0)
-        return t
-
-    def t_PREPROCINSTR(t):
-        r'\.[a-z]+'
-        if t.value in preproc_instructions:
-            t.type = preproc_instructions[t.value]
-            return t
-        else:
-            t.type = 'error'
-            return t
-
     def t_LABEL(t):
-        r'[a-z_][\da-z_]*'
-        if t.value in opcodes:
+        r'[\.\w]+'
+        if re.compile(r'^(?:0x[\da-f]+)|(?:0b[01]+)|(?:0o[0-7]+)|(?:\d+)$').match(t.value):
+            t.value = int(t.value, 0)
+            t.type = 'NUMBER'
+        elif t.value in preproc_instructions:
+            t.type = preproc_instructions[t.value]
+        elif t.value in opcodes:
             t.type = t.value.upper()
-        elif re.compile('^r[0-9a-f]$').match(t.value) is not None:
+        elif re.compile(r'^r[0-9a-f]$').match(t.value):
             t.type = 'REGISTER'
             t.value = int(t.value[1], 16)
-        else:
+        elif re.compile(r'[a-z_\.]').match(t.value[0]):
             t.type = 'LABEL'
+        else:
+            g.error_list.append("Unexpected token '{value}' at {line}:{col}"
+                                .format(value=t.value, line=t.lineno,
+                                        col=find_column(t.lexpos)))
+            t = None
         return t
 
     # Define a rule so we can track line numbers
@@ -168,15 +170,14 @@ def parser():
     def p_deflabel_label(p):
         """deflabel : LABEL ':'"""
         if p[1] in g.label_table:
-            prev = g.label_table[p[1]][1]
+            prev = g.label_table[p[1]]
             g.error_list.append("Double definition of label '{label}' at {line}:{col}"
-                                .format(line=p.lineno(1), col=find_column(p.lexpos(1))) +
+                                .format(label=p[1], line=p.lineno(1), col=find_column(p.lexpos(1))) +
                                 " previously defined at {line}:{col}"
-                                .format(label=p[1], line=prev['line'], col=prev['col']))
+                                .format(line=prev[1], col=prev[2]))
             raise SyntaxError
         else:
-            prev = {'line': p.lineno(1), 'col': find_column(p.lexpos(1))}
-            g.label_table[p[1]] = (g.pos, prev)
+            g.label_table[p[1]] = (g.pos, p.lineno(1), find_column(p.lexpos(1)))
 
     def p_line_config(p):
         """line : CONFIG NUMBER"""
@@ -220,26 +221,51 @@ def parser():
         g.mapper.append((g.pos + 1, p[4][1], p.lineno(3), find_column(p.lexpos(3))))
         g.pos += 2
 
+    def p_line_regops(p):
+        """line : RADD  REGISTER ',' REGISTER
+                | RSUB  REGISTER ',' REGISTER
+                | RSMUL REGISTER ',' REGISTER
+                | RSDIV REGISTER ',' REGISTER
+                | RCOMP REGISTER ',' REGISTER
+                | RUMUL REGISTER ',' REGISTER
+                | RUDIV REGISTER ',' REGISTER
+        """
+        data = opcodes[p[1]] << 8 | p[2] << 4 | p[4]
+        g.ram.put(g.pos, data, 16)
+        g.pos += 1
+
+    def p_line_jumps(p):
+        """line : JUMP  address
+                | JEQ   address
+                | JNEQ  address
+                | SJL   address
+                | SJGEQ address
+                | SJLEQ address
+                | SJG   address
+                | UJL   address
+                | UJGEQ address
+                | UJLEQ address
+                | UJG   address
+        """
+        data = opcodes[p[1]] << 8 | p[2][0]
+        g.ram.put(g.pos, data, 16)
+        g.mapper.append((g.pos + 1, p[2][1], p.lineno(1), find_column(p.lexpos(1))))
+        g.pos += 2
+
     def p_line_halt(p):
         """line : HALT"""
         g.ram.put(g.pos, 0x9900, 16)
         g.pos += 1
 
     def p_program(p):
-        """program : line
-                   | program '\\n' line"""
+        r"""program : line
+                    | program '\n' line"""
         pass
 
     lexer()
 
     # Build the parser
     g.parser = yacc.yacc()
-    g.pos = 0
-    g.label_table = dict()
-    g.ram = RandomAccessMemory(word_size=16,
-                               memory_size=2 ** 16,
-                               endianess='big',
-                               is_protected=False)
 
     return g.parser
 
@@ -251,12 +277,18 @@ if __name__ == "__main__":
     array: .word 1,2,3,4,5
     zero: .word 0
     size_word: .word 2
-    size_array: .word 5
+    size_array: .word 10
     .dump sum
     .code
     load R2, size_word
     load RF, size_array
     load R5, zero
+    rsub R6, R6
+    rpt: add R5, array(R6)
+    radd R6, R2
+    rcomp R6, RF
+    jneq rpt
+    store R5, sum
     halt
     """
 
@@ -265,8 +297,9 @@ if __name__ == "__main__":
 
     if len(g.error_list) == 0:
         for insert in g.mapper:
-            if insert[1] in g.label_table:
-                g.ram.put(insert[0], g.label_table[insert[1]][0], 16)
+            pos, label = insert[:2]
+            if label in g.label_table:
+                g.ram.put(pos, g.label_table[label][0], 16)
             else:
                 g.error_list.append("Undefined label '{label}' at {line}:{col}"
                                     .format(line=insert[2], col=insert[3]))
