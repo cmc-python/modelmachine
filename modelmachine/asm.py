@@ -131,7 +131,7 @@ def lexer():
         elif re.compile(r'^r[0-9a-f]$').match(t.value):
             t.type = 'REGISTER'
             t.value = int(t.value[1], 16)
-        elif re.compile(r'[a-z_]\w*').match(t.value):
+        elif re.compile(r'^[a-z_]\w*$').match(t.value):
             t.type = 'LABEL'
         else:
             g.error_list.append("Illegal token '{value}' at {line}:{col}"

@@ -5,7 +5,7 @@
 from modelmachine.ide import get_program, debug, assemble
 import pytest, os, sys, argparse
 
-__version__ = "0.1.1" # Don't forget fix in setup.py
+__version__ = "0.1.2" # Don't forget fix in setup.py
 
 def run_program(args):
     cpu = get_program(args.filename, args.protect_memory)
