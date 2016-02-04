@@ -4,6 +4,19 @@
 
 from modelmachine import asm
 
+RESULT_CODE = """mmm
+
+[config]
+input =
+output = 32
+
+[code]
+0020 002e 00f0 0030 0050 002c 2266 0156 0022 2162 256f 8200 0007 1050 0020 9900 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0001 0000 0002 0000 0003 0000 0004 0000 0005 0000 0000 0000 0002 0000 000a
+
+[input]
+
+"""
+
 def eq_token(token, type, value):
     return token.type == type and token.value == value
 
@@ -15,7 +28,7 @@ class TestASM:
     def setup(self):
 
         self.code = '''
-        .config 0x100
+        .config 0x20
         sum: .word 0
         array: .word 1,2,3,4,5 ; Input array
         zero: .word 0
@@ -38,7 +51,7 @@ class TestASM:
         self.tokens = [
             ('\n', '\n'),
             ('CONFIG', '.config'),
-            ('NUMBER', 256),
+            ('NUMBER', 32),
             ('\n', '\n'),
             ('LABEL', 'sum'),
             (':', ':'),
@@ -162,3 +175,16 @@ class TestASM:
 
         error_list, code = asm.parse("double: halt\ndouble: halt")
         assert error_list == ["Double definition of label 'double' at 2:1 previously defined at 1:1"]
+
+        error_list, code = asm.parse("load R0, array(R0)")
+        assert error_list == ["Cannot use R0 for indexing at 1:10"]
+
+        error_list, code = asm.parse("load R0")
+        assert error_list == ["Unexpected EOF"]
+
+        error_list, code = asm.parse("load R0, undef_label")
+        assert error_list == ["Undefined label 'undef_label' at 1:8"]
+
+        error_list, code = asm.parse(self.code)
+        assert error_list == []
+        assert code == RESULT_CODE

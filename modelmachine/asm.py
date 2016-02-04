@@ -7,7 +7,7 @@ from modelmachine.io import InputOutputUnit
 
 from ply import lex, yacc
 
-import sys, re
+import re, warnings
 
 class g:
     lexer = None
@@ -16,8 +16,15 @@ class g:
     mapper = None
     output = None
     pos = None
+    max_pos = None
     label_table = None
     ram = None
+
+    def put(value, size):
+        g.ram.put(g.pos, value, size)
+        for i in range(size // 16):
+            g.pos = (g.pos + 1) % 2 ** 16
+            g.max_pos = max(g.max_pos, g.pos)
 
     def clear():
         g.lexer = None
@@ -26,11 +33,25 @@ class g:
         g.mapper = [] # Will fulled at last step
         g.output = []
         g.pos = 0
+        g.max_pos = 0
         g.label_table = dict()
         g.ram = RandomAccessMemory(word_size=16,
-                                 memory_size=2 ** 16,
-                                 endianess='big',
-                                 is_protected=False)
+                                   memory_size=2 ** 16,
+                                   endianess='big',
+                                   is_protected=False)
+
+TEMPLATE = """mmm
+
+[config]
+input =
+output = {output}
+
+[code]
+{code}
+
+[input]
+
+"""
 
 literals = ['(', ')', ':', ',', '\n']
 
@@ -76,8 +97,6 @@ preproc_instructions = {
 
 # List of token names.   This is always required
 tokens = [
-    'COMMENT',
-
     'LABEL',
     'NUMBER',
     'REGISTER',
@@ -178,6 +197,7 @@ def parser():
         if p[3] == 0:
             g.error_list.append("Cannot use R0 for indexing at {line}:{col}"
                                 .format(line=p.lineno(3), col=find_column(p.lexpos(1))))
+            raise SyntaxError
         else:
             p[0] = (p[3], p[1])
 
@@ -210,8 +230,7 @@ def parser():
     def p_line_word(p):
         """line : WORD numberlist"""
         for number in p[2]:
-            g.ram.put(g.pos, number, 32)
-            g.pos += 2
+            g.put(number, 32)
 
     def p_line_dump(p):
         """line : DUMP labellist"""
@@ -237,9 +256,9 @@ def parser():
                 | STORE REGISTER ',' address
         """
         data = opcodes[p[1]] << 8 | p[2] << 4 | p[4][0]
-        g.ram.put(g.pos, data, 16)
-        g.mapper.append((g.pos + 1, p[4][1], p.lineno(3), find_column(p.lexpos(3))))
-        g.pos += 2
+        g.put(data, 16)
+        g.mapper.append((g.pos, p[4][1], p.lineno(3), find_column(p.lexpos(3))))
+        g.put(0, 16)
 
     def p_line_regops(p):
         """line : RADD  REGISTER ',' REGISTER
@@ -249,10 +268,10 @@ def parser():
                 | RCOMP REGISTER ',' REGISTER
                 | RUMUL REGISTER ',' REGISTER
                 | RUDIV REGISTER ',' REGISTER
+                | RMOVE REGISTER ',' REGISTER
         """
         data = opcodes[p[1]] << 8 | p[2] << 4 | p[4]
-        g.ram.put(g.pos, data, 16)
-        g.pos += 1
+        g.put(data, 16)
 
     def p_line_jumps(p):
         """line : JUMP  address
@@ -268,14 +287,13 @@ def parser():
                 | UJG   address
         """
         data = opcodes[p[1]] << 8 | p[2][0]
-        g.ram.put(g.pos, data, 16)
-        g.mapper.append((g.pos + 1, p[2][1], p.lineno(1), find_column(p.lexpos(1))))
-        g.pos += 2
+        g.put(data, 16)
+        g.mapper.append((g.pos, p[2][1], p.lineno(1), find_column(p.lexpos(1))))
+        g.put(0, 16)
 
     def p_line_halt(p):
         """line : HALT"""
-        g.ram.put(g.pos, 0x9900, 16)
-        g.pos += 1
+        g.put(0x9900, 16)
 
     def p_program(p):
         r"""program : line
@@ -302,7 +320,7 @@ def parse(code):
     g.parser.parse(code.lower())
 
     # Test syntax correct
-    if g.error_list != 0:
+    if g.error_list != []:
         return g.error_list, None
     else:
         # link
@@ -312,12 +330,26 @@ def parse(code):
                 g.ram.put(pos, g.label_table[label][0], 16)
             else:
                 g.error_list.append("Undefined label '{label}' at {line}:{col}"
-                                    .format(line=insert[2], col=insert[3]))
+                                    .format(label=label, line=insert[2], col=insert[3]))
+
+        for label in g.output:
+            if label not in g.label_table:
+                g.error_list.append("Undefined label '{label}' at output"
+                                    .format(label=label))
+
+        if g.error_list == []:
+            g.output = [str(g.label_table[label][0]) for label in g.output]
 
     # Test link error
     if g.error_list != []:
         return g.error_list, None
     else:
         io_unit = InputOutputUnit(g.ram, 0, 16)
-        code = io_unit.store_hex(0, 2 ** 16)
-        return g.error_list, code
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            code = io_unit.store_hex(0, g.max_pos * 16)
+
+        output = ', '.join(g.output)
+
+        return [], TEMPLATE.format(output=output, code=code)
