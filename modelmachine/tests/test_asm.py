@@ -133,14 +133,32 @@ class TestASM:
         self.tokens.reverse() # for popping from front
 
     def test_lexer(self):
-        lexer = asm.lexer()
-
         # Give the lexer some input
-        lexer.input(self.code.lower())
+        error_list, lexems = asm.get_lexems(self.code)
+        assert error_list == []
 
         # Tokenize
-        for tok in lexer:
+        for tok in lexems:
             ground_truth = self.tokens.pop()
             assert eq_token(tok, ground_truth[0], ground_truth[1])
 
         assert len(self.tokens) == 0
+
+        error_list, lexems = asm.get_lexems("tilda~is_not_allowed")
+        assert error_list == ["Illegal character '~' at 1:6"]
+
+        error_list, lexems = asm.get_lexems("0abacaba")
+        assert error_list == ["Illegal token '0abacaba' at 1:1"]
+
+    def test_parse(self):
+        error_list, code = asm.parse("tilda~is_not_allowed")
+        assert error_list == ["Illegal character '~' at 1:6"]
+
+        error_list, code = asm.parse("0abacaba")
+        assert error_list == ["Illegal token '0abacaba' at 1:1"]
+
+        error_list, code = asm.parse("load load")
+        assert error_list == ["Unexpected 'LOAD' at 1:6"]
+
+        error_list, code = asm.parse("double: halt\ndouble: halt")
+        assert error_list == ["Double definition of label 'double' at 2:1 previously defined at 1:1"]

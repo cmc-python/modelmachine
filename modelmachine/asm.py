@@ -12,15 +12,25 @@ import sys, re
 class g:
     lexer = None
     parser = None
-    error_list = []
-    mapper = [] # Will fulled at last step
-    output = []
-    pos = 0
-    label_table = dict()
-    ram = RandomAccessMemory(word_size=16,
-                             memory_size=2 ** 16,
-                             endianess='big',
-                             is_protected=False)
+    error_list = None
+    mapper = None
+    output = None
+    pos = None
+    label_table = None
+    ram = None
+
+    def clear():
+        g.lexer = None
+        g.parser = None
+        g.error_list = []
+        g.mapper = [] # Will fulled at last step
+        g.output = []
+        g.pos = 0
+        g.label_table = dict()
+        g.ram = RandomAccessMemory(word_size=16,
+                                 memory_size=2 ** 16,
+                                 endianess='big',
+                                 is_protected=False)
 
 literals = ['(', ')', ':', ',', '\n']
 
@@ -75,10 +85,10 @@ tokens = [
 
 def find_column(lexpos):
     last_cr = g.lexer.lexdata.rfind('\n', 0, lexpos)
-    if last_cr < 0:
-        last_cr = 0
-    column = (lexpos - last_cr)
-    return column
+    if last_cr == -1:
+        return lexpos + 1
+    else:
+        return lexpos - last_cr
 
 def position(t):
     return '{line}:{col}'.format(line=t.lineno,
@@ -106,7 +116,7 @@ def lexer():
         elif re.compile(r'[a-z_\.]').match(t.value[0]):
             t.type = 'LABEL'
         else:
-            g.error_list.append("Unexpected token '{value}' at {line}:{col}"
+            g.error_list.append("Illegal token '{value}' at {line}:{col}"
                                 .format(value=t.value, line=t.lineno,
                                         col=find_column(t.lexpos)))
             t = None
@@ -114,7 +124,7 @@ def lexer():
 
     # Define a rule so we can track line numbers
     def t_newline(t):
-        r'\n'
+        r'\n+'
         t.lexer.lineno += len(t.value)
         t.type = '\n'
         return t
@@ -123,10 +133,20 @@ def lexer():
     def t_error(t):
         g.error_list.append("Illegal character '{char}' at {position}"
                             .format(char=t.value[0], position=position(t)))
+        g.lexer.skip(1)
 
     # Build the lexer
     g.lexer = lex.lex()
     return g.lexer
+
+def get_lexems(code):
+    """Get array of lexems and errors."""
+
+    g.clear()
+    lexer()
+    g.lexer.input(code.lower())
+    result = list(g.lexer)
+    return g.error_list, result
 
 def parser():
 
@@ -266,36 +286,26 @@ def parser():
 
     # Build the parser
     g.parser = yacc.yacc()
-
     return g.parser
 
-if __name__ == "__main__":
-    mmasm_parser = parser()
-    code = """
-    .config 0x100
-    sum: .word 0
-    array: .word 1,2,3,4,5
-    zero: .word 0
-    size_word: .word 2
-    size_array: .word 10
-    .dump sum
-    .code
-    load R2, size_word
-    load RF, size_array
-    load R5, zero
-    rsub R6, R6
-    rpt: add R5, array(R6)
-    radd R6, R2
-    rcomp R6, RF
-    jneq rpt
-    store R5, sum
-    halt
-    """
+def parse(code):
+    """Parse asm code and return model machine code."""
+    # Test lexem correct
+    error_list, lexems = get_lexems(code)
+    if error_list != []:
+        return error_list, None
 
-    print(code)
-    mmasm_parser.parse(code.lower())
+    g.clear()
+    lexer()
+    parser()
 
-    if len(g.error_list) == 0:
+    g.parser.parse(code.lower())
+
+    # Test syntax correct
+    if g.error_list != 0:
+        return g.error_list, None
+    else:
+        # link
         for insert in g.mapper:
             pos, label = insert[:2]
             if label in g.label_table:
@@ -304,10 +314,10 @@ if __name__ == "__main__":
                 g.error_list.append("Undefined label '{label}' at {line}:{col}"
                                     .format(line=insert[2], col=insert[3]))
 
-    if len(g.error_list) == 0:
-        io_unit = InputOutputUnit(g.ram, 0, 16)
-        print(io_unit.store_hex(0, 16 * g.pos))
+    # Test link error
+    if g.error_list != []:
+        return g.error_list, None
     else:
-        for error in g.error_list:
-            print(error, file=sys.stderr)
-        exit(1)
+        io_unit = InputOutputUnit(g.ram, 0, 16)
+        code = io_unit.store_hex(0, 2 ** 16)
+        return g.error_list, code
