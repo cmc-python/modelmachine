@@ -43,7 +43,6 @@ class g:
 TEMPLATE = """mmm
 
 [config]
-input =
 output = {output}
 
 [code]

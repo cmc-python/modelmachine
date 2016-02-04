@@ -4,8 +4,9 @@
 
 from modelmachine.cpu import CPU_LIST
 from modelmachine.cu import HALTED
+from modelmachine import asm
 
-import warnings
+import warnings, sys
 
 POS = [0, 0]
 MAX_POS = [20, 20]
@@ -235,3 +236,19 @@ def get_program(filename, protect_memory):
         cpu = get_cpu(source, protect_memory)
         cpu.load_program(source)
         return cpu
+
+def assemble(input_filename, output_filename):
+    with open(input_filename, 'r') as input_file:
+        input_data = input_file.read()
+
+    error_list, code = asm.parse(input_data)
+
+    if error_list != []:
+        print("Compilation aborted with errors:")
+        for error in error_list:
+            print(error, file=sys.stderr)
+            exit(1)
+    else:
+        print("Success compilation.")
+        with open(output_filename, 'w') as output_file:
+            print(code, file=output_file)

@@ -7,7 +7,6 @@ from modelmachine import asm
 RESULT_CODE = """mmm
 
 [config]
-input =
 output = 32
 
 [code]
@@ -184,6 +183,9 @@ class TestASM:
 
         error_list, code = asm.parse("load R0, undef_label")
         assert error_list == ["Undefined label 'undef_label' at 1:8"]
+
+        error_list, code = asm.parse(".dump undef_label")
+        assert error_list == ["Undefined label 'undef_label' at output"]
 
         error_list, code = asm.parse(self.code)
         assert error_list == []
