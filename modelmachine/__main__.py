@@ -2,10 +2,10 @@
 
 """Modelmachine - model machine emulator."""
 
-from modelmachine.ide import get_program, get_cpu, debug
+from modelmachine.ide import get_program, debug, assemble
 import pytest, os, sys, argparse
 
-__version__ = "0.1.0" # Don't forget fix in setup.py
+__version__ = "0.1.1" # Don't forget fix in setup.py
 
 def run_program(args):
     cpu = get_program(args.filename, args.protect_memory)
@@ -20,6 +20,9 @@ def run_tests(args):
     sys.argv[1] = path
     pytest.main()
 
+def run_asm(args):
+    assemble(args.asm_file, args.machine_file)
+
 def main(argv, stdout):
     """Execute, when user call modelmachine."""
     parser = argparse.ArgumentParser(description='Modelmachine ' + __version__)
@@ -30,15 +33,20 @@ def main(argv, stdout):
                                        help='commands for model machine emulator')
 
     run = subparsers.add_parser('run', help='run program')
-    run.add_argument('filename', help='file with source code')
+    run.add_argument('filename', help='file with machine code')
     run.set_defaults(func=run_program)
 
     debug = subparsers.add_parser('debug', help='run program in debug mode')
-    debug.add_argument('filename', help='file with source code')
+    debug.add_argument('filename', help='file with machine code')
     debug.set_defaults(func=run_debug)
 
     test = subparsers.add_parser('test', help='run internal tests end exit')
     test.set_defaults(func=run_tests)
+
+    asm = subparsers.add_parser('asm', help='assemble model machine program')
+    asm.add_argument('asm_file', help='input file with asm source')
+    asm.add_argument('machine_file', help='output file with machine code')
+    asm.set_defaults(func=run_asm)
 
     args = parser.parse_args(argv[1:])
 
