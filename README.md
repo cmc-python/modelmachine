@@ -3,15 +3,6 @@ Model machine emulator
 
 [![Build Status](https://travis-ci.org/cmc-python/modelmachine.svg?branch=master)](https://travis-ci.org/cmc-python/modelmachine)
 
-## TODO
-
-* Проверить test.alu.swap
-* Работа с плавающей запятой
-* Подумать еще о mock в тестах
-* Переделать документацию модулей
-* Исправить опечатки в документации
-* Расширить howto
-
 ## Модельная машина
 
 Модельная машина - это чистая архитектурная концепция, позволяющая понять
