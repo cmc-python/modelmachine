@@ -2,8 +2,9 @@
 
 """Test case for arithmetic logic unit."""
 
-from modelmachine.numeric import Integer
 from pytest import raises
+
+from modelmachine.numeric import Integer
 
 class TestNumeric:
 
@@ -19,7 +20,7 @@ class TestNumeric:
     def test_init(self):
         """Test, that we can create numbers."""
         assert self.first.size == 32
-        assert self.first.signed == True
+        assert self.first.signed is True
         assert self.first.get_value() == 10
 
         self.first = Integer(2 ** 32 - 1, 32, True)
@@ -105,7 +106,7 @@ class TestNumeric:
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == True
+        assert result.signed is True
         assert result.get_value() == 22
 
         result = Integer(2 ** 31 - 1, 32, True) + Integer(2 ** 31 - 1, 32, True)
@@ -120,7 +121,7 @@ class TestNumeric:
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == True
+        assert result.signed is True
         assert result.get_value() == 120
 
         result = Integer(1555256314, 32, True) * Integer(-1234567890, 32, True)
@@ -135,14 +136,14 @@ class TestNumeric:
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == True
+        assert result.signed is True
         assert result.get_value() == -2
 
         result = self.second - self.first
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == True
+        assert result.signed is True
         assert result.get_value() == 2
 
         self.first = Integer(10, 32, False)
@@ -152,14 +153,14 @@ class TestNumeric:
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == False
+        assert result.signed is False
         assert result.get_value() == 2 ** 32 - 2
 
         result = self.second - self.first
 
         assert isinstance(result, Integer)
         assert result.size == 32
-        assert result.signed == False
+        assert result.signed is False
         assert result.get_value() == 2
 
         result = Integer(-2145634518, 32, True) - Integer(2000000000, 32, True)

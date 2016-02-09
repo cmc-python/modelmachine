@@ -2,14 +2,14 @@
 
 """Test case for memory module."""
 
+from pytest import raises
+
 from modelmachine.memory import big_endian_decode, little_endian_decode
 from modelmachine.memory import big_endian_encode, little_endian_encode
 from modelmachine.memory import AbstractMemory, RandomAccessMemory, RegisterMemory
-from pytest import raises
 
 BYTE_SIZE = 8
 WORD_SIZE = 32
-
 
 def test_endianess():
     """Simple test."""
@@ -103,7 +103,7 @@ class TestRandomAccessMemory:
         assert self.ram.word_size == WORD_SIZE
         assert self.ram.memory_size == 512
         assert len(self.ram) == 512
-        assert self.ram.is_protected == True
+        assert self.ram.is_protected is True
 
     def test_check_address(self):
         """It a second part of information protection."""

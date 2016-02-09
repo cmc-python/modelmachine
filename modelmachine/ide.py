@@ -2,11 +2,12 @@
 
 """IDE for model machine."""
 
+import warnings
+import sys
+
 from modelmachine.cpu import CPU_LIST
 from modelmachine.cu import HALTED
 from modelmachine import asm
-
-import warnings, sys
 
 POS = [0, 0]
 MAX_POS = [20, 20]
@@ -214,8 +215,8 @@ def debug(cpu):
                 for warn in warns:
                     print('Warning:', warn.message)
 
-        except Exception as e:
-            print('Error:', e.args[0])
+        except Exception as error:
+            print('Error:', error.args[0])
             cpu.alu.halt()
             print('machine has halted')
 
@@ -238,6 +239,7 @@ def get_program(filename, protect_memory):
         return cpu
 
 def assemble(input_filename, output_filename):
+    """Assemble input_filename and wrote output_filename."""
     with open(input_filename, 'r') as input_file:
         input_data = input_file.read()
 

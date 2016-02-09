@@ -2,25 +2,36 @@
 
 """Modelmachine - model machine emulator."""
 
-from modelmachine.ide import get_program, debug, assemble
-import pytest, os, sys, argparse
+import os
+import sys
+import argparse
 
-__version__ = "0.1.2" # Don't forget fix in setup.py
+import pytest
+
+from modelmachine.ide import get_program, debug, assemble
+
+__version__ = "0.1.4" # Don't forget fix in setup.py
 
 def run_program(args):
+    """Get params from args and run file."""
     cpu = get_program(args.filename, args.protect_memory)
     cpu.run_file(args.filename)
 
 def run_debug(args):
+    """Get params from args and run debug."""
     cpu = get_program(args.filename, args.protect_memory)
     debug(cpu)
 
 def run_tests(args):
+    """Run tests."""
+    args = args # args is unused
+
     path = os.path.abspath(os.path.dirname(__file__))
     sys.argv[1] = path
     pytest.main()
 
 def run_asm(args):
+    """Get params from args and run assembler."""
     assemble(args.asm_file, args.machine_file)
 
 def main(argv, stdout):
@@ -36,9 +47,9 @@ def main(argv, stdout):
     run.add_argument('filename', help='file with machine code')
     run.set_defaults(func=run_program)
 
-    debug = subparsers.add_parser('debug', help='run program in debug mode')
-    debug.add_argument('filename', help='file with machine code')
-    debug.set_defaults(func=run_debug)
+    debug_parser = subparsers.add_parser('debug', help='run program in debug mode')
+    debug_parser.add_argument('filename', help='file with machine code')
+    debug_parser.set_defaults(func=run_debug)
 
     test = subparsers.add_parser('test', help='run internal tests end exit')
     test.set_defaults(func=run_tests)

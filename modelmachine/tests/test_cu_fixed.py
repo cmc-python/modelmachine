@@ -2,15 +2,16 @@
 
 """Test case for control unit with fixed command length."""
 
+from unittest.mock import call
+
+from pytest import raises
+
 from modelmachine.cu import RUNNING, HALTED
 from modelmachine.cu import ControlUnit3
 from modelmachine.cu import ControlUnit2
 from modelmachine.cu import ControlUnit1
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, LESS, GREATER, EQUAL
-
-from pytest import raises
-from unittest.mock import call
 
 from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_SDIVMOD,
                                OP_COMP, OP_UDIVMOD, OP_JUMP, OP_JEQ,
