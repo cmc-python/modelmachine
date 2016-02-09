@@ -31,7 +31,7 @@ Model machine emulator
 Поддерживается компилирование ассемблера модельной машины (mmasm) в ее машинный
 код.
 
-    $ modelmachine asmg source.mmasm result.mmach
+    $ modelmachine asm source.mmasm result.mmach
 
 ### Пример
 
