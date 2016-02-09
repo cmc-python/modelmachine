@@ -99,8 +99,8 @@ class Integer(Number):
             return Integer(representation, 1, False)
         elif isinstance(representation, list):
             value = 0
-            for i in range(len(representation)):
-                value += representation[i] << i
+            for i, part in enumerate(representation):
+                value += part << i
             return Integer(value, len(representation), False)
         else:
             raise TypeError("Integer indeces must be integers")

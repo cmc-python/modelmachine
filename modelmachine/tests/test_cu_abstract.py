@@ -2,13 +2,14 @@
 
 """Test case for abstract control units."""
 
+from unittest.mock import create_autospec, call
+
+from pytest import raises
+
 from modelmachine.cu import AbstractControlUnit, RUNNING, HALTED
 from modelmachine.cu import ControlUnit
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, HALT
-
-from pytest import raises
-from unittest.mock import create_autospec, call
 
 BYTE_SIZE = 8
 WORD_SIZE = 32
@@ -209,8 +210,7 @@ class TestControlUnit:
             self.control_unit.fetch_instruction(instruction_size)
         self.registers.fetch.assert_any_call("PC", address_size)
         self.registers.put.assert_has_calls([call("RI", value, ir_size),
-                                                  call("PC", address + increment,
-                                                       address_size)])
+                                             call("PC", address + increment, address_size)])
         assert self.control_unit.opcode == opcode
 
     def test_fetch_instruction(self):

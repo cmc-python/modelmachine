@@ -2,11 +2,12 @@
 
 """Test case for input/output device."""
 
+from unittest.mock import create_autospec, call
+
+from pytest import raises
+
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory
-
-from unittest.mock import create_autospec, call
-from pytest import raises
 
 BYTE_SIZE = 8
 WORD_SIZE = 32

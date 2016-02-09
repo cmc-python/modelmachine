@@ -2,6 +2,9 @@
 
 """Test case for complex CPU."""
 
+from unittest.mock import create_autospec
+from pytest import raises
+
 from modelmachine.cpu import AbstractCPU
 from modelmachine.cpu import CPUMM3, CPUMM2
 from modelmachine.cpu import CPUMMV, CPUMM1
@@ -12,9 +15,6 @@ from modelmachine.memory import RandomAccessMemory, RegisterMemory
 from modelmachine.cu import AbstractControlUnit
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
-
-from unittest.mock import create_autospec
-from pytest import raises
 
 class TestAbstractCPU:
 

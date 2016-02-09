@@ -7,7 +7,7 @@ Read the doc: <https://github.com/vslutov/modelmachine>
 
 from setuptools import setup, find_packages
 
-VERSION = "0.1.2" # Don't forget fix in __main__.py
+VERSION = "0.1.4" # Don't forget fix in __main__.py
 
 setup(name='modelmachine',
       version=VERSION,
@@ -28,7 +28,7 @@ setup(name='modelmachine',
                    "Topic :: Education",
                    "Topic :: Utilities",
                    "Topic :: Scientific/Engineering"],
-      install_requires=['pytest'],
+      install_requires=['pytest>=2.8', 'ply>=3.8'],
       packages=find_packages(),
       include_package_data=True,
       entry_points={'console_scripts': ['modelmachine = modelmachine.__main__:exec_main']})

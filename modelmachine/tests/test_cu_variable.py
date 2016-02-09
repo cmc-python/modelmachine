@@ -2,27 +2,25 @@
 
 """Test case for control unit with variable command length."""
 
+from unittest.mock import call
+
+from pytest import raises
+
 from modelmachine.cu import RUNNING, HALTED
 from modelmachine.cu import ControlUnitV
 from modelmachine.cu import ControlUnitM
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit
 
-from unittest.mock import call, create_autospec
-from pytest import raises
-
 from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_COMP,
                                OP_SDIVMOD, OP_UDIVMOD,
-                               OP_STPUSH, OP_STPOP,
                                OP_LOAD, OP_STORE, OP_RMOVE,
                                OP_RADD, OP_RSUB, OP_RSMUL, OP_RSDIVMOD,
                                OP_RCOMP, OP_RUMUL, OP_RUDIVMOD,
-                               OP_STDUP, OP_STSWAP, OP_JUMP, OP_HALT,
+                               OP_JUMP, OP_HALT,
                                ARITHMETIC_OPCODES, CONDJUMP_OPCODES,
                                JUMP_OPCODES, REGISTER_OPCODES)
 from .test_cu_fixed import TestControlUnit2 as TBCU2
-from .test_cu_abstract import TestControlUnit as TBCU
-
 
 class TestControlUnitV(TBCU2):
 
@@ -62,13 +60,13 @@ class TestControlUnitV(TBCU2):
             self.control_unit.address1, self.control_unit.address2 = None, None
             self.run_fetch(opcode << 8 | 0x02, opcode, 16)
             assert self.control_unit.address1 == 0x02
-            assert self.control_unit.address2 == None
+            assert self.control_unit.address2 is None
 
         for opcode in {OP_HALT}:
             self.control_unit.address1, self.control_unit.address2 = None, None
             self.run_fetch(opcode, opcode, 8)
-            assert self.control_unit.address1 == None
-            assert self.control_unit.address2 == None
+            assert self.control_unit.address1 is None
+            assert self.control_unit.address2 is None
 
 
     def test_load(self):
@@ -219,7 +217,7 @@ class TestControlUnitM(TBCU2):
     def run_fetch(self, value, opcode, instruction_size, r2=True):
         """Run one fetch test."""
         address1 = 10
-        address2=42
+        address2 = 42
         self.ram.put(address1, value, instruction_size)
         increment = instruction_size // self.ram.word_size
 
@@ -231,7 +229,7 @@ class TestControlUnitM(TBCU2):
             if name == "PC":
                 assert size == 2 * BYTE_SIZE
                 return address1
-            elif name=="R2":
+            elif name == "R2":
                 assert size == WORD_SIZE
                 return address2
             else:
@@ -246,8 +244,7 @@ class TestControlUnitM(TBCU2):
         else:
             self.registers.fetch.assert_any_call("PC", 2 * BYTE_SIZE)
         self.registers.put.assert_has_calls([call("RI", value, WORD_SIZE),
-                                                  call("PC", address1 + increment,
-                                                       2 * BYTE_SIZE)])
+                                             call("PC", address1 + increment, 2 * BYTE_SIZE)])
         assert self.control_unit.opcode == opcode
 
     def test_fetch_and_decode(self):
@@ -444,7 +441,9 @@ class TestControlUnitM(TBCU2):
     def test_step(self):
         """Test step cycle."""
         self.control_unit.registers = self.registers = RegisterMemory()
-        for register in {'RI', 'RZ', 'S', 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'RA', 'RB', 'RC', 'RD', 'RE', 'RF'}:
+        for register in {'RI', 'RZ', 'S', 'R0', 'R1', 'R2', 'R3', 'R4',
+                         'R5', 'R6', 'R7', 'R8', 'R9', 'RA', 'RB', 'RC',
+                         'RD', 'RE', 'RF'}:
             self.registers.add_register(register, self.operand_size)
         self.alu = ArithmeticLogicUnit(self.registers,
                                        self.control_unit.register_names,

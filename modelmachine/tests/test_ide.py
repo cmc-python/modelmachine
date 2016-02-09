@@ -2,11 +2,12 @@
 
 """Test case for IDE."""
 
+from unittest.mock import create_autospec
+
+from pytest import raises
+
 from modelmachine import ide
 from modelmachine.cpu import AbstractCPU
-
-from unittest.mock import create_autospec
-from pytest import raises
 
 def test_get_cpu():
     """Test define cpu method."""
