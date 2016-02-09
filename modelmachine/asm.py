@@ -2,12 +2,13 @@
 
 """Model machine assembler."""
 
-from modelmachine.memory import RandomAccessMemory
-from modelmachine.io import InputOutputUnit
+import re
+import warnings
 
 from ply import lex, yacc
 
-import re, warnings
+from modelmachine.memory import RandomAccessMemory
+from modelmachine.io import InputOutputUnit
 
 class g:
     lexer = None
@@ -20,25 +21,30 @@ class g:
     label_table = None
     ram = None
 
-    def put(value, size):
-        g.ram.put(g.pos, value, size)
+    @classmethod
+    def put(cls, value, size):
+        """Write test memory."""
+        cls.ram.put(cls.pos, value, size)
         for i in range(size // 16):
-            g.pos = (g.pos + 1) % 2 ** 16
-            g.max_pos = max(g.max_pos, g.pos)
+            i = i
+            cls.pos = (cls.pos + 1) % 2 ** 16
+            cls.max_pos = max(cls.max_pos, cls.pos)
 
-    def clear():
-        g.lexer = None
-        g.parser = None
-        g.error_list = []
-        g.mapper = [] # Will fulled at last step
-        g.output = []
-        g.pos = 0
-        g.max_pos = 0
-        g.label_table = dict()
-        g.ram = RandomAccessMemory(word_size=16,
-                                   memory_size=2 ** 16,
-                                   endianess='big',
-                                   is_protected=False)
+    @classmethod
+    def clear(cls):
+        """Set up."""
+        cls.lexer = None
+        cls.parser = None
+        cls.error_list = []
+        cls.mapper = [] # Will fulled at last step
+        cls.output = []
+        cls.pos = 0
+        cls.max_pos = 0
+        cls.label_table = dict()
+        cls.ram = RandomAccessMemory(word_size=16,
+                                     memory_size=2 ** 16,
+                                     endianess='big',
+                                     is_protected=False)
 
 TEMPLATE = """mmm
 
@@ -102,6 +108,7 @@ tokens = [
 ] + [op.upper() for op in opcodes.keys()] + list(preproc_instructions.values())
 
 def find_column(lexpos):
+    """Get symbol position."""
     last_cr = g.lexer.lexdata.rfind('\n', 0, lexpos)
     if last_cr == -1:
         return lexpos + 1
@@ -109,13 +116,14 @@ def find_column(lexpos):
         return lexpos - last_cr
 
 def position(t):
+    """Get term position."""
     return '{line}:{col}'.format(line=t.lineno,
                                  col=find_column(t.lexpos))
 
 def lexer():
 
     # A string containing ignored characters (spaces and tabs)
-    t_ignore  = ' \t'
+    t_ignore = ' \t'
     t_ignore_COMMENT = r';.*'
 
     # A regular expression rule with some action code
@@ -167,6 +175,7 @@ def get_lexems(code):
     return g.error_list, result
 
 def parser():
+    """Get the parser."""
 
     start = 'program'
 
@@ -211,7 +220,8 @@ def parser():
         if p[1] in g.label_table:
             prev = g.label_table[p[1]]
             g.error_list.append("Double definition of label '{label}' at {line}:{col}"
-                                .format(label=p[1], line=p.lineno(1), col=find_column(p.lexpos(1))) +
+                                .format(label=p[1], line=p.lineno(1),
+                                        col=find_column(p.lexpos(1))) +
                                 " previously defined at {line}:{col}"
                                 .format(line=prev[1], col=prev[2]))
             raise SyntaxError

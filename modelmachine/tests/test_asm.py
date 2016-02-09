@@ -16,16 +16,19 @@ output = 32
 
 """
 
-def eq_token(token, type, value):
-    return token.type == type and token.value == value
+def eq_token(token, tok_type, value):
+    """Test tokens equals."""
+    return token.type == tok_type and token.value == value
 
 class TestASM:
+
+    """Tast case for modelmachine.asm."""
 
     code = None
     tokens = None
 
     def setup(self):
-
+        """Sample program."""
         self.code = '''
         .config 0x20
         sum: .word 0
@@ -145,6 +148,7 @@ class TestASM:
         self.tokens.reverse() # for popping from front
 
     def test_lexer(self):
+        """Test lexer."""
         # Give the lexer some input
         error_list, lexems = asm.get_lexems(self.code)
         assert error_list == []
@@ -163,6 +167,7 @@ class TestASM:
         assert error_list == ["Illegal token '0abacaba' at 1:1"]
 
     def test_parse(self):
+        """Test parser."""
         error_list, code = asm.parse("tilda~is_not_allowed")
         assert error_list == ["Illegal character '~' at 1:6"]
 
@@ -173,7 +178,8 @@ class TestASM:
         assert error_list == ["Unexpected 'LOAD' at 1:6"]
 
         error_list, code = asm.parse("double: halt\ndouble: halt")
-        assert error_list == ["Double definition of label 'double' at 2:1 previously defined at 1:1"]
+        assert error_list == ["Double definition of label 'double'" +
+                              " at 2:1 previously defined at 1:1"]
 
         error_list, code = asm.parse("load R0, array(R0)")
         assert error_list == ["Cannot use R0 for indexing at 1:10"]

@@ -11,6 +11,8 @@ CPU includes:
 * bootstrap loader?
 """
 
+import sys
+
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 from modelmachine.cu import ControlUnit3 as BCU3
 from modelmachine.cu import ControlUnit2 as BCU2
@@ -19,8 +21,6 @@ from modelmachine.cu import ControlUnit1 as BCU1
 from modelmachine.cu import ControlUnitM as BCUM
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.io import InputOutputUnit
-
-import sys
 
 class AbstractCPU:
 
