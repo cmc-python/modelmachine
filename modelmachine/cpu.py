@@ -34,7 +34,7 @@ class AbstractCPU:
     io_unit = None
     config = None
 
-    def load_program(self, program):
+    def load_program(self, program, input_function=input):
         """Load source and data to memory."""
         def get_section_index(section):
             """Function for checking and getting section."""
@@ -48,7 +48,10 @@ class AbstractCPU:
 
         config_start = get_section_index("config")
         code_start = get_section_index("code")
-        input_start = get_section_index("input")
+        try:
+            input_start = get_section_index("input")
+        except ValueError:
+            input_start = len(program)
 
         if not config_start < code_start < input_start:
             raise ValueError('Wrong section order, should be: config, '
@@ -76,7 +79,7 @@ class AbstractCPU:
 
             if data == []: # Read data from stdin
                 while len(data) < len(input_addresses):
-                    data_chunk = input().split()
+                    data_chunk = input_function().split()
                     data.extend(data_chunk)
 
             self.io_unit.load_data(input_addresses, data)

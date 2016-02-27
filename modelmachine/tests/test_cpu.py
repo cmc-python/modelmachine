@@ -71,6 +71,32 @@ class TestAbstractCPU:
             source[1] = "wrong_format"
             self.cpu.load_program(source)
 
+        def input_function():
+            """Mock on input"""
+            return "0o123 0x456 789"
+
+        self.cpu.io_unit.reset_mock()
+        source = self.source[:9]
+        self.cpu.load_program(source, input_function=input_function)
+        assert self.cpu.config == {"arch": "mm1",
+                                   "input": "0o100, 0x101, 102",
+                                   "output": "102",
+                                   "key": "value"}
+        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
+                                                           ["0o123", "0x456", "789"])
+
+        self.cpu.io_unit.reset_mock()
+        source = self.source[:8]
+        self.cpu.load_program(source, input_function=input_function)
+        assert self.cpu.config == {"arch": "mm1",
+                                   "input": "0o100, 0x101, 102",
+                                   "output": "102",
+                                   "key": "value"}
+        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
+                                                           ["0o123", "0x456", "789"])
+
     def test_print_result(self, tmpdir):
         """CPU should print to file."""
         self.cpu.load_program(self.source)
@@ -109,7 +135,7 @@ class TestCPUMM3:
     def setup(self):
         """Init state."""
         self.cpu = CPUMM3(protect_memory=False)
-        self.source = ("[config]\ninput=0x101,0x102\noutput=0x103\n" +
+        self.source = ("[config]\ninput=0x101,0x102\n\noutput=0x103\n" +
                        "[code]\n01 0101 0102 0103\n80 0000 0000 0003\n" +
                        "02 0103 0103 0103; never be used\n" +
                        "02 0103 0005 0103\n99 0000 0000 0000\n" +
