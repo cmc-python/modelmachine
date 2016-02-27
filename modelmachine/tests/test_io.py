@@ -91,18 +91,18 @@ class TestIODevice:
 
     def test_load_source(self):
         """Test load source code method."""
-        self.io_unit.load_source(["; start",
-                                  "03 02 02 03 ; b := 2 * 2",
-                                  "99 00 00 00 ; halt",
-                                  "; -------------",
-                                  "00000002 ; 2"])
+        self.io_unit.load_source(["",
+                                  "03 02 02 03",
+                                  "99 00 00 00",
+                                  "",
+                                  "00000002"])
         self.ram.put.assert_has_calls([call(10, 0x03020203, WORD_SIZE),
                                        call(11, 0x99000000, WORD_SIZE),
                                        call(12, 0x00000002, WORD_SIZE)])
 
     def test_load_data(self):
         """Test load data by addresses."""
-        self.io_unit.load_data([100, 101, 102], ["-123 456 0x456\n"])
+        self.io_unit.load_data([100, 101, 102], ["-123", "456", "0x456"])
         self.ram.put.assert_has_calls([call(100, -123 % 2 ** WORD_SIZE, WORD_SIZE),
                                        call(101, 456, WORD_SIZE),
                                        call(102, 0x456, WORD_SIZE)])

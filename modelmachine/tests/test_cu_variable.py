@@ -12,7 +12,8 @@ from modelmachine.cu import ControlUnitM
 from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit
 
-from .test_cu_abstract import (BYTE_SIZE, WORD_SIZE, OP_MOVE, OP_COMP,
+from .test_cu_abstract import (BYTE_SIZE, HALF_SIZE, WORD_SIZE,
+                               OP_MOVE, OP_COMP,
                                OP_SDIVMOD, OP_UDIVMOD,
                                OP_LOAD, OP_STORE, OP_RMOVE,
                                OP_RADD, OP_RSUB, OP_RSMUL, OP_RSDIVMOD,
@@ -185,9 +186,9 @@ class TestControlUnitM(TBCU2):
     def setup(self):
         """Init state."""
         super().setup()
-        self.ram = RandomAccessMemory(2 * BYTE_SIZE, 2 ** WORD_SIZE, 'big', is_protected=True)
+        self.ram = RandomAccessMemory(HALF_SIZE, 2 ** HALF_SIZE, 'big', is_protected=True)
         self.control_unit = ControlUnitM(WORD_SIZE,
-                                         2 * BYTE_SIZE,
+                                         HALF_SIZE,
                                          self.registers,
                                          self.ram,
                                          self.alu,

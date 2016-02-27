@@ -12,6 +12,7 @@ from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit, HALT
 
 BYTE_SIZE = 8
+HALF_SIZE = 16
 WORD_SIZE = 32
 
 OP_MOVE = 0x00

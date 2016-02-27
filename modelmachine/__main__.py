@@ -10,12 +10,12 @@ import pytest
 
 from modelmachine.ide import get_program, debug, assemble
 
-__version__ = "0.1.4" # Don't forget fix in setup.py
+__version__ = "0.1.5" # Don't forget fix in setup.py
 
 def run_program(args):
     """Get params from args and run file."""
     cpu = get_program(args.filename, args.protect_memory)
-    cpu.run_file(args.filename)
+    cpu.run()
 
 def run_debug(args):
     """Get params from args and run debug."""

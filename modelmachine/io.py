@@ -59,7 +59,6 @@ class InputOutputUnit:
         """Source code loader."""
         program = ""
         for line in source:
-            line = line.split(";")[0].strip() # remove comments
             if line == "":
                 continue
             program += " " + line
@@ -67,7 +66,7 @@ class InputOutputUnit:
 
     def load_data(self, addresses, data):
         """Data loader (decimal numbers)."""
-        data = [int(value, 0) for value in ' '.join(data).split()]
+        data = [int(value, 0) for value in data]
         for address, value in zip(addresses, data):
             self.put_int(address, value)
 
