@@ -102,7 +102,7 @@ class TestIODevice:
 
     def test_load_data(self):
         """Test load data by addresses."""
-        self.io_unit.load_data([100, 101, 102], ["-123 456 0x456\n"])
+        self.io_unit.load_data([100, 101, 102], ["-123", "456", "0x456"])
         self.ram.put.assert_has_calls([call(100, -123 % 2 ** WORD_SIZE, WORD_SIZE),
                                        call(101, 456, WORD_SIZE),
                                        call(102, 0x456, WORD_SIZE)])
