@@ -53,7 +53,7 @@ class TestAbstractCPU:
                                    "key": "value"}
         self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
         self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
-                                                           self.source[9:])
+                                                           ["0o123", "0x456", "789"])
 
         with raises(ValueError):
             source = list(self.source)
@@ -80,13 +80,12 @@ class TestAbstractCPU:
         self.cpu.io_unit.get_int.assert_called_once_with(102)
         assert out.read() == "789\n"
 
-    def test_run_file(self, tmpdir):
+    def test_run(self, tmpdir):
         """Send run message to control unit."""
-        source = tmpdir.join("source.mmach")
-        source.write("\n".join(self.source))
+        self.cpu.load_program(self.source)
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert self.cpu.config == {"arch": "mm1",
                                    "input": "0o100, 0x101, 102",
@@ -94,7 +93,7 @@ class TestAbstractCPU:
                                    "key": "value"}
         self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
         self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
-                                                           self.source[9:])
+                                                           ["0o123", "0x456", "789"])
         self.cpu.control_unit.run.assert_called_with()
         self.cpu.io_unit.get_int.assert_called_once_with(102)
         assert out.read() == "789\n"
@@ -119,11 +118,10 @@ class TestCPUMM3:
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
-        source = tmpdir.join("source.mmach")
-        source.write(self.source)
+        self.cpu.load_program(self.source.split('\n'))
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert out.read() == "298\n"
 
@@ -155,11 +153,10 @@ class TestCPUMM2:
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
-        source = tmpdir.join("source.mmach")
-        source.write(self.source)
+        self.cpu.load_program(self.source.split('\n'))
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert out.read() == "298\n"
 
@@ -190,11 +187,10 @@ class TestCPUMMV:
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
-        source = tmpdir.join("source.mmach")
-        source.write(self.source)
+        self.cpu.load_program(self.source.split('\n'))
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert out.read() == "298\n"
 
@@ -228,11 +224,10 @@ class TestCPUMM1:
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
-        source = tmpdir.join("source.mmach")
-        source.write(self.source)
+        self.cpu.load_program(self.source.split('\n'))
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert out.read() == "298\n"
 
@@ -265,11 +260,10 @@ class TestCPUMMM:
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
-        source = tmpdir.join("source.mmach")
-        source.write(self.source)
+        self.cpu.load_program(self.source.split('\n'))
         out = tmpdir.join("output.txt")
         with open(str(out), 'w') as output:
-            self.cpu.run_file(str(source), output=output)
+            self.cpu.run(output=output)
 
         assert out.read() == "40000\n"
 

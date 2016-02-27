@@ -57,6 +57,7 @@ class AbstractCPU:
         config_list = program[config_start + 1:code_start]
         code = program[code_start + 1:input_start]
         data = program[input_start + 1:]
+        data = ' '.join(data).split()
 
         self.config = dict()
         for line in config_list:
@@ -72,6 +73,12 @@ class AbstractCPU:
 
         if 'input' in self.config:
             input_addresses = [int(x, 0) for x in self.config['input'].split(',')]
+
+            if data == []: # Read data from stdin
+                while len(data) < len(input_addresses):
+                    data_chunk = input().split()
+                    data.extend(data_chunk)
+
             self.io_unit.load_data(input_addresses, data)
 
     def print_result(self, output=sys.stdout):
@@ -80,11 +87,8 @@ class AbstractCPU:
             for address in (int(x, 0) for x in self.config['output'].split(',')):
                 print(self.io_unit.get_int(address), file=output)
 
-    def run_file(self, filename, output=sys.stdout):
+    def run(self, output=sys.stdout):
         """Run all execution cycle."""
-        with open(filename) as source:
-            program = source.readlines()
-        self.load_program(program)
         self.control_unit.run()
         self.print_result(output=output)
 
