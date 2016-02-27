@@ -51,7 +51,7 @@ class TestAbstractCPU:
                                    "input": "0o100, 0x101, 102",
                                    "output": "102",
                                    "key": "value"}
-        self.cpu.io_unit.load_source.assert_called_once_with(self.source[6:8])
+        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
         self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
                                                            self.source[9:])
 
@@ -92,7 +92,7 @@ class TestAbstractCPU:
                                    "input": "0o100, 0x101, 102",
                                    "output": "102",
                                    "key": "value"}
-        self.cpu.io_unit.load_source.assert_called_once_with(self.source[6:8])
+        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
         self.cpu.io_unit.load_data.assert_called_once_with([0o100, 0x101, 102],
                                                            self.source[9:])
         self.cpu.control_unit.run.assert_called_with()

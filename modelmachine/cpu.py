@@ -44,7 +44,7 @@ class AbstractCPU:
                                  .format(section=section))
             return program.index(section)
 
-        program = [line.strip() for line in program]
+        program = [line.split(';')[0].strip() for line in program]
 
         config_start = get_section_index("config")
         code_start = get_section_index("code")
