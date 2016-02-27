@@ -59,7 +59,6 @@ class InputOutputUnit:
         """Source code loader."""
         program = ""
         for line in source:
-            line = line.split(";")[0].strip() # remove comments
             if line == "":
                 continue
             program += " " + line
