@@ -35,7 +35,7 @@ def little_endian_encode(value, word_size, bits):
             value //= 2 ** word_size
 
         if len(result) * word_size > bits:
-            raise ValueError('Too long integer: {value}, expected '
+            raise ValueError('Integer is too long: {value}, expected '
                              '{bits} bits integer'
                              .format(value=copy_value, bits=bits))
         result += [0] * (size - len(result))
@@ -71,7 +71,7 @@ class AbstractMemory(dict):
     def check_word_size(self, word):
         """Check that value can be represented by word with the size."""
         if not 0 <= word < 2 ** self.word_size:
-            raise ValueError('Wrong format of word: {word}, '
+            raise ValueError('Wrong word format: {word}, '
                              'should be 0 <= word < {max_value}'
                              .format(word=word, max_value=2 ** self.word_size))
 
@@ -95,7 +95,7 @@ class AbstractMemory(dict):
         """Check that we want to read integer count of words."""
         address = address # May be usefull in successors
         if bits % self.word_size != 0:
-            raise KeyError('Cannot operate with not integer count of words: '
+            raise KeyError('Cannot operate with non-integer word counter: '
                            'needs {bits} bits, but word size is {word_size}'
                            .format(bits=bits, word_size=self.word_size))
 
@@ -199,7 +199,7 @@ class RegisterMemory(AbstractMemory):
              self.register_sizes[name] != register_size):
             raise KeyError('Cannot add register with name `{name}` and size '
                            '`{register_size}`, register with this name and '
-                           'size `{exist_size}` already exists'
+                           '`{exist_size}` size already exists'
                            .format(name=name, register_size=register_size,
                                    exist_size=self.register_sizes[name]))
 

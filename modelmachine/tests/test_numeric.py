@@ -40,20 +40,20 @@ class TestNumeric:
                 assert self.first.signed == signed
                 assert self.first.get_value() == 10
 
-    def test_check_compability(self):
-        """Test check compability method."""
+    def test_check_compatibility(self):
+        """Test check compatibility method."""
         with raises(NotImplementedError):
-            self.first.check_compability(14)
+            self.first.check_compatibility(14)
         with raises(NotImplementedError):
-            self.first.check_compability(Integer(14, 32, False))
+            self.first.check_compatibility(Integer(14, 32, False))
         with raises(NotImplementedError):
-            self.first.check_compability(Integer(14, 16, True))
+            self.first.check_compatibility(Integer(14, 16, True))
         print(self.first.size)
         print(self.first.signed)
         print(self.second.size)
         print(self.second.signed)
-        self.first.check_compability(self.second)
-        self.first.check_compability(Integer(14, 32, True))
+        self.first.check_compatibility(self.second)
+        self.first.check_compatibility(Integer(14, 32, True))
 
         for first_size in (8, 16, 32, 64):
             for second_size in (8, 16, 32, 64):
@@ -62,26 +62,26 @@ class TestNumeric:
                     self.second = Integer(12, second_size, signed)
 
                     if first_size == second_size:
-                        self.first.check_compability(self.second)
-                        self.second.check_compability(self.first)
+                        self.first.check_compatibility(self.second)
+                        self.second.check_compatibility(self.first)
                     else:
                         with raises(NotImplementedError):
-                            self.first.check_compability(self.second)
+                            self.first.check_compatibility(self.second)
                         with raises(NotImplementedError):
-                            self.second.check_compability(self.first)
+                            self.second.check_compatibility(self.first)
 
                     self.first = Integer(10, first_size, signed)
                     self.second = Integer(12, second_size, not signed)
                     with raises(NotImplementedError):
-                        self.first.check_compability(self.second)
+                        self.first.check_compatibility(self.second)
                     with raises(NotImplementedError):
-                        self.second.check_compability(self.first)
+                        self.second.check_compatibility(self.first)
 
-        Integer(15, 8, False).check_compability(Integer(16, 8, False))
+        Integer(15, 8, False).check_compatibility(Integer(16, 8, False))
         with raises(NotImplementedError):
-            Integer(15, 8, False).check_compability(Integer(16, 8, True))
+            Integer(15, 8, False).check_compatibility(Integer(16, 8, True))
         with raises(NotImplementedError):
-            Integer(15, 16, False).check_compability(Integer(16, 8, False))
+            Integer(15, 16, False).check_compatibility(Integer(16, 8, False))
 
     def test_get_value(self):
         """Test get_value method."""
