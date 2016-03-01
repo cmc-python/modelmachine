@@ -513,6 +513,7 @@ Model machine emulator
 |0x03       |smul    |smul R M A |               4|
 |0x04       |sdiv    |sdiv R M A |               4|
 |0x05       |comp    |comp R M A |               4|
+|0x11       |addr    |addr R M A |               4|
 |0x13       |umul    |umul R M A |               4|
 |0x14       |udiv    |udiv R M A |               4|
 |0x10       |store   |store R M A|               4|
@@ -536,6 +537,11 @@ Model machine emulator
 |0x95       |ujleq   |ujleq 0 M A|               4|
 |0x96       |ujg     |ujg 0 M A  |               4|
 |0x99       |halt    |halt 00    |               2|
+
+Действия для загрузки исполнительного адреса в регистр `addr R M A`:
+
+1. `S := [M] + A`
+2. `R := S`
 
 Действия для арифметических команд регистр-память (исключая деление) `add`,
 `sub`, `smul`, `umul` (формат `op R M A`):
