@@ -103,4 +103,4 @@ class Integer(Number):
                 value += part << i
             return Integer(value, len(representation), False)
         else:
-            raise TypeError("Integer indeces must be integers")
+            raise TypeError("Integer indices must be integers")

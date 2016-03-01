@@ -39,24 +39,24 @@ def main(argv, stdout):
     parser = argparse.ArgumentParser(description='Modelmachine ' + __version__)
 
     parser.add_argument('-m', '--protect_memory', action='store_true', default=False,
-                        help='raise an error, if program tries read dirty memory')
+                        help='raise an error, if program tries to read dirty memory')
     subparsers = parser.add_subparsers(title='commands',
-                                       help='commands for model machine emulator')
+                                       help='commands of model machine emulator')
 
     run = subparsers.add_parser('run', help='run program')
-    run.add_argument('filename', help='file with machine code')
+    run.add_argument('filename', help='file containing machine code')
     run.set_defaults(func=run_program)
 
     debug_parser = subparsers.add_parser('debug', help='run program in debug mode')
-    debug_parser.add_argument('filename', help='file with machine code')
+    debug_parser.add_argument('filename', help='file containing machine code')
     debug_parser.set_defaults(func=run_debug)
 
     test = subparsers.add_parser('test', help='run internal tests end exit')
     test.set_defaults(func=run_tests)
 
     asm = subparsers.add_parser('asm', help='assemble model machine program')
-    asm.add_argument('asm_file', help='input file with asm source')
-    asm.add_argument('machine_file', help='output file with machine code')
+    asm.add_argument('asm_file', help='input file containing asm source')
+    asm.add_argument('machine_file', help='output file containing machine code')
     asm.set_defaults(func=run_asm)
 
     args = parser.parse_args(argv[1:])
