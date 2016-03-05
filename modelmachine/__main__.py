@@ -10,7 +10,7 @@ import pytest
 
 from modelmachine.ide import get_program, debug, assemble
 
-__version__ = "0.1.5" # Don't forget fix in setup.py
+__version__ = "0.1.6" # Don't forget fix in setup.py
 
 def run_program(args):
     """Get params from args and run file."""
