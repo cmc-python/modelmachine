@@ -1,6 +1,6 @@
 .config 0x100
 sum: .word 0
-array: .word 1,2,3,4,5
+array: .word -1,2,3,4,5
 zero: .word 0
 size_word: .word 2
 size_array: .word 10

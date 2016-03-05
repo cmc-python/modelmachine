@@ -22,4 +22,4 @@ output = 0x10A
 0000000A ; SIZE_ARRAY = 5
 
 [input]
-1 2 3 4 5
+-1 2 3 4 5

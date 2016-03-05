@@ -58,7 +58,7 @@ output = {output}
 
 """
 
-literals = ['(', ')', ':', ',', '\n']
+literals = '()-:,\n'
 
 opcodes = {
     # Opcodes
@@ -184,14 +184,22 @@ def parser():
         """empty :"""
         pass
 
+    def p_negative_minus(p):
+        """negative : '-' NUMBER"""
+        p[0] = -p[2]
+
+    def p_negative_plus(p):
+        """negative : NUMBER"""
+        p[0] = p[1]
+
     def p_listtail(p):
-        """numberlist : NUMBER
+        """numberlist : negative
            labellist : LABEL
         """
         p[0] = [p[1]]
 
     def p_list(p):
-        """numberlist : numberlist ',' NUMBER
+        """numberlist : numberlist ',' negative
            labellist : labellist ',' LABEL
         """
         p[0] = p[1].copy()
@@ -240,7 +248,7 @@ def parser():
     def p_line_word(p):
         """line : WORD numberlist"""
         for number in p[2]:
-            g.put(number, 32)
+            g.put(number % 2 ** 32, 32)
 
     def p_line_dump(p):
         """line : DUMP labellist"""
