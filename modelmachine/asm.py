@@ -68,6 +68,7 @@ opcodes = {
     'smul'  : 0x03,
     'sdiv'  : 0x04,
     'comp'  : 0x05,
+    'addr'  : 0x11,
     'umul'  : 0x13,
     'udiv'  : 0x14,
     'store' : 0x10,
@@ -262,6 +263,7 @@ def parser():
                 | COMP  REGISTER ',' address
                 | UMUL  REGISTER ',' address
                 | UDIV  REGISTER ',' address
+                | ADDR  REGISTER ',' address
                 | STORE REGISTER ',' address
         """
         data = opcodes[p[1]] << 8 | p[2] << 4 | p[4][0]
