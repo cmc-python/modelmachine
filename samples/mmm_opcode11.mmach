@@ -1,0 +1,17 @@
+mmm
+
+[config]
+output = 0x100, 0x102, 0x104
+
+[code]
+; output = sum(input)
+1100 0002 ; R0 := 2
+1000 0100 ; print 2
+11F0 0004 ; RF := 4
+10F0 0102 ; print 4
+11AF 0002 ; RA := RF + 2 = 4 + 2 = 6
+10A0 0104 ; print 6
+9900
+
+[input]
+
