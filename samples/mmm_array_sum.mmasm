@@ -4,7 +4,7 @@ array: .word -1,2,3,4,5
 zero: .word 0
 size_word: .word 2
 size_array: .word 10
-.dump sum
+.dump array(5), sum
 .code
 load R2, size_word
 load RF, size_array
