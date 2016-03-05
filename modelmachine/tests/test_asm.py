@@ -7,10 +7,10 @@ from modelmachine import asm
 RESULT_CODE = """mmm
 
 [config]
-output = 32
+output = 34, 36, 38, 40, 42, 32
 
 [code]
-0020 002e 00f0 0030 0050 002c 2266 0156 0022 2162 256f 8200 0007 1050 0020 9900 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0001 0000 0002 0000 0003 0000 0004 0000 0005 0000 0000 0000 0002 0000 000a
+0020 002e 00f0 0030 0050 002c 2266 0156 0022 2162 256f 8200 0007 1050 0020 9900 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 ffff ffff 0000 0002 0000 0003 0000 0004 0000 0005 0000 0000 0000 0002 0000 000a
 
 [input]
 
@@ -32,11 +32,11 @@ class TestASM:
         self.code = '''
         .config 0x20
         sum: .word 0
-        array: .word 1,2,3,4,5 ; Input array
+        array: .word -1,2,3,4,5 ; Input array
         zero: .word 0
         size_word: .word 2
         size_array: .word 10
-        .dump sum
+        .dump array(5), sum
         .code
         load R2, size_word
         load RF, size_array
@@ -63,6 +63,7 @@ class TestASM:
             ('LABEL', 'array'),
             (':', ':'),
             ('WORD', '.word'),
+            ('-', '-'),
             ('NUMBER', 1),
             (',', ','),
             ('NUMBER', 2),
@@ -89,6 +90,11 @@ class TestASM:
             ('NUMBER', 10),
             ('\n', '\n'),
             ('DUMP', '.dump'),
+            ('LABEL', 'array'),
+            ('(', '('),
+            ('NUMBER', 5),
+            (')', ')'),
+            (',', ','),
             ('LABEL', 'sum'),
             ('\n', '\n'),
             ('CODE', '.code'),

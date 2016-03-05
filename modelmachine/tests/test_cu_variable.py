@@ -13,7 +13,7 @@ from modelmachine.memory import RegisterMemory, RandomAccessMemory
 from modelmachine.alu import ArithmeticLogicUnit
 
 from .test_cu_abstract import (BYTE_SIZE, HALF_SIZE, WORD_SIZE,
-                               OP_MOVE, OP_COMP,
+                               OP_MOVE, OP_ADDR, OP_COMP,
                                OP_SDIVMOD, OP_UDIVMOD,
                                OP_LOAD, OP_STORE, OP_RMOVE,
                                OP_RADD, OP_RSUB, OP_RSMUL, OP_RSDIVMOD,
@@ -196,7 +196,7 @@ class TestControlUnitM(TBCU2):
         self.operand_size = WORD_SIZE
         self.address_size = 2 * BYTE_SIZE
         assert self.control_unit.opcodes == {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
-                                             0x10, 0x13, 0x14,
+                                             0x10, 0x11, 0x13, 0x14,
                                              0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
                                              0x33, 0x34,
                                              0x80, 0x81, 0x82,
@@ -206,6 +206,7 @@ class TestControlUnitM(TBCU2):
 
     def test_const(self):
         super().test_const()
+        assert self.control_unit.OPCODES["addr"] == OP_ADDR
         assert self.control_unit.OPCODES["rmove"] == OP_RMOVE
         assert self.control_unit.OPCODES["radd"] == OP_RADD
         assert self.control_unit.OPCODES["rsub"] == OP_RSUB
@@ -222,6 +223,7 @@ class TestControlUnitM(TBCU2):
         self.ram.put(address1, value, instruction_size)
         increment = instruction_size // self.ram.word_size
 
+        # pylint: disable=no-member
         self.registers.fetch.reset_mock()
         self.registers.put.reset_mock()
 
@@ -254,7 +256,7 @@ class TestControlUnitM(TBCU2):
             with raises(ValueError):
                 self.run_fetch(opcode << BYTE_SIZE, opcode, 2 * BYTE_SIZE)
 
-        for opcode in ARITHMETIC_OPCODES | JUMP_OPCODES | {OP_COMP, OP_LOAD, OP_STORE}:
+        for opcode in ARITHMETIC_OPCODES | JUMP_OPCODES | {OP_COMP, OP_LOAD, OP_ADDR, OP_STORE}:
             self.control_unit.register1 = None
             self.control_unit.register2 = None
             self.control_unit.address = None
@@ -310,6 +312,7 @@ class TestControlUnitM(TBCU2):
         self.control_unit.register2 = register2
         self.ram.put(address, val3, WORD_SIZE)
 
+        # pylint: disable=no-member
         for opcode in ARITHMETIC_OPCODES | {OP_LOAD, OP_COMP}:
             self.registers.fetch.reset_mock()
             self.registers.put.reset_mock()
@@ -340,6 +343,15 @@ class TestControlUnitM(TBCU2):
             self.registers.put.assert_has_calls([call("S", val1, WORD_SIZE),
                                                  call("RZ", val2, WORD_SIZE)])
 
+        for opcode in {OP_ADDR}:
+            self.registers.fetch.reset_mock()
+            self.registers.put.reset_mock()
+
+            self.control_unit.opcode = opcode
+            self.control_unit.load()
+            assert not self.registers.fetch.called
+            self.registers.put.assert_called_once_with("S", address, WORD_SIZE)
+
         for opcode in CONDJUMP_OPCODES | {OP_JUMP}:
             self.registers.fetch.reset_mock()
             self.registers.put.reset_mock()
@@ -364,16 +376,21 @@ class TestControlUnitM(TBCU2):
         """Test basic operations."""
         super().test_basic_execute(should_move=should_move)
 
+        # pylint: disable=no-member
         self.control_unit.opcode = OP_MOVE
         self.alu.move.reset_mock()
         self.control_unit.execute()
         self.alu.move.assert_called_once_with('R2', 'S')
 
+        self.control_unit.opcode = OP_ADDR
+        self.alu.move.reset_mock()
+        self.control_unit.execute()
+        assert not self.alu.move.called
 
     def run_write_back(self, should, opcode):
         """Run write back method for specific opcode."""
 
-        print(hex(opcode))
+        print(hex(opcode), should)
 
         register1, next_register1, register2 = 'R5', 'R6', 'R8'
         res_register1, val1 = 'S', 123456
@@ -396,6 +413,7 @@ class TestControlUnitM(TBCU2):
         self.control_unit.register2 = register2
         self.ram.put(address, canary, self.operand_size)
 
+        # pylint: disable=no-member
         self.registers.fetch.reset_mock()
         self.registers.put.reset_mock()
 
@@ -429,7 +447,8 @@ class TestControlUnitM(TBCU2):
         for opcode in {OP_SDIVMOD, OP_UDIVMOD}:
             self.run_write_back('two_registers', opcode)
 
-        for opcode in (ARITHMETIC_OPCODES | {OP_LOAD}) - {OP_SDIVMOD, OP_UDIVMOD}:
+        for opcode in (ARITHMETIC_OPCODES | {OP_ADDR, OP_LOAD}) - \
+                      {OP_SDIVMOD, OP_UDIVMOD}:
             self.run_write_back('register', opcode)
 
         for opcode in {OP_STORE}:

@@ -58,7 +58,7 @@ output = {output}
 
 """
 
-literals = ['(', ')', ':', ',', '\n']
+literals = '()-:,\n'
 
 opcodes = {
     # Opcodes
@@ -68,6 +68,7 @@ opcodes = {
     'smul'  : 0x03,
     'sdiv'  : 0x04,
     'comp'  : 0x05,
+    'addr'  : 0x11,
     'umul'  : 0x13,
     'udiv'  : 0x14,
     'store' : 0x10,
@@ -183,15 +184,31 @@ def parser():
         """empty :"""
         pass
 
+    def p_negative_minus(p):
+        """negative : '-' NUMBER"""
+        p[0] = -p[2]
+
+    def p_negative_plus(p):
+        """negative : NUMBER"""
+        p[0] = p[1]
+
+    def p_position_label(p):
+        """position : LABEL"""
+        p[0] = (p[1], 1)
+
+    def p_position_array(p):
+        """position : LABEL '(' NUMBER ')'"""
+        p[0] = (p[1], p[3])
+
     def p_listtail(p):
-        """numberlist : NUMBER
-           labellist : LABEL
+        """numberlist : negative
+           poslist : position
         """
         p[0] = [p[1]]
 
     def p_list(p):
-        """numberlist : numberlist ',' NUMBER
-           labellist : labellist ',' LABEL
+        """numberlist : numberlist ',' negative
+           poslist : poslist ',' position
         """
         p[0] = p[1].copy()
         p[0].append(p[3])
@@ -239,10 +256,10 @@ def parser():
     def p_line_word(p):
         """line : WORD numberlist"""
         for number in p[2]:
-            g.put(number, 32)
+            g.put(number % 2 ** 32, 32)
 
     def p_line_dump(p):
-        """line : DUMP labellist"""
+        """line : DUMP poslist"""
         g.output.extend(p[2])
 
     def p_error(p):
@@ -262,6 +279,7 @@ def parser():
                 | COMP  REGISTER ',' address
                 | UMUL  REGISTER ',' address
                 | UDIV  REGISTER ',' address
+                | ADDR  REGISTER ',' address
                 | STORE REGISTER ',' address
         """
         data = opcodes[p[1]] << 8 | p[2] << 4 | p[4][0]
@@ -341,13 +359,17 @@ def parse(code):
                 g.error_list.append("Undefined label '{label}' at {line}:{col}"
                                     .format(label=label, line=insert[2], col=insert[3]))
 
-        for label in g.output:
+        for label, count in g.output:
             if label not in g.label_table:
                 g.error_list.append("Undefined label '{label}' at output"
                                     .format(label=label))
 
         if g.error_list == []:
-            g.output = [str(g.label_table[label][0]) for label in g.output]
+            output = g.output
+            g.output = []
+            for label, count in output:
+                for i in range(count):
+                    g.output.append(str(g.label_table[label][0] + 2 * i))
 
     # Test link error
     if g.error_list != []:

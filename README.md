@@ -87,6 +87,9 @@ Model machine emulator
   число занимает пару ячеек.
 - `.dump имя_метки` - по завершении работы программы вывести содержимое памяти
   по адресу `имя_метки`, команда выводит содержимое двух ячеек как одно число.
+  Для вывода массива фиксированного размера используйте формат
+  `.dump имя_метки(размер)`. Также метки для вывода можно перечислять через
+  запятую. Например: `.dump array(5), sum`
 
 Коды команд те же, что и в таблице кодов `mmm`. Имя метки - последовательность
 английских букв, цифр и знака `_`, первый символ последовательности - не цифра.
@@ -97,11 +100,11 @@ Model machine emulator
 
     .config 0x100
     sum: .word 0
-    array: .word 1, 2, 3, 4, 5
+    array: .word -1, 2, 3, 4, 5
     zero: .word 0
     size_word: .word 2
     size_array: .word 10
-    .dump sum
+    .dump array(5), sum
     .code
     load R2, size_word
     load RF, size_array
@@ -504,6 +507,7 @@ Model machine emulator
 |0x03       |smul    |smul R M A |               4|
 |0x04       |sdiv    |sdiv R M A |               4|
 |0x05       |comp    |comp R M A |               4|
+|0x11       |addr    |addr R M A |               4|
 |0x13       |umul    |umul R M A |               4|
 |0x14       |udiv    |udiv R M A |               4|
 |0x10       |store   |store R M A|               4|
@@ -527,6 +531,11 @@ Model machine emulator
 |0x95       |ujleq   |ujleq 0 M A|               4|
 |0x96       |ujg     |ujg 0 M A  |               4|
 |0x99       |halt    |halt 00    |               2|
+
+Действия для загрузки исполнительного адреса в регистр `addr R M A`:
+
+1. `S := [M] + A`
+2. `R := S`
 
 Действия для арифметических команд регистр-память (исключая деление) `add`,
 `sub`, `smul`, `umul` (формат `op R M A`):

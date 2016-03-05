@@ -19,12 +19,12 @@ class Integer(Number):
         """Hash is important for indexing."""
         return hash((self.size, self.signed, self.value))
 
-    def check_compability(self, other):
-        """Test compability of two numbers."""
+    def check_compatibility(self, other):
+        """Test compatibility of two numbers."""
         if  (not isinstance(other, type(self)) or
              self.size != other.size or
              self.signed != other.signed):
-            raise NotImplementedError('Not compability types.')
+            raise NotImplementedError('Incompatible types.')
 
     def get_value(self):
         """Return integer value."""
@@ -41,25 +41,25 @@ class Integer(Number):
 
     def __add__(self, other):
         """Equal to self + other."""
-        self.check_compability(other)
+        self.check_compatibility(other)
         value = self.get_value() + other.get_value()
         return type(self)(value=value, size=self.size, signed=self.signed)
 
     def __sub__(self, other):
         """Equal to self - other."""
-        self.check_compability(other)
+        self.check_compatibility(other)
         value = self.get_value() - other.get_value()
         return type(self)(value=value, size=self.size, signed=self.signed)
 
     def __mul__(self, other):
         """Equal to self * other."""
-        self.check_compability(other)
+        self.check_compatibility(other)
         value = self.get_value() * other.get_value()
         return type(self)(value=value, size=self.size, signed=self.signed)
 
     def __divmod__(self, other):
         """Equal to divmod(self, other)."""
-        self.check_compability(other)
+        self.check_compatibility(other)
 
         div = abs(self.get_value()) // abs(other.get_value())
         if self.get_value() * other.get_value() < 0:
@@ -85,7 +85,7 @@ class Integer(Number):
 
     def __eq__(self, other):
         """Test if two integer is equal."""
-        self.check_compability(other)
+        self.check_compatibility(other)
         return self.get_value() == other.get_value()
 
     def __getitem__(self, key):
@@ -103,4 +103,4 @@ class Integer(Number):
                 value += part << i
             return Integer(value, len(representation), False)
         else:
-            raise TypeError("Integer indeces must be integers")
+            raise TypeError("Integer indices must be integers")

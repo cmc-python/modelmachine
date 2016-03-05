@@ -76,6 +76,7 @@ class ControlUnit(AbstractControlUnit):
         "comp": 0x05,
 
         "store": 0x10,
+        "addr": 0x11,
 
         "umul": 0x13,
         "udivmod": 0x14,
@@ -588,7 +589,8 @@ class ControlUnitM(ControlUnit):
                         | {self.OPCODES["load"],
                            self.OPCODES["store"],
                            self.OPCODES["halt"],
-                           self.OPCODES["comp"]})
+                           self.OPCODES["comp"],
+                           self.OPCODES["addr"]})
 
         for reg in {"S", "RZ", "FLAGS", "R0", "R1", "R2", "R3", "R4",
                     "R5", "R6", "R7", "R8", "R9", "RA", "RB", "RC",
@@ -621,7 +623,7 @@ class ControlUnitM(ControlUnit):
 
             r_y = instruction & reg_mask
             self.register2 = "R" + hex(r_y).upper()[2:]
-        elif self.opcode != self.OPCODES["halt"]:
+        elif self.opcode in self.opcodes - {self.OPCODES["halt"]}:
             r_x = (instruction >> (self.reg_addr_size + self.address_size)) & reg_mask
             self.register1 = "R" + hex(r_x).upper()[2:]
 
@@ -658,6 +660,10 @@ class ControlUnitM(ControlUnit):
             self.registers.put(self.register_names["R2"],
                                operand2,
                                self.operand_size)
+        elif self.opcode == self.OPCODES["addr"]:
+            self.registers.put(self.register_names["S"],
+                               self.address,
+                               self.operand_size)
         elif self.opcode in self.JUMP_OPCODES:
             self.registers.put(self.register_names["ADDR"],
                                self.address,
@@ -674,6 +680,8 @@ class ControlUnitM(ControlUnit):
             self.alu.move("R2", "S")
         elif self.opcode == self.OPCODES["store"]:
             self.alu.move("R1", "S")
+        elif self.opcode == self.OPCODES["addr"]:
+            pass
         elif self.opcode in self.JUMP_OPCODES:
             self.execute_jump()
         else:
@@ -681,7 +689,8 @@ class ControlUnitM(ControlUnit):
 
     def write_back(self):
         """Write result back."""
-        if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["load"]}:
+        if self.opcode in self.ARITHMETIC_OPCODES | {self.OPCODES["load"],
+                                                     self.OPCODES["addr"]}:
             value = self.registers.fetch(self.register_names["S"],
                                          self.operand_size)
             self.registers.put(self.register1, value, self.operand_size)

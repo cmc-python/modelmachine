@@ -86,7 +86,7 @@ MAX_POS = [20, 20]
 
 INSTRUCTION = ('Enter\n'
                '  `(s)tep [count]` to start execution\n'
-               '  `(c)ontinue` to continue the program to the end\n'
+               '  `(c)ontinue` to continue the program until the end\n'
                '  `(p)rint` registers state\n'
                '  `(m)emory <begin> <end>` to view random access memory\n'
                '  `(q)uit` to quit\n')
@@ -96,7 +96,7 @@ def exec_step(cpu, step, command):
     need_help = False
 
     if cpu.control_unit.get_status() == HALTED:
-        print('cannot execute command: machine has been halted')
+        print('cannot execute command: machine halted')
     else:
         command = command.split()
         try:
@@ -119,7 +119,7 @@ def exec_step(cpu, step, command):
                 print('step {step}:'.format(step=step))
                 exec_print(cpu, step)
                 if cpu.control_unit.get_status() == HALTED:
-                    print('machine has halted')
+                    print('machine halted')
                     break
 
     return step, need_help, False
@@ -128,10 +128,10 @@ def exec_continue(cpu, step):
     """Exec debug continue command."""
 
     if cpu.control_unit.get_status() == HALTED:
-        print('cannot execute command: machine has halted')
+        print('cannot execute command: machine halted')
     else:
         cpu.control_unit.run()
-        print('machine has halted')
+        print('machine halted')
 
     return step, False, False
 
@@ -139,7 +139,7 @@ def exec_print(cpu, step):
     """Print contents of registers."""
 
     print("RAM access count:", cpu.ram.access_count)
-    print("Register states:")
+    print("Registers state:")
     registers = sorted(list(cpu.registers.keys()))
     for reg in registers:
         size = cpu.registers.register_sizes[reg]
