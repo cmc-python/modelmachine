@@ -93,7 +93,7 @@ class AbstractMemory(dict):
 
     def check_bits_count(self, address, bits):
         """Check that we want to read integer count of words."""
-        address = address # May be usefull in successors
+        address = address # May be useful in successors
         if bits % self.word_size != 0:
             raise KeyError('Cannot operate with non-integer word counter: '
                            'needs {bits} bits, but word size is {word_size}'
@@ -141,7 +141,7 @@ class RandomAccessMemory(AbstractMemory):
 
     Addresses is x: 0 <= x < memory_size.
     If is_protected == True, you cannot read unassigned memory
-    (usefull for debug).
+    (useful for debug).
     """
 
     def __init__(self, word_size, memory_size, endianess,

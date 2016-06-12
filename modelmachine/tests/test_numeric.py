@@ -131,7 +131,7 @@ class TestNumeric:
             result = self.first * 42
 
     def test_sub(self):
-        """Test substraction of two integer."""
+        """Test subtraction of two integer."""
         result = self.first - self.second
 
         assert isinstance(result, Integer)
