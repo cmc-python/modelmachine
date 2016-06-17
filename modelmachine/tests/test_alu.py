@@ -115,7 +115,7 @@ class TestArithmeticLogicUnit:
                 assert self.registers.fetch('FLAGS', BYTE_SIZE) == OF | CF
 
     def test_sub(self):
-        """Substraction test."""
+        """Subtraction test."""
         self.registers.put('R1', 0, BYTE_SIZE)
         self.registers.put('R2', 0, BYTE_SIZE)
         self.alu.sub()
