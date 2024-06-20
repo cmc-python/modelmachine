@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Pytest
@@ -14,15 +14,23 @@ permissions:
 
 jobs:
   build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: "ubuntu-24.04"
+            python-version: "3.12"
+          - os: "ubuntu-20.04"
+            python-version: "3.7"
 
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.12
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
-        python-version: "3.12"
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

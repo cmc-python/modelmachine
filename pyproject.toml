@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modelmachine"
+dynamic = ["version"]
+description = "Model machine emulator"
+readme = "README.md"
+license = "WTFPL"
+maintainers = [
+    { name = "Vladimir Liutov", email = "vs@lutov.net" },
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Natural Language :: English",
+    "Natural Language :: Russian",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "ply>=3.11",
+]
+
+[project.scripts]
+modelmachine = "modelmachine.__main__:exec_main"
+
+[project.urls]
+Homepage = "https://github.com/cmc-python/modelmachine"
+Issues = "https://github.com/cmc-python/modelmachine/issues"
+
+[tool.hatch.version]
+path = "modelmachine/__main__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/modelmachine",
+]
