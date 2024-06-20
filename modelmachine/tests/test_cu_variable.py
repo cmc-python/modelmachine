@@ -27,9 +27,9 @@ class TestControlUnitV(TBCU2):
 
     """Test case for  Model Machine Variable Control Unit."""
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
-        super().setup()
+        super().setup_method()
         self.ram = RandomAccessMemory(BYTE_SIZE, 256, 'big', is_protected=True)
         self.control_unit = ControlUnitV(WORD_SIZE,
                                          BYTE_SIZE,
@@ -183,9 +183,9 @@ class TestControlUnitM(TBCU2):
 
     """Test case for Address Modification Model Machine Control Unit."""
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
-        super().setup()
+        super().setup_method()
         self.ram = RandomAccessMemory(HALF_SIZE, 2 ** HALF_SIZE, 'big', is_protected=True)
         self.control_unit = ControlUnitM(WORD_SIZE,
                                          HALF_SIZE,

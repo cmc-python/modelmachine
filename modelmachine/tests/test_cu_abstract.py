@@ -53,7 +53,7 @@ class TestAbstractControlUnit:
     alu = None
     control_unit = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.ram = create_autospec(RandomAccessMemory, True, True)
         self.registers = create_autospec(RegisterMemory, True, True)
@@ -125,7 +125,7 @@ class TestControlUnit:
     operand_size = WORD_SIZE
     address_size = BYTE_SIZE
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
         self.registers = create_autospec(RegisterMemory, True, True)

@@ -27,7 +27,7 @@ class TestASM:
     code = None
     tokens = None
 
-    def setup(self):
+    def setup_method(self):
         """Sample program."""
         self.code = '''
         .config 0x20

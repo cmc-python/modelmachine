@@ -18,7 +18,7 @@ class TestArithmeticLogicUnit:
     alu = None
     max_int, min_int = None, None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.registers = RegisterMemory()
         register_names = {"R1": "R1", "R2": "R2", "FLAGS": "FLAGS",
