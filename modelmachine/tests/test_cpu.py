@@ -23,7 +23,7 @@ class TestAbstractCPU:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state and mock."""
         self.cpu = AbstractCPU()
         self.cpu.memory = create_autospec(RandomAccessMemory, True, True)
@@ -132,7 +132,7 @@ class TestCPUMM3:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.cpu = CPUMM3(protect_memory=False)
         self.source = ("[config]\ninput=0x101,0x102\n\noutput=0x103\n" +
@@ -159,7 +159,7 @@ class TestCPUMM2:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.cpu = CPUMM2(protect_memory=False)
         self.source = ("[config]\n" +
@@ -193,7 +193,7 @@ class TestCPUMMV:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.cpu = CPUMMV(protect_memory=False)
         self.source = ("[config]\n" +
@@ -228,7 +228,7 @@ class TestCPUMM1:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.cpu = CPUMM1(protect_memory=False)
         self.source = ("[config]\n" +
@@ -264,7 +264,7 @@ class TestCPUMMM:
     cpu = None
     source = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.cpu = CPUMMM(protect_memory=False)
         self.source = ("[config]\n" +

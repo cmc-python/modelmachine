@@ -27,7 +27,7 @@ class TestAbstractMemory:
 
     memory = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.memory = AbstractMemory(BYTE_SIZE)
         assert self.memory.word_size == BYTE_SIZE
@@ -97,7 +97,7 @@ class TestRandomAccessMemory:
 
     ram = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.ram = RandomAccessMemory(WORD_SIZE, 512, endianess='big')
         assert self.ram.word_size == WORD_SIZE
@@ -204,7 +204,7 @@ class TestRegisterMemory:
 
     registers = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.registers = RegisterMemory()
         self.registers.add_register('R1', WORD_SIZE)

@@ -12,7 +12,7 @@ class TestNumeric:
 
     first, second = None, None
 
-    def setup(self):
+    def setup_method(self):
         """Init two test values."""
         self.first = Integer(10, 32, True)
         self.second = Integer(12, 32, True)

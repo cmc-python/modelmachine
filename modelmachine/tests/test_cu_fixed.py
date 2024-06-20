@@ -25,9 +25,9 @@ class TestControlUnit3(TBCU):
 
     """Test case for  Mode Machine 3 Control Unit."""
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
-        super().setup()
+        super().setup_method()
         self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
         self.control_unit = ControlUnit3(WORD_SIZE,
                                          BYTE_SIZE,
@@ -244,9 +244,9 @@ class TestControlUnit2(TestControlUnit3):
 
     """Test case for  Mode Machine 3 Control Unit."""
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
-        super().setup()
+        super().setup_method()
         self.control_unit = ControlUnit2(WORD_SIZE,
                                          BYTE_SIZE,
                                          self.registers,
@@ -433,9 +433,9 @@ class TestControlUnit1(TestControlUnit2):
 
     """Test case for  Mode Machine 1 Control Unit."""
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
-        super().setup()
+        super().setup_method()
         self.control_unit = ControlUnit1(WORD_SIZE,
                                          BYTE_SIZE,
                                          self.registers,

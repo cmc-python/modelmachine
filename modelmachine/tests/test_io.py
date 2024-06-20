@@ -19,7 +19,7 @@ class TestIODevice:
     ram = None
     io_unit = None
 
-    def setup(self):
+    def setup_method(self):
         """Init state."""
         self.ram = create_autospec(RandomAccessMemory, True, True)
         self.ram.word_size = WORD_SIZE
