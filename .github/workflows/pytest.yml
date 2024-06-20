@@ -14,14 +14,17 @@ permissions:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.4.4", "3.12"]
+        include:
+          - os: "ubuntu-22.04"
+            python-version: "3.12"
+          - os: "ubuntu-18.04"
+            python-version: "3.4"
 
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
