@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-
 """Modelmachine - Model machine emulator."""
 
 from modelmachine.__about__ import __version__, __version_tuple__
 
-__all__ = ['__version__', "__version_tuple__"]
+__all__ = ["__version__", "__version_tuple__"]

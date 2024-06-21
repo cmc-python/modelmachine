@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """Arithmetic logic unit make operations with internal registers."""
 
 from numbers import Number
 
-class Integer(Number):
 
+class Integer(Number):
     """Integer type with fixed length."""
 
     def __init__(self, value, size, signed):
@@ -13,7 +11,7 @@ class Integer(Number):
         self.size = size
         self.signed = signed
 
-        self.value = value % 2 ** size
+        self.value = value % 2**size
 
     def __hash__(self):
         """Hash is important for indexing."""
@@ -21,17 +19,20 @@ class Integer(Number):
 
     def check_compatibility(self, other):
         """Test compatibility of two numbers."""
-        if  (not isinstance(other, type(self)) or
-             self.size != other.size or
-             self.signed != other.signed):
-            raise NotImplementedError('Incompatible types.')
+        if (
+            not isinstance(other, type(self))
+            or self.size != other.size
+            or self.signed != other.signed
+        ):
+            msg = "Incompatible types."
+            raise NotImplementedError(msg)
 
     def get_value(self):
         """Return integer value."""
         if self.signed:
             sign_bit = 2 ** (self.size - 1)
             if self.value & sign_bit != 0:
-                return self.value - 2 ** self.size
+                return self.value - 2**self.size
 
         return self.value
 
@@ -67,13 +68,14 @@ class Integer(Number):
 
         mod = self.get_value() - div * other.get_value()
 
-        return (Integer(div, self.size, self.signed),
-                Integer(mod, self.size, self.signed))
+        return (
+            Integer(div, self.size, self.signed),
+            Integer(mod, self.size, self.signed),
+        )
 
     def __floordiv__(self, other):
         """self // other."""
         return divmod(self, other)[0]
-
 
     def __truediv__(self, other):
         """self / other."""
@@ -103,4 +105,5 @@ class Integer(Number):
                 value += part << i
             return Integer(value, len(representation), False)
         else:
-            raise TypeError("Integer indices must be integers")
+            msg = "Integer indices must be integers"
+            raise TypeError(msg)

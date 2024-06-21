@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
-
 """Test case for abstract control units."""
 
-from unittest.mock import create_autospec, call
+from unittest.mock import call, create_autospec
 
 from pytest import raises
 
-from modelmachine.cu import AbstractControlUnit, RUNNING, HALTED
-from modelmachine.cu import ControlUnit
-from modelmachine.memory import RegisterMemory, RandomAccessMemory
-from modelmachine.alu import ArithmeticLogicUnit, HALT
+from modelmachine.alu import HALT, ArithmeticLogicUnit
+from modelmachine.cu import HALTED, RUNNING, AbstractControlUnit, ControlUnit
+from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
 BYTE_SIZE = 8
 HALF_SIZE = 16
@@ -37,15 +34,32 @@ OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG = 0x93, 0x94, 0x95, 0x96
 OP_HALT = 0x99
 
 ARITHMETIC_OPCODES = {OP_ADD, OP_SUB, OP_SMUL, OP_SDIVMOD, OP_UMUL, OP_UDIVMOD}
-CONDJUMP_OPCODES = {OP_JEQ, OP_JNEQ,
-                    OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG,
-                    OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG}
+CONDJUMP_OPCODES = {
+    OP_JEQ,
+    OP_JNEQ,
+    OP_SJL,
+    OP_SJGEQ,
+    OP_SJLEQ,
+    OP_SJG,
+    OP_UJL,
+    OP_UJGEQ,
+    OP_UJLEQ,
+    OP_UJG,
+}
 JUMP_OPCODES = CONDJUMP_OPCODES | {OP_JUMP}
-REGISTER_OPCODES = {OP_RMOVE, OP_RADD, OP_RSUB, OP_RSMUL,
-                    OP_RSDIVMOD, OP_RCOMP, OP_RUMUL, OP_RUDIVMOD}
+REGISTER_OPCODES = {
+    OP_RMOVE,
+    OP_RADD,
+    OP_RSUB,
+    OP_RSMUL,
+    OP_RSDIVMOD,
+    OP_RCOMP,
+    OP_RUMUL,
+    OP_RUDIVMOD,
+}
+
 
 class TestAbstractControlUnit:
-
     """Test case for abstract control unit."""
 
     ram = None
@@ -58,10 +72,9 @@ class TestAbstractControlUnit:
         self.ram = create_autospec(RandomAccessMemory, True, True)
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.control_unit = AbstractControlUnit(self.registers,
-                                                self.ram,
-                                                self.alu,
-                                                WORD_SIZE)
+        self.control_unit = AbstractControlUnit(
+            self.registers, self.ram, self.alu, WORD_SIZE
+        )
         assert self.control_unit.operand_size == WORD_SIZE
 
     def test_get_status(self):
@@ -84,6 +97,7 @@ class TestAbstractControlUnit:
 
     def test_step_and_run(self):
         """Test command execution."""
+
         def do_nothing():
             """Empty function."""
 
@@ -110,7 +124,6 @@ class TestAbstractControlUnit:
 
 
 class TestControlUnit:
-
     """Test case for abstract bordachenkova control unit."""
 
     ram = None
@@ -127,15 +140,12 @@ class TestControlUnit:
 
     def setup_method(self):
         """Init state."""
-        self.ram = RandomAccessMemory(WORD_SIZE, 256, 'big')
+        self.ram = RandomAccessMemory(WORD_SIZE, 256, "big")
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.control_unit = ControlUnit(WORD_SIZE,
-                                        BYTE_SIZE,
-                                        self.registers,
-                                        self.ram,
-                                        self.alu,
-                                        WORD_SIZE)
+        self.control_unit = ControlUnit(
+            WORD_SIZE, BYTE_SIZE, self.registers, self.ram, self.alu, WORD_SIZE
+        )
         self.test_const()
 
     def test_const(self):
@@ -189,8 +199,15 @@ class TestControlUnit:
         with raises(NotImplementedError):
             self.control_unit.write_back()
 
-    def run_fetch(self, value, opcode, instruction_size, and_decode=True,
-                  address_size=BYTE_SIZE, ir_size=WORD_SIZE):
+    def run_fetch(
+        self,
+        value,
+        opcode,
+        instruction_size,
+        and_decode=True,
+        address_size=BYTE_SIZE,
+        ir_size=WORD_SIZE,
+    ):
         """Run one fetch test."""
         address = 10
         self.ram.put(address, value, instruction_size)
@@ -204,6 +221,7 @@ class TestControlUnit:
             assert name == "PC"
             assert size == self.control_unit.address_size
             return address
+
         self.registers.fetch.side_effect = get_register
 
         if and_decode:
@@ -211,8 +229,9 @@ class TestControlUnit:
         else:
             self.control_unit.fetch_instruction(instruction_size)
         self.registers.fetch.assert_any_call("PC", address_size)
-        self.registers.put.assert_has_calls([call("RI", value, ir_size),
-                                             call("PC", address + increment, address_size)])
+        self.registers.put.assert_has_calls(
+            [call("RI", value, ir_size), call("PC", address + increment, address_size)]
+        )
         assert self.control_unit.opcode == opcode
 
     def test_fetch_instruction(self):
@@ -274,4 +293,3 @@ class TestControlUnit:
 
         assert not self.registers.fetch.called
         assert not self.registers.put.called
-

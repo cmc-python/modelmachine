@@ -26,7 +26,8 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "ply>=3.11",
+  "ply>=3.11",
+  "frozendict>=2.4.4",
 ]
 
 [project.scripts]

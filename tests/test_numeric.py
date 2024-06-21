@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-
 """Test case for arithmetic logic unit."""
 
 from pytest import raises
 
 from modelmachine.numeric import Integer
 
-class TestNumeric:
 
+class TestNumeric:
     """Case test for Integer class."""
 
     first, second = None, None
@@ -23,11 +21,11 @@ class TestNumeric:
         assert self.first.signed is True
         assert self.first.get_value() == 10
 
-        self.first = Integer(2 ** 32 - 1, 32, True)
+        self.first = Integer(2**32 - 1, 32, True)
         assert self.first.get_value() == -1
 
-        self.first = Integer(2 ** 32 - 1, 32, False)
-        assert self.first.get_value() == 2 ** 32 - 1
+        self.first = Integer(2**32 - 1, 32, False)
+        assert self.first.get_value() == 2**32 - 1
 
         for size in (8, 16, 32, 64):
             for signed in (True, False):
@@ -48,10 +46,6 @@ class TestNumeric:
             self.first.check_compatibility(Integer(14, 32, False))
         with raises(NotImplementedError):
             self.first.check_compatibility(Integer(14, 16, True))
-        print(self.first.size)
-        print(self.first.signed)
-        print(self.second.size)
-        print(self.second.signed)
         self.first.check_compatibility(self.second)
         self.first.check_compatibility(Integer(14, 32, True))
 
@@ -89,8 +83,8 @@ class TestNumeric:
         assert self.first.get_value() == 10
         assert isinstance(self.second.get_value(), int)
         assert self.second.get_value() == 12
-        assert Integer(2 ** 32 - 1, 32, True).get_value() == -1
-        assert Integer(2 ** 32 - 1, 32, False).get_value() == 2 ** 32 - 1
+        assert Integer(2**32 - 1, 32, True).get_value() == -1
+        assert Integer(2**32 - 1, 32, False).get_value() == 2**32 - 1
 
     def test_index(self):
         """Test, if we can useinteger for indexing."""
@@ -109,7 +103,7 @@ class TestNumeric:
         assert result.signed is True
         assert result.get_value() == 22
 
-        result = Integer(2 ** 31 - 1, 32, True) + Integer(2 ** 31 - 1, 32, True)
+        result = Integer(2**31 - 1, 32, True) + Integer(2**31 - 1, 32, True)
         assert result.get_value() == -2
 
         with raises(NotImplementedError):
@@ -154,7 +148,7 @@ class TestNumeric:
         assert isinstance(result, Integer)
         assert result.size == 32
         assert result.signed is False
-        assert result.get_value() == 2 ** 32 - 2
+        assert result.get_value() == 2**32 - 2
 
         result = self.second - self.first
 
@@ -176,15 +170,26 @@ class TestNumeric:
 
     def test_divmod(self):
         """Test  method."""
-        assert divmod(self.second, self.first) == (Integer(1, 32, True), Integer(2, 32, True))
-        assert (divmod(Integer(156, 32, True), Integer(10, 32, True)) ==
-                (Integer(15, 32, True), Integer(6, 32, True)))
-        assert (divmod(Integer(-156, 32, True), Integer(10, 32, True)) ==
-                (Integer(-15, 32, True), Integer(-6, 32, True)))
-        assert (divmod(Integer(156, 32, True), Integer(-10, 32, True)) ==
-                (Integer(-15, 32, True), Integer(6, 32, True)))
-        assert (divmod(Integer(-156, 32, True), Integer(-10, 32, True)) ==
-                (Integer(15, 32, True), Integer(-6, 32, True)))
+        assert divmod(self.second, self.first) == (
+            Integer(1, 32, True),
+            Integer(2, 32, True),
+        )
+        assert divmod(Integer(156, 32, True), Integer(10, 32, True)) == (
+            Integer(15, 32, True),
+            Integer(6, 32, True),
+        )
+        assert divmod(Integer(-156, 32, True), Integer(10, 32, True)) == (
+            Integer(-15, 32, True),
+            Integer(-6, 32, True),
+        )
+        assert divmod(Integer(156, 32, True), Integer(-10, 32, True)) == (
+            Integer(-15, 32, True),
+            Integer(6, 32, True),
+        )
+        assert divmod(Integer(-156, 32, True), Integer(-10, 32, True)) == (
+            Integer(15, 32, True),
+            Integer(-6, 32, True),
+        )
 
         assert self.second / self.first == Integer(1, 32, True)
         assert self.second // self.first == Integer(1, 32, True)
@@ -194,11 +199,11 @@ class TestNumeric:
         """Test two's complement."""
         assert self.first.get_data() == 10
         self.first = Integer(-5, 32, True)
-        assert self.first.get_data() == 2 ** 32 - 5
+        assert self.first.get_data() == 2**32 - 5
         assert self.first.get_value() == -5
         self.first = Integer(-5, 32, signed=False)
-        assert self.first.get_data() == 2 ** 32 - 5
-        assert self.first.get_value() == 2 ** 32 - 5
+        assert self.first.get_data() == 2**32 - 5
+        assert self.first.get_value() == 2**32 - 5
 
     def test_hash(self):
         """Test if we can use Integer for indexing."""
@@ -206,7 +211,7 @@ class TestNumeric:
         assert hash(self.first) != hash(self.second)
         assert hash(self.first) == hash(third)
         assert hash(self.second) != hash(third)
-        dic = dict()
+        dic = {}
         dic[self.first] = 10
         dic[self.second] = 11
         assert dic[self.first] == 10

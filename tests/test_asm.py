@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Test case for assembler."""
 
 from modelmachine import asm
@@ -16,12 +14,13 @@ output = 34, 36, 38, 40, 42, 32
 
 """
 
+
 def eq_token(token, tok_type, value):
     """Test tokens equals."""
     return token.type == tok_type and token.value == value
 
-class TestASM:
 
+class TestASM:
     """Tast case for modelmachine.asm."""
 
     code = None
@@ -29,7 +28,7 @@ class TestASM:
 
     def setup_method(self):
         """Sample program."""
-        self.code = '''
+        self.code = """
         .config 0x20
         sum: .word 0
         array: .word -1,2,3,4,5 ; Input array
@@ -48,110 +47,110 @@ class TestASM:
         jneq rpt
         store R5, sum
         halt
-        '''
+        """
 
         self.tokens = [
-            ('\n', '\n'),
-            ('CONFIG', '.config'),
-            ('NUMBER', 32),
-            ('\n', '\n'),
-            ('LABEL', 'sum'),
-            (':', ':'),
-            ('WORD', '.word'),
-            ('NUMBER', 0),
-            ('\n', '\n'),
-            ('LABEL', 'array'),
-            (':', ':'),
-            ('WORD', '.word'),
-            ('-', '-'),
-            ('NUMBER', 1),
-            (',', ','),
-            ('NUMBER', 2),
-            (',', ','),
-            ('NUMBER', 3),
-            (',', ','),
-            ('NUMBER', 4),
-            (',', ','),
-            ('NUMBER', 5),
-            ('\n', '\n'),
-            ('LABEL', 'zero'),
-            (':', ':'),
-            ('WORD', '.word'),
-            ('NUMBER', 0),
-            ('\n', '\n'),
-            ('LABEL', 'size_word'),
-            (':', ':'),
-            ('WORD', '.word'),
-            ('NUMBER', 2),
-            ('\n', '\n'),
-            ('LABEL', 'size_array'),
-            (':', ':'),
-            ('WORD', '.word'),
-            ('NUMBER', 10),
-            ('\n', '\n'),
-            ('DUMP', '.dump'),
-            ('LABEL', 'array'),
-            ('(', '('),
-            ('NUMBER', 5),
-            (')', ')'),
-            (',', ','),
-            ('LABEL', 'sum'),
-            ('\n', '\n'),
-            ('CODE', '.code'),
-            ('\n', '\n'),
-            ('LOAD', 'load'),
-            ('REGISTER', 2),
-            (',', ','),
-            ('LABEL', 'size_word'),
-            ('\n', '\n'),
-            ('LOAD', 'load'),
-            ('REGISTER', 15),
-            (',', ','),
-            ('LABEL', 'size_array'),
-            ('\n', '\n'),
-            ('LOAD', 'load'),
-            ('REGISTER', 5),
-            (',', ','),
-            ('LABEL', 'zero'),
-            ('\n', '\n'),
-            ('RSUB', 'rsub'),
-            ('REGISTER', 6),
-            (',', ','),
-            ('REGISTER', 6),
-            ('\n', '\n'),
-            ('LABEL', 'rpt'),
-            (':', ':'),
-            ('ADD', 'add'),
-            ('REGISTER', 5),
-            (',', ','),
-            ('LABEL', 'array'),
-            ('(', '('),
-            ('REGISTER', 6),
-            (')', ')'),
-            ('\n', '\n'),
-            ('RADD', 'radd'),
-            ('REGISTER', 6),
-            (',', ','),
-            ('REGISTER', 2),
-            ('\n', '\n'),
-            ('RCOMP', 'rcomp'),
-            ('REGISTER', 6),
-            (',', ','),
-            ('REGISTER', 15),
-            ('\n', '\n'),
-            ('JNEQ', 'jneq'),
-            ('LABEL', 'rpt'),
-            ('\n', '\n'),
-            ('STORE', 'store'),
-            ('REGISTER', 5),
-            (',', ','),
-            ('LABEL', 'sum'),
-            ('\n', '\n'),
-            ('HALT', 'halt'),
-            ('\n', '\n'),
+            ("\n", "\n"),
+            ("CONFIG", ".config"),
+            ("NUMBER", 32),
+            ("\n", "\n"),
+            ("LABEL", "sum"),
+            (":", ":"),
+            ("WORD", ".word"),
+            ("NUMBER", 0),
+            ("\n", "\n"),
+            ("LABEL", "array"),
+            (":", ":"),
+            ("WORD", ".word"),
+            ("-", "-"),
+            ("NUMBER", 1),
+            (",", ","),
+            ("NUMBER", 2),
+            (",", ","),
+            ("NUMBER", 3),
+            (",", ","),
+            ("NUMBER", 4),
+            (",", ","),
+            ("NUMBER", 5),
+            ("\n", "\n"),
+            ("LABEL", "zero"),
+            (":", ":"),
+            ("WORD", ".word"),
+            ("NUMBER", 0),
+            ("\n", "\n"),
+            ("LABEL", "size_word"),
+            (":", ":"),
+            ("WORD", ".word"),
+            ("NUMBER", 2),
+            ("\n", "\n"),
+            ("LABEL", "size_array"),
+            (":", ":"),
+            ("WORD", ".word"),
+            ("NUMBER", 10),
+            ("\n", "\n"),
+            ("DUMP", ".dump"),
+            ("LABEL", "array"),
+            ("(", "("),
+            ("NUMBER", 5),
+            (")", ")"),
+            (",", ","),
+            ("LABEL", "sum"),
+            ("\n", "\n"),
+            ("CODE", ".code"),
+            ("\n", "\n"),
+            ("LOAD", "load"),
+            ("REGISTER", 2),
+            (",", ","),
+            ("LABEL", "size_word"),
+            ("\n", "\n"),
+            ("LOAD", "load"),
+            ("REGISTER", 15),
+            (",", ","),
+            ("LABEL", "size_array"),
+            ("\n", "\n"),
+            ("LOAD", "load"),
+            ("REGISTER", 5),
+            (",", ","),
+            ("LABEL", "zero"),
+            ("\n", "\n"),
+            ("RSUB", "rsub"),
+            ("REGISTER", 6),
+            (",", ","),
+            ("REGISTER", 6),
+            ("\n", "\n"),
+            ("LABEL", "rpt"),
+            (":", ":"),
+            ("ADD", "add"),
+            ("REGISTER", 5),
+            (",", ","),
+            ("LABEL", "array"),
+            ("(", "("),
+            ("REGISTER", 6),
+            (")", ")"),
+            ("\n", "\n"),
+            ("RADD", "radd"),
+            ("REGISTER", 6),
+            (",", ","),
+            ("REGISTER", 2),
+            ("\n", "\n"),
+            ("RCOMP", "rcomp"),
+            ("REGISTER", 6),
+            (",", ","),
+            ("REGISTER", 15),
+            ("\n", "\n"),
+            ("JNEQ", "jneq"),
+            ("LABEL", "rpt"),
+            ("\n", "\n"),
+            ("STORE", "store"),
+            ("REGISTER", 5),
+            (",", ","),
+            ("LABEL", "sum"),
+            ("\n", "\n"),
+            ("HALT", "halt"),
+            ("\n", "\n"),
         ]
 
-        self.tokens.reverse() # for popping from front
+        self.tokens.reverse()  # for popping from front
 
     def test_lexer(self):
         """Test lexer."""
@@ -184,8 +183,9 @@ class TestASM:
         assert error_list == ["Unexpected 'LOAD' at 1:6"]
 
         error_list, code = asm.parse("double: halt\ndouble: halt")
-        assert error_list == ["Double definition of label 'double'" +
-                              " at 2:1 previously defined at 1:1"]
+        assert error_list == [
+            "Double definition of label 'double'" + " at 2:1 previously defined at 1:1"
+        ]
 
         error_list, code = asm.parse("load R0, array(R0)")
         assert error_list == ["Cannot use R0 for indexing at 1:10"]
