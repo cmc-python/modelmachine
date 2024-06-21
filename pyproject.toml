@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "ply>=3.11",
 ]
