@@ -6,33 +6,25 @@ import os
 import sys
 import argparse
 
-import pytest
-
 from modelmachine.ide import get_program, debug, assemble
-
-__version__ = "0.1.6" # Don't forget fix in setup.py
+from modelmachine.__about__ import __version__
 
 def run_program(args):
     """Get params from args and run file."""
     cpu = get_program(args.filename, args.protect_memory)
     cpu.run()
 
+
 def run_debug(args):
     """Get params from args and run debug."""
     cpu = get_program(args.filename, args.protect_memory)
     debug(cpu)
 
-def run_tests(args):
-    """Run tests."""
-    args = args # args is unused
-
-    path = os.path.abspath(os.path.dirname(__file__))
-    sys.argv[1] = path
-    pytest.main()
 
 def run_asm(args):
     """Get params from args and run assembler."""
     assemble(args.asm_file, args.machine_file)
+
 
 def main(argv, stdout):
     """Execute, when user call modelmachine."""
@@ -50,9 +42,6 @@ def main(argv, stdout):
     debug_parser = subparsers.add_parser('debug', help='run program in debug mode')
     debug_parser.add_argument('filename', help='file containing machine code')
     debug_parser.set_defaults(func=run_debug)
-
-    test = subparsers.add_parser('test', help='run internal tests end exit')
-    test.set_defaults(func=run_tests)
 
     asm = subparsers.add_parser('asm', help='assemble model machine program')
     asm.add_argument('asm_file', help='input file containing asm source')

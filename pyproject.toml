@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
@@ -33,13 +33,35 @@ dependencies = [
 modelmachine = "modelmachine.__main__:exec_main"
 
 [project.urls]
+Documentation = "https://github.com/cmc-python/modelmachine#readme"
 Homepage = "https://github.com/cmc-python/modelmachine"
 Issues = "https://github.com/cmc-python/modelmachine/issues"
 
 [tool.hatch.version]
-path = "modelmachine/__main__.py"
+source="vcs"
+[tool.hatch.build.hooks.vcs]
+version-file = "modelmachine/__about__.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "/modelmachine",
+]
+
+[tool.coverage.run]
+source_pkgs = ["modelmachine", "tests"]
+branch = true
+parallel = true
+omit = [
+  "modelmachine/__about__.py",
+]
+
+[tool.coverage.paths]
+model = ["modelmachine"]
+tests = ["tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
 ]

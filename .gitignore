@@ -1,6 +1,7 @@
 # Project-specific
-parser.out
-parsetab.py
+/modelmachine/parser.out
+/modelmachine/parsetab.py
+/modelmachine/__about__.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
