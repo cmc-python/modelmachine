@@ -29,3 +29,8 @@ Show coverage:
 ```shell
 hatch test --cover
 ```
+
+## Publish
+Publishing hhappens automatically by github actions.
+To publish new version, create a release tag and release itself in github
+web interface.
