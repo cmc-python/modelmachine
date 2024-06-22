@@ -8,8 +8,10 @@ dynamic = ["version"]
 description = "Model machine emulator"
 readme = "README.md"
 license = "WTFPL"
+author = { name = "Vladimir Liutov", email = "vs@lutov.net" }
 maintainers = [
     { name = "Vladimir Liutov", email = "vs@lutov.net" },
+    { name = "Fr. Br. George", email = "georgle@altlinux.org" },
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
