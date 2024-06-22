@@ -43,8 +43,10 @@ MAX_POS = [20, 20]
 #             l_text = '00 0000 0000 0000'
 #             l_comment = '; comment'
 #             stdscr.addstr(line + 1, 1, l_no, curses.color_pair(1))
-#             stdscr.addstr(line + 1, 2 + len(l_no), l_text, curses.color_pair(0))
-#             stdscr.addstr(line + 1, 3 + len(l_no + l_text), l_comment, curses.color_pair(2))
+#             stdscr.addstr(line + 1, 2 + len(l_no), l_text,
+#                           curses.color_pair(0))
+#             stdscr.addstr(line + 1, 3 + len(l_no + l_text), l_comment,
+#                           curses.color_pair(2))
 #
 #         pos = source_to_screen(POS)
 #         pos[0] += 1
@@ -101,20 +103,19 @@ def exec_step(cpu, step, command):
     else:
         command = command.split()
         try:
-            if len(command) == 2:
+            if len(command) == 2:  # noqa: PLR2004
                 count = int(command[1], 0)  # may be raised value error
             elif len(command) == 1:
                 count = 1
             else:
-                raise ValueError
+                raise ValueError  # noqa: TRY301
 
         except ValueError:
             need_help = True
             count = None
 
         else:
-            for i in range(count):
-                i = i  # pylint hack
+            for _i in range(count):
                 step += 1
                 cpu.control_unit.step()
                 exec_print(cpu, step)
@@ -146,12 +147,12 @@ def exec_print(cpu, step):
     return step, False, False
 
 
-def exec_memory(cpu, step, command):
+def exec_memory(_cpu, step, command):
     """Print contents of RAM."""
     need_help = False
 
     command = command.split()
-    if len(command) == 3:
+    if len(command) == 3:  # noqa: PLR2004
         try:
             int(command[1], 0)
             int(command[2], 0)
@@ -166,27 +167,25 @@ def exec_memory(cpu, step, command):
 
 
 def exec_command(cpu, step, command):
-    """Exec one command and generate step, need_help and need_quit variables."""
+    """Exec one command and generate step, need_help and need_quit
+    variables."""
 
     if command[0] == "s":
         return exec_step(cpu, step, command)
-    elif command[0] == "c":
+    if command[0] == "c":
         return exec_continue(cpu, step)
-    elif command[0] == "p":
+    if command[0] == "p":
         return exec_print(cpu, step)
-    elif command[0] == "m":
+    if command[0] == "m":
         return exec_memory(cpu, step, command)
-    elif command[0] == "q":
+    if command[0] == "q":
         return step, False, True
-    else:
-        return step, True, False
+
+    return step, True, False
 
 
 def debug(cpu):
     """Debug cycle."""
-    import readline
-
-    readline = readline
 
     need_quit = False
     need_help = True
@@ -210,7 +209,7 @@ def debug(cpu):
                 for _warn in warns:
                     pass
 
-        except Exception:
+        except Exception:  # noqa: BLE001
             cpu.alu.halt()
 
 
@@ -219,9 +218,9 @@ def get_cpu(source, protect_memory):
     arch = source[0].strip()
     if arch in CPU_LIST:
         return CPU_LIST[arch](protect_memory)
-    else:
-        msg = f"Unexpected arch (found in first line): {arch}"
-        raise ValueError(msg)
+
+    msg = f"Unexpected arch (found in first line): {arch}"
+    raise ValueError(msg)
 
 
 def get_program(filename, protect_memory):

@@ -89,7 +89,10 @@ class TestArithmeticLogicUnit:
         for i in range(self.min_int, self.max_int):
             self.registers.put("R1", i % 2**BYTE_SIZE, BYTE_SIZE)
             self.registers.put("R2", (-i - 1) % 2**BYTE_SIZE, BYTE_SIZE)
-            signed = (Integer(i, BYTE_SIZE, True), Integer(-i - 1, BYTE_SIZE, True))
+            signed = (
+                Integer(i, BYTE_SIZE, True),
+                Integer(-i - 1, BYTE_SIZE, True),
+            )
             unsigned = (
                 Integer(i % 2**BYTE_SIZE, BYTE_SIZE, False),
                 Integer((-i - 1) % 2**BYTE_SIZE, BYTE_SIZE, False),
@@ -124,7 +127,10 @@ class TestArithmeticLogicUnit:
             self.registers.put("R1", -i % 2**BYTE_SIZE, BYTE_SIZE)
             self.registers.put("R2", -10 % 2**BYTE_SIZE, BYTE_SIZE)
             self.alu.add()
-            assert self.registers.fetch("S", BYTE_SIZE) == (-i - 10) % 2**BYTE_SIZE
+            assert (
+                self.registers.fetch("S", BYTE_SIZE)
+                == (-i - 10) % 2**BYTE_SIZE
+            )
             if -i >= self.min_int + 10:
                 assert self.registers.fetch("FLAGS", BYTE_SIZE) == SF | CF
             else:
@@ -148,7 +154,9 @@ class TestArithmeticLogicUnit:
             self.registers.put("R1", i, BYTE_SIZE)
             self.registers.put("R2", 10, BYTE_SIZE)
             self.alu.sub()
-            assert self.registers.fetch("S", BYTE_SIZE) == (i - 10) % 2**BYTE_SIZE
+            assert (
+                self.registers.fetch("S", BYTE_SIZE) == (i - 10) % 2**BYTE_SIZE
+            )
             if i < 10:
                 assert self.registers.fetch("FLAGS", BYTE_SIZE) == CF | SF
             elif i == 10:
@@ -159,7 +167,10 @@ class TestArithmeticLogicUnit:
             self.registers.put("R1", -i % 2**BYTE_SIZE, BYTE_SIZE)
             self.registers.put("R2", 10, BYTE_SIZE)
             self.alu.sub()
-            assert self.registers.fetch("S", BYTE_SIZE) == (-i - 10) % 2**BYTE_SIZE
+            assert (
+                self.registers.fetch("S", BYTE_SIZE)
+                == (-i - 10) % 2**BYTE_SIZE
+            )
             if -i >= self.min_int + 10:
                 assert self.registers.fetch("FLAGS", BYTE_SIZE) == SF
             else:

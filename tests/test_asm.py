@@ -2,17 +2,22 @@
 
 from modelmachine import asm
 
-RESULT_CODE = """mmm
+RESULT_CODE = (
+    """mmm
 
 [config]
 output = 34, 36, 38, 40, 42, 32
 
 [code]
-0020 002e 00f0 0030 0050 002c 2266 0156 0022 2162 256f 8200 0007 1050 0020 9900 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 ffff ffff 0000 0002 0000 0003 0000 0004 0000 0005 0000 0000 0000 0002 0000 000a
+0020 002e 00f0 0030 0050 002c 2266 0156 0022 2162 256f 8200 0007 1050 0020"""
+    """ 9900 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"""
+    """ 0000 0000 0000 0000 0000 0000 ffff ffff 0000 0002 0000 0003 0000"""
+    """ 0004 0000 0005 0000 0000 0000 0002 0000 000a
 
 [input]
 
 """
+)
 
 
 def eq_token(token, tok_type, value):
@@ -184,7 +189,8 @@ class TestASM:
 
         error_list, code = asm.parse("double: halt\ndouble: halt")
         assert error_list == [
-            "Double definition of label 'double'" + " at 2:1 previously defined at 1:1"
+            "Double definition of label 'double'"
+            " at 2:1 previously defined at 1:1"
         ]
 
         error_list, code = asm.parse("load R0, array(R0)")

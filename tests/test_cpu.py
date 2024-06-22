@@ -2,10 +2,17 @@
 
 from unittest.mock import create_autospec
 
-from pytest import raises
+import pytest
 
 from modelmachine.alu import ArithmeticLogicUnit
-from modelmachine.cpu import CPUMM1, CPUMM2, CPUMM3, CPUMMM, CPUMMV, AbstractCPU
+from modelmachine.cpu import (
+    CPUMM1,
+    CPUMM2,
+    CPUMM3,
+    CPUMMM,
+    CPUMMV,
+    AbstractCPU,
+)
 from modelmachine.cu import AbstractControlUnit
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
@@ -23,7 +30,9 @@ class TestAbstractCPU:
         self.cpu.memory = create_autospec(RandomAccessMemory, True, True)
         self.cpu.registers = create_autospec(RegisterMemory, True, True)
         self.cpu.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.cpu.control_unit = create_autospec(AbstractControlUnit, True, True)
+        self.cpu.control_unit = create_autospec(
+            AbstractControlUnit, True, True
+        )
         self.cpu.io_unit = create_autospec(InputOutputUnit, True, True)
         self.cpu.io_unit.get_int.return_value = 789
         self.source = [
@@ -49,25 +58,34 @@ class TestAbstractCPU:
             "output": "102",
             "key": "value",
         }
-        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_source.assert_called_once_with(
+            ["00 00", "99 00"]
+        )
         self.cpu.io_unit.load_data.assert_called_once_with(
             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
         )
 
-        with raises(ValueError):
-            source = list(self.source)
-            source[0] = "wrong_format"
+        source = list(self.source)
+        source[0] = "wrong_format"
+        with pytest.raises(
+            ValueError, match="Cannot find section \\[config\\]"
+        ):
             self.cpu.load_program(source)
 
-        with raises(ValueError):
-            source = list(self.source)
-            source[0] = "[input]"
-            source[8] = "[config]"
+        source = list(self.source)
+        source[0] = "[input]"
+        source[8] = "[config]"
+        with pytest.raises(
+            ValueError,
+            match="Wrong section order, should be: config, code, input",
+        ):
             self.cpu.load_program(source)
 
-        with raises(ValueError):
-            source = list(self.source)
-            source[1] = "wrong_format"
+        source = list(self.source)
+        source[1] = "wrong_format"
+        with pytest.raises(
+            ValueError, match="Wrong config format: `wrong_format`"
+        ):
             self.cpu.load_program(source)
 
         def input_function():
@@ -83,7 +101,9 @@ class TestAbstractCPU:
             "output": "102",
             "key": "value",
         }
-        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_source.assert_called_once_with(
+            ["00 00", "99 00"]
+        )
         self.cpu.io_unit.load_data.assert_called_once_with(
             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
         )
@@ -97,7 +117,9 @@ class TestAbstractCPU:
             "output": "102",
             "key": "value",
         }
-        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_source.assert_called_once_with(
+            ["00 00", "99 00"]
+        )
         self.cpu.io_unit.load_data.assert_called_once_with(
             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
         )
@@ -124,7 +146,9 @@ class TestAbstractCPU:
             "output": "102",
             "key": "value",
         }
-        self.cpu.io_unit.load_source.assert_called_once_with(["00 00", "99 00"])
+        self.cpu.io_unit.load_source.assert_called_once_with(
+            ["00 00", "99 00"]
+        )
         self.cpu.io_unit.load_data.assert_called_once_with(
             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
         )
@@ -142,14 +166,22 @@ class TestCPUMM3:
     def setup_method(self):
         """Init state."""
         self.cpu = CPUMM3(protect_memory=False)
-        self.source = (
-            "[config]\ninput=0x101,0x102\n\noutput=0x103\n"
-            + "[code]\n01 0101 0102 0103\n80 0000 0000 0003\n"
-            + "02 0103 0103 0103; never be used\n"
-            + "02 0103 0005 0103\n99 0000 0000 0000\n"
-            + "00000000000002\n"
-            + "[input]\n100 200\n"
-        )
+        self.source = """
+            [config]
+            input=0x101,0x102
+            output=0x103
+
+            [code]
+            01 0101 0102 0103
+            80 0000 0000 0003
+            02 0103 0103 0103; never be used
+            02 0103 0005 0103
+            99 0000 0000 0000
+            00000000000002
+
+            [input]
+            100 200
+        """
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
@@ -170,22 +202,22 @@ class TestCPUMM2:
     def setup_method(self):
         """Init state."""
         self.cpu = CPUMM2(protect_memory=False)
-        self.source = (
-            "[config]\n"
-            + "input=0x101,0x102\n"
-            + "output=0x103\n"
-            + "[code]\n"
-            + "01 0101 0102\n"
-            + "00 0103 0101\n"
-            + "05 0101 0102\n"
-            + "86 0000 0005\n"
-            + "02 0103 0103; never be used\n"
-            + "02 0103 0007\n"
-            + "99 0000 0000\n"
-            + "0000000002\n"
-            + "[input]\n"
-            + "100 200\n"
-        )
+        self.source = """
+            [config]
+            input=0x101,0x102
+            output=0x103
+            [code]
+            01 0101 0102
+            00 0103 0101
+            05 0101 0102
+            86 0000 0005
+            02 0103 0103; never be used
+            02 0103 0007
+            99 0000 0000
+            0000000002
+            [input]
+            100 200
+        """
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
@@ -206,22 +238,22 @@ class TestCPUMMV:
     def setup_method(self):
         """Init state."""
         self.cpu = CPUMMV(protect_memory=False)
-        self.source = (
-            "[config]\n"
-            + "input=0x100,0x105\n"
-            + "output=0x10a\n"
-            + "[code]\n"
-            + "01 0100 0105\n"
-            + "00 010a 0100\n"
-            + "05 0100 0105\n"
-            + "86 0017\n"
-            + "02 0103 0103; never be used\n"
-            + "02 010a 001d\n"
-            + "99\n"
-            + "0000000002\n"
-            + "[input]\n"
-            + "100 200\n"
-        )
+        self.source = """
+            [config]
+            input=0x100,0x105
+            output=0x10a
+            [code]
+            01 0100 0105
+            00 010a 0100
+            05 0100 0105
+            86 0017
+            02 0103 0103; never be used
+            02 010a 001d
+            99
+            0000000002
+            [input]
+            100 200
+        """
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
@@ -242,24 +274,24 @@ class TestCPUMM1:
     def setup_method(self):
         """Init state."""
         self.cpu = CPUMM1(protect_memory=False)
-        self.source = (
-            "[config]\n"
-            + "input=0x101,0x102\n"
-            + "output=0x103\n"
-            + "[code]\n"
-            + "00 0101\n"
-            + "01 0102\n"
-            + "05 0102\n"
-            + "86 0006\n"
-            + "02 0103; never be used\n"
-            + "10 0103\n"
-            + "02 0009\n"
-            + "10 0103\n"
-            + "99 0000\n"
-            + "000002\n"
-            + "[input]\n"
-            + "100 200\n"
-        )
+        self.source = """
+            [config]
+            input=0x101,0x102
+            output=0x103
+            [code]
+            00 0101
+            01 0102
+            05 0102
+            86 0006
+            02 0103; never be used
+            10 0103
+            02 0009
+            10 0103
+            99 0000
+            000002
+            [input]
+            100 200
+        """
 
     def test_smoke(self, tmpdir):
         """Smoke test."""
@@ -280,21 +312,24 @@ class TestCPUMMM:
     def setup_method(self):
         """Init state."""
         self.cpu = CPUMMM(protect_memory=False)
-        self.source = (
-            "[config]\n"
-            + "input=0x100,0x102\n"
-            + "output=0x104\n"
-            + "[code]\n"
-            + "00 0 0 0100\n"
-            + "03 0 0 000C\n"
-            + "04 0 0 000E\n"
-            + "02 1 0 0102\n"
-            + "23 1 1; coment never be used\n"
-            + "10 1 0 0104\n"
-            + "99 0 0\n"
-            + "; -----------\n"
-            "ffffffeb\n" + "00000032\n" + "[input]\n" + "100 200\n"
-        )
+        self.source = """
+            [config]
+            input=0x100,0x102
+            output=0x104
+            [code]
+            00 0 0 0100
+            03 0 0 000C
+            04 0 0 000E
+            02 1 0 0102
+            23 1 1; coment never be used
+            10 1 0 0104
+            99 0 0
+            ; -----------
+            ffffffeb
+            00000032
+            [input]
+            100 200
+        """
 
     def test_smoke(self, tmpdir):
         """Smoke test."""

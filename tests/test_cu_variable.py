@@ -2,7 +2,7 @@
 
 from unittest.mock import call
 
-from pytest import raises
+import pytest
 
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.cu import HALTED, RUNNING, ControlUnitM, ControlUnitV
@@ -34,16 +34,18 @@ from .test_cu_abstract import (
     REGISTER_OPCODES,
     WORD_SIZE,
 )
-from .test_cu_fixed import TestControlUnit2 as TBCU2
+from .test_cu_fixed import TestControlUnit2 as TCu2
 
 
-class TestControlUnitV(TBCU2):
+class TestControlUnitV(TCu2):
     """Test case for  Model Machine Variable Control Unit."""
 
     def setup_method(self):
         """Init state."""
         super().setup_method()
-        self.ram = RandomAccessMemory(BYTE_SIZE, 256, "big", is_protected=True)
+        self.ram = RandomAccessMemory(
+            word_size=BYTE_SIZE, memory_size=256, is_protected=True
+        )
         self.control_unit = ControlUnitV(
             WORD_SIZE, BYTE_SIZE, self.registers, self.ram, self.alu, WORD_SIZE
         )
@@ -73,7 +75,7 @@ class TestControlUnitV(TBCU2):
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2**BYTE_SIZE)) - self.control_unit.opcodes:
-            with raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid opcode"):
                 self.run_fetch(opcode, opcode, BYTE_SIZE)
 
         for opcode in ARITHMETIC_OPCODES | {OP_COMP, OP_MOVE}:
@@ -121,7 +123,9 @@ class TestControlUnitV(TBCU2):
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
-            self.registers.put.assert_called_once_with("ADDR", addr1, BYTE_SIZE)
+            self.registers.put.assert_called_once_with(
+                "ADDR", addr1, BYTE_SIZE
+            )
 
         for opcode in (OP_HALT,):
             self.registers.put.reset_mock()
@@ -134,7 +138,10 @@ class TestControlUnitV(TBCU2):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -167,7 +174,10 @@ class TestControlUnitV(TBCU2):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -190,7 +200,10 @@ class TestControlUnitV(TBCU2):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -202,13 +215,17 @@ class TestControlUnitV(TBCU2):
         assert self.control_unit.get_status() == HALTED
 
 
-class TestControlUnitM(TBCU2):
+class TestControlUnitM(TCu2):
     """Test case for Address Modification Model Machine Control Unit."""
 
     def setup_method(self):
         """Init state."""
         super().setup_method()
-        self.ram = RandomAccessMemory(HALF_SIZE, 2**HALF_SIZE, "big", is_protected=True)
+        self.ram = RandomAccessMemory(
+            word_size=HALF_SIZE,
+            memory_size=2**HALF_SIZE,
+            is_protected=True,
+        )
         self.control_unit = ControlUnitM(
             WORD_SIZE, HALF_SIZE, self.registers, self.ram, self.alu, WORD_SIZE
         )
@@ -259,14 +276,13 @@ class TestControlUnitM(TBCU2):
         assert self.control_unit.OPCODES["rumul"] == OP_RUMUL
         assert self.control_unit.OPCODES["rudivmod"] == OP_RUDIVMOD
 
-    def run_fetch(self, value, opcode, instruction_size, r2=True):
+    def run_fetch(self, value, opcode, instruction_size, *, r2=True):
         """Run one fetch test."""
         address1 = 10
         address2 = 42
         self.ram.put(address1, value, instruction_size)
         increment = instruction_size // self.ram.word_size
 
-        # pylint: disable=no-member
         self.registers.fetch.reset_mock()
         self.registers.put.reset_mock()
 
@@ -275,11 +291,12 @@ class TestControlUnitM(TBCU2):
             if name == "PC":
                 assert size == 2 * BYTE_SIZE
                 return address1
-            elif name == "R2":
+
+            if name == "R2":
                 assert size == WORD_SIZE
                 return address2
-            else:
-                raise KeyError
+
+            raise KeyError
 
         self.registers.fetch.side_effect = get_register
 
@@ -298,14 +315,22 @@ class TestControlUnitM(TBCU2):
         )
         assert self.control_unit.opcode == opcode
 
+    def test_fetch_instruction(self):
+        """Override parent test_fetch_instruction.
+
+        In this class we test this logic in test_fetch_and_decode.
+        """
+
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2**BYTE_SIZE)) - self.control_unit.opcodes:
-            with raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid opcode"):
                 self.run_fetch(opcode << BYTE_SIZE, opcode, 2 * BYTE_SIZE)
 
         for opcode in (
-            ARITHMETIC_OPCODES | JUMP_OPCODES | {OP_COMP, OP_LOAD, OP_ADDR, OP_STORE}
+            ARITHMETIC_OPCODES
+            | JUMP_OPCODES
+            | {OP_COMP, OP_LOAD, OP_ADDR, OP_STORE}
         ):
             self.control_unit.register1 = None
             self.control_unit.register2 = None
@@ -350,10 +375,11 @@ class TestControlUnitM(TBCU2):
             assert size == WORD_SIZE
             if name == register1:
                 return val1
-            elif name == register2:
+
+            if name == register2:
                 return val2
-            else:
-                raise KeyError
+
+            raise KeyError
 
         self.registers.fetch.side_effect = get_register
         self.control_unit.address = address
@@ -361,7 +387,6 @@ class TestControlUnitM(TBCU2):
         self.control_unit.register2 = register2
         self.ram.put(address, val3, WORD_SIZE)
 
-        # pylint: disable=no-member
         for opcode in ARITHMETIC_OPCODES | {OP_LOAD, OP_COMP}:
             self.registers.fetch.reset_mock()
             self.registers.put.reset_mock()
@@ -412,7 +437,9 @@ class TestControlUnitM(TBCU2):
             self.control_unit.load()
 
             assert not self.registers.fetch.called
-            self.registers.put.assert_called_once_with("ADDR", address, 2 * BYTE_SIZE)
+            self.registers.put.assert_called_once_with(
+                "ADDR", address, 2 * BYTE_SIZE
+            )
 
         for opcode in (OP_HALT,):
             self.registers.fetch.reset_mock()
@@ -428,7 +455,6 @@ class TestControlUnitM(TBCU2):
         """Test basic operations."""
         super().test_basic_execute(should_move=should_move)
 
-        # pylint: disable=no-member
         self.control_unit.opcode = OP_MOVE
         self.alu.move.reset_mock()
         self.control_unit.execute()
@@ -442,7 +468,6 @@ class TestControlUnitM(TBCU2):
     def run_write_back(self, should, opcode):
         """Run write back method for specific opcode."""
 
-
         register1, next_register1, register2 = "R5", "R6", "R8"
         res_register1, val1 = "S", 123456
         res_register2, val2 = "RZ", 654321
@@ -453,10 +478,11 @@ class TestControlUnitM(TBCU2):
             assert size == self.operand_size
             if name == res_register1:
                 return val1
-            elif name == res_register2:
+
+            if name == res_register2:
                 return val2
-            else:
-                raise KeyError
+
+            raise KeyError
 
         self.registers.fetch.side_effect = get_register
         self.control_unit.address = address
@@ -464,7 +490,6 @@ class TestControlUnitM(TBCU2):
         self.control_unit.register2 = register2
         self.ram.put(address, canary, self.operand_size)
 
-        # pylint: disable=no-member
         self.registers.fetch.reset_mock()
         self.registers.put.reset_mock()
 
@@ -596,7 +621,9 @@ class TestControlUnitM(TBCU2):
 
         self.control_unit.step()
         assert self.registers.fetch("R0", WORD_SIZE) == (21 * 123) // 50
-        assert self.registers.fetch("R1", WORD_SIZE) == (x - 456) % 2**WORD_SIZE
+        assert (
+            self.registers.fetch("R1", WORD_SIZE) == (x - 456) % 2**WORD_SIZE
+        )
         assert self.registers.fetch("PC", 2 * BYTE_SIZE) == 0x08
         assert self.ram.fetch(0x0104, WORD_SIZE) == canary
         assert self.control_unit.get_status() == RUNNING

@@ -12,7 +12,13 @@ CPU includes:
 import sys
 
 from modelmachine.alu import ArithmeticLogicUnit
-from modelmachine.cu import ControlUnit1, ControlUnit2, ControlUnit3, ControlUnitM, ControlUnitV
+from modelmachine.cu import (
+    ControlUnit1,
+    ControlUnit2,
+    ControlUnit3,
+    ControlUnitM,
+    ControlUnitV,
+)
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
@@ -64,16 +70,18 @@ class AbstractCPU:
             line = [x.strip() for x in line_str.split("=")]
             expected = 2
             if len(line) != expected:
-                msg = "Wrong config format: `{line}`".format(line="=".join(line))
-                raise ValueError(
-                    msg
+                msg = "Wrong config format: `{line}`".format(
+                    line="=".join(line)
                 )
+                raise ValueError(msg)
             self.config[line[0]] = line[1]
 
         self.io_unit.load_source(code)
 
         if "input" in self.config:
-            input_addresses = [int(x, 0) for x in self.config["input"].split(",")]
+            input_addresses = [
+                int(x, 0) for x in self.config["input"].split(",")
+            ]
 
             if data == []:  # Read data from stdin
                 while len(data) < len(input_addresses):
@@ -85,7 +93,9 @@ class AbstractCPU:
     def print_result(self, output=sys.stdout):
         """Print calculation result."""
         if "output" in self.config:
-            for address in (int(x, 0) for x in self.config["output"].split(",")):
+            for address in (
+                int(x, 0) for x in self.config["output"].split(",")
+            ):
                 print(self.io_unit.get_int(address), file=output)
 
     def run(self, output=sys.stdout):
@@ -105,7 +115,6 @@ class CPUMM3(AbstractCPU):
         self.ram = RandomAccessMemory(
             word_size=word_size,
             memory_size=memory_size,
-            endianess="big",  # Unused
             is_protected=protect_memory,
         )
         self.registers = RegisterMemory()
@@ -140,7 +149,6 @@ class CPUMM2(AbstractCPU):
         self.ram = RandomAccessMemory(
             word_size=word_size,
             memory_size=memory_size,
-            endianess="big",  # Unused
             is_protected=protect_memory,
         )
         self.registers = RegisterMemory()
@@ -176,7 +184,6 @@ class CPUMMV(AbstractCPU):
         self.ram = RandomAccessMemory(
             word_size=byte_size,
             memory_size=memory_size,
-            endianess="big",
             is_protected=protect_memory,
         )
         self.registers = RegisterMemory()
@@ -211,7 +218,6 @@ class CPUMM1(AbstractCPU):
         self.ram = RandomAccessMemory(
             word_size=word_size,
             memory_size=memory_size,
-            endianess="big",  # Unused
             is_protected=protect_memory,
         )
         self.registers = RegisterMemory()
@@ -247,7 +253,6 @@ class CPUMMM(AbstractCPU):
         self.ram = RandomAccessMemory(
             word_size=word_size,
             memory_size=memory_size,
-            endianess="big",  # Unused
             is_protected=protect_memory,
         )
         self.registers = RegisterMemory()
@@ -271,4 +276,10 @@ class CPUMMM(AbstractCPU):
         )
 
 
-CPU_LIST = {"mm3": CPUMM3, "mm2": CPUMM2, "mmv": CPUMMV, "mm1": CPUMM1, "mmm": CPUMMM}
+CPU_LIST = {
+    "mm3": CPUMM3,
+    "mm2": CPUMM2,
+    "mmv": CPUMMV,
+    "mm1": CPUMM1,
+    "mmm": CPUMMM,
+}

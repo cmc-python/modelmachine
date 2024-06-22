@@ -9,7 +9,7 @@ from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory
 
 
-class g: # noqa: N801
+class g:  # noqa: N801
     lexer = None
     parser = None
     error_list = None
@@ -40,7 +40,7 @@ class g: # noqa: N801
         cls.max_pos = 0
         cls.label_table = {}
         cls.ram = RandomAccessMemory(
-            word_size=16, memory_size=2**16, endianess="big", is_protected=False
+            word_size=16, memory_size=2**16, is_protected=False
         )
 
 
@@ -131,11 +131,11 @@ def lexer():
     t_ignore_COMMENT = r";.*"  # noqa: F841,N806
 
     # A regular expression rule with some action code
-    def t_LABEL(t): # noqa: N802
+    def t_LABEL(t):  # noqa: N802
         r"[\.\w]+"
-        if re.compile(r"^(?:0x[\da-f]+)|(?:0b[01]+)|(?:0o[0-7]+)|(?:\d+)$").match(
-            t.value
-        ):
+        if re.compile(
+            r"^(?:0x[\da-f]+)|(?:0b[01]+)|(?:0o[0-7]+)|(?:\d+)$"
+        ).match(t.value):
             t.value = int(t.value, 0)
             t.type = "NUMBER"
         elif t.value in preproc_instructions:
@@ -149,7 +149,8 @@ def lexer():
             t.type = "LABEL"
         else:
             g.error_list.append(
-                f"Illegal token '{t.value}' at {t.lineno}:{find_column(t.lexpos)}"
+                f"Illegal token '{t.value}' at"
+                f" {t.lineno}:{find_column(t.lexpos)}"
             )
             t = None
         return t
@@ -163,7 +164,9 @@ def lexer():
 
     # Error handling rule
     def t_error(t):
-        g.error_list.append(f"Illegal character '{t.value[0]}' at {position(t)}")
+        g.error_list.append(
+            f"Illegal character '{t.value[0]}' at {position(t)}"
+        )
         g.lexer.skip(1)
 
     # Build the lexer
@@ -226,7 +229,8 @@ def parser():
         """address : LABEL '(' REGISTER ')'"""
         if p[3] == 0:
             g.error_list.append(
-                f"Cannot use R0 for indexing at {p.lineno(3)}:{find_column(p.lexpos(1))}"
+                "Cannot use R0 for indexing at"
+                f" {p.lineno(3)}:{find_column(p.lexpos(1))}"
             )
             raise SyntaxError
 
@@ -243,7 +247,8 @@ def parser():
         if p[1] in g.label_table:
             prev = g.label_table[p[1]]
             g.error_list.append(
-                f"Double definition of label '{p[1]}' at {p.lineno(1)}:{find_column(p.lexpos(1))}"
+                "Double definition of label"
+                f" '{p[1]}' at {p.lineno(1)}:{find_column(p.lexpos(1))}"
                 f" previously defined at {prev[1]}:{prev[2]}"
             )
             raise SyntaxError
@@ -288,7 +293,9 @@ def parser():
         """
         data = opcodes[p[1]] << 8 | p[2] << 4 | p[4][0]
         g.put(data, 16)
-        g.mapper.append((g.pos, p[4][1], p.lineno(3), find_column(p.lexpos(3))))
+        g.mapper.append(
+            (g.pos, p[4][1], p.lineno(3), find_column(p.lexpos(3)))
+        )
         g.put(0, 16)
 
     def p_line_regops(p):
@@ -319,7 +326,9 @@ def parser():
         """
         data = opcodes[p[1]] << 8 | p[2][0]
         g.put(data, 16)
-        g.mapper.append((g.pos, p[2][1], p.lineno(1), find_column(p.lexpos(1))))
+        g.mapper.append(
+            (g.pos, p[2][1], p.lineno(1), find_column(p.lexpos(1)))
+        )
         g.put(0, 16)
 
     def p_line_halt(_p):

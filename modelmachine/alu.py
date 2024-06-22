@@ -43,7 +43,9 @@ class ArithmeticLogicUnit:
     def set_flags(self, signed, unsigned):
         """Set flags."""
         flags = 0
-        data = self.registers.fetch(self.register_names["S"], self.operand_size)
+        data = self.registers.fetch(
+            self.register_names["S"], self.operand_size
+        )
         value = Integer(data, self.operand_size, True).get_value()
         if value == 0:
             flags |= ZF
@@ -53,26 +55,38 @@ class ArithmeticLogicUnit:
         if value != signed:
             flags |= OF
 
-        data = self.registers.fetch(self.register_names["S"], self.operand_size)
+        data = self.registers.fetch(
+            self.register_names["S"], self.operand_size
+        )
         value = Integer(data, self.operand_size, False).get_value()
         if value != unsigned:
             flags |= CF
 
-        self.registers.put(self.register_names["FLAGS"], flags, self.operand_size)
+        self.registers.put(
+            self.register_names["FLAGS"], flags, self.operand_size
+        )
 
     def get_signed_ops(self):
         """Read and return R1 and R2."""
-        operand1 = self.registers.fetch(self.register_names["R1"], self.operand_size)
+        operand1 = self.registers.fetch(
+            self.register_names["R1"], self.operand_size
+        )
         operand1 = Integer(operand1, self.operand_size, True)
-        operand2 = self.registers.fetch(self.register_names["R2"], self.operand_size)
+        operand2 = self.registers.fetch(
+            self.register_names["R2"], self.operand_size
+        )
         operand2 = Integer(operand2, self.operand_size, True)
         return (operand1, operand2)
 
     def get_unsigned_ops(self):
         """Read and return unsigned R1 and R2."""
-        operand1 = self.registers.fetch(self.register_names["R1"], self.operand_size)
+        operand1 = self.registers.fetch(
+            self.register_names["R1"], self.operand_size
+        )
         operand1 = Integer(operand1, self.operand_size, False)
-        operand2 = self.registers.fetch(self.register_names["R2"], self.operand_size)
+        operand2 = self.registers.fetch(
+            self.register_names["R2"], self.operand_size
+        )
         operand2 = Integer(operand2, self.operand_size, False)
         return (operand1, operand2)
 
@@ -184,7 +198,9 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_unsigned_ops()
         unsigned = (operand1 // operand2).get_value()
 
-        self.registers.put(self.register_names["S"], div.get_data(), self.operand_size)
+        self.registers.put(
+            self.register_names["S"], div.get_data(), self.operand_size
+        )
         self.registers.put(
             self.register_names["RES"], mod.get_data(), self.operand_size
         )
@@ -198,7 +214,9 @@ class ArithmeticLogicUnit:
         operand1, operand2 = self.get_signed_ops()
         signed = (operand1 // operand2).get_value()
 
-        self.registers.put(self.register_names["S"], div.get_data(), self.operand_size)
+        self.registers.put(
+            self.register_names["S"], div.get_data(), self.operand_size
+        )
         self.registers.put(
             self.register_names["RES"], mod.get_data(), self.operand_size
         )
@@ -206,7 +224,9 @@ class ArithmeticLogicUnit:
 
     def jump(self):
         """PC := R1."""
-        addr = self.registers.fetch(self.register_names["ADDR"], self.address_size)
+        addr = self.registers.fetch(
+            self.register_names["ADDR"], self.address_size
+        )
         self.registers.put(self.register_names["PC"], addr, self.address_size)
 
     def cond_jump(self, signed, comparasion, equal):
@@ -216,15 +236,19 @@ class ArithmeticLogicUnit:
         comparasion may be 1, 0, -1.
         equal may be True or False.
 
-        >>> alu.cond_jump(signed=False, comparasion=1, equal=False) # a > b
+        >>> alu.cond_jump(signed=False, comparasion=1, equal=False)  # a > b
         """
-        flags = self.registers.fetch(self.register_names["FLAGS"], self.operand_size)
+        flags = self.registers.fetch(
+            self.register_names["FLAGS"], self.operand_size
+        )
 
         def _signed_cond_jump():
             """Conditional jump if comparasion != 0 and signed == True."""
             if comparasion == LESS:
                 if equal:
-                    if bool(flags & OF) != bool(flags & SF) or bool(flags & ZF):
+                    if bool(flags & OF) != bool(flags & SF) or bool(
+                        flags & ZF
+                    ):
                         self.jump()
                 elif bool(flags & OF) != bool(flags & SF):
                     self.jump()
@@ -261,17 +285,29 @@ class ArithmeticLogicUnit:
 
     def halt(self):
         """Stop the machine."""
-        self.registers.put(self.register_names["FLAGS"], HALT, self.operand_size)
+        self.registers.put(
+            self.register_names["FLAGS"], HALT, self.operand_size
+        )
 
     def move(self, source="R1", dest="S"):
         """dest := source."""
-        value = self.registers.fetch(self.register_names[source], self.operand_size)
+        value = self.registers.fetch(
+            self.register_names[source], self.operand_size
+        )
         self.registers.put(self.register_names[dest], value, self.operand_size)
 
     def swap(self, reg1="S", reg2="RES"):
         """S := R1."""
-        reg1_value = self.registers.fetch(self.register_names[reg1], self.operand_size)
-        reg2_value = self.registers.fetch(self.register_names[reg2], self.operand_size)
+        reg1_value = self.registers.fetch(
+            self.register_names[reg1], self.operand_size
+        )
+        reg2_value = self.registers.fetch(
+            self.register_names[reg2], self.operand_size
+        )
 
-        self.registers.put(self.register_names[reg1], reg2_value, self.operand_size)
-        self.registers.put(self.register_names[reg2], reg1_value, self.operand_size)
+        self.registers.put(
+            self.register_names[reg1], reg2_value, self.operand_size
+        )
+        self.registers.put(
+            self.register_names[reg2], reg1_value, self.operand_size
+        )

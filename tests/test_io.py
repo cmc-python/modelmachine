@@ -2,7 +2,7 @@
 
 from unittest.mock import call, create_autospec
 
-from pytest import raises
+import pytest
 
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory
@@ -29,7 +29,7 @@ class TestIODevice:
         self.ram.put.assert_any_call(20, 0x01020A0A, WORD_SIZE)
         self.ram.put.assert_any_call(21, 0x10153264, WORD_SIZE)
 
-        with raises(ValueError):
+        with pytest.raises(ValueError, match="Cannot save string, wrong size"):
             self.io_unit.load_hex(20, "01")
 
     def test_store_hex(self):
@@ -43,8 +43,8 @@ class TestIODevice:
             assert address in {20, 21}
             if address == 20:
                 return first
-            else:
-                return second
+
+            return second
 
         self.ram.fetch.side_effect = side_effect
 
@@ -55,21 +55,27 @@ class TestIODevice:
 
         self.ram.fetch.reset_mock()
         assert self.io_unit.store_hex(20, 2 * WORD_SIZE) == "01020a10 03040b20"
-        self.ram.fetch.assert_has_calls([call(20, WORD_SIZE), call(21, WORD_SIZE)])
+        self.ram.fetch.assert_has_calls(
+            [call(20, WORD_SIZE), call(21, WORD_SIZE)]
+        )
 
-        with raises(KeyError):
+        with pytest.raises(KeyError):
             self.io_unit.store_hex(0, WORD_SIZE + 1)
 
     def test_put_int(self):
         """Test load data method."""
         address, value = 0x55, 0x1234
         self.io_unit.put_int(address, value)
-        self.ram.put.assert_called_once_with(address, value % 2**WORD_SIZE, WORD_SIZE)
+        self.ram.put.assert_called_once_with(
+            address, value % 2**WORD_SIZE, WORD_SIZE
+        )
 
         self.ram.put.reset_mock()
         value *= -1
         self.io_unit.put_int(address, value)
-        self.ram.put.assert_called_once_with(address, value % 2**WORD_SIZE, WORD_SIZE)
+        self.ram.put.assert_called_once_with(
+            address, value % 2**WORD_SIZE, WORD_SIZE
+        )
 
     def test_get_int(self):
         """Test load data method."""
@@ -85,7 +91,9 @@ class TestIODevice:
 
     def test_load_source(self):
         """Test load source code method."""
-        self.io_unit.load_source(["", "03 02 02 03", "99 00 00 00", "", "00000002"])
+        self.io_unit.load_source(
+            ["", "03 02 02 03", "99 00 00 00", "", "00000002"]
+        )
         self.ram.put.assert_has_calls(
             [
                 call(10, 0x03020203, WORD_SIZE),

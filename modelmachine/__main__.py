@@ -43,13 +43,17 @@ def main(argv, stdout):
     run.add_argument("filename", help="file containing machine code")
     run.set_defaults(func=run_program)
 
-    debug_parser = subparsers.add_parser("debug", help="run program in debug mode")
+    debug_parser = subparsers.add_parser(
+        "debug", help="run program in debug mode"
+    )
     debug_parser.add_argument("filename", help="file containing machine code")
     debug_parser.set_defaults(func=run_debug)
 
     asm = subparsers.add_parser("asm", help="assemble model machine program")
     asm.add_argument("asm_file", help="input file containing asm source")
-    asm.add_argument("machine_file", help="output file containing machine code")
+    asm.add_argument(
+        "machine_file", help="output file containing machine code"
+    )
     asm.set_defaults(func=run_asm)
 
     args = parser.parse_args(argv[1:])

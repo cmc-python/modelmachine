@@ -1,6 +1,6 @@
 """Test case for arithmetic logic unit."""
 
-from pytest import raises
+import pytest
 
 from modelmachine.numeric import Integer
 
@@ -40,11 +40,11 @@ class TestNumeric:
 
     def test_check_compatibility(self):
         """Test check compatibility method."""
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.first.check_compatibility(14)
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.first.check_compatibility(Integer(14, 32, False))
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.first.check_compatibility(Integer(14, 16, True))
         self.first.check_compatibility(self.second)
         self.first.check_compatibility(Integer(14, 32, True))
@@ -59,22 +59,22 @@ class TestNumeric:
                         self.first.check_compatibility(self.second)
                         self.second.check_compatibility(self.first)
                     else:
-                        with raises(NotImplementedError):
+                        with pytest.raises(NotImplementedError):
                             self.first.check_compatibility(self.second)
-                        with raises(NotImplementedError):
+                        with pytest.raises(NotImplementedError):
                             self.second.check_compatibility(self.first)
 
                     self.first = Integer(10, first_size, signed)
                     self.second = Integer(12, second_size, not signed)
-                    with raises(NotImplementedError):
+                    with pytest.raises(NotImplementedError):
                         self.first.check_compatibility(self.second)
-                    with raises(NotImplementedError):
+                    with pytest.raises(NotImplementedError):
                         self.second.check_compatibility(self.first)
 
         Integer(15, 8, False).check_compatibility(Integer(16, 8, False))
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             Integer(15, 8, False).check_compatibility(Integer(16, 8, True))
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             Integer(15, 16, False).check_compatibility(Integer(16, 8, False))
 
     def test_get_value(self):
@@ -106,7 +106,7 @@ class TestNumeric:
         result = Integer(2**31 - 1, 32, True) + Integer(2**31 - 1, 32, True)
         assert result.get_value() == -2
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             result = self.first + 42
 
     def test_mul(self):
@@ -121,7 +121,7 @@ class TestNumeric:
         result = Integer(1555256314, 32, True) * Integer(-1234567890, 32, True)
         assert result.get_value() == 264317164
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             result = self.first * 42
 
     def test_sub(self):
@@ -160,7 +160,7 @@ class TestNumeric:
         result = Integer(-2145634518, 32, True) - Integer(2000000000, 32, True)
         assert result.get_value() == 149332778
 
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             result = self.first - 42
 
     def test_eq(self):

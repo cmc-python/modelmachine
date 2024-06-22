@@ -2,7 +2,7 @@
 
 from unittest.mock import call, create_autospec
 
-from pytest import raises
+import pytest
 
 from modelmachine.alu import HALT, ArithmeticLogicUnit
 from modelmachine.cu import HALTED, RUNNING, AbstractControlUnit, ControlUnit
@@ -86,13 +86,13 @@ class TestAbstractControlUnit:
 
     def test_abstract_methods(self):
         """Abstract class."""
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.fetch_and_decode()
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.load()
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.execute()
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.write_back()
 
     def test_step_and_run(self):
@@ -140,7 +140,7 @@ class TestControlUnit:
 
     def setup_method(self):
         """Init state."""
-        self.ram = RandomAccessMemory(WORD_SIZE, 256, "big")
+        self.ram = RandomAccessMemory(word_size=WORD_SIZE, memory_size=256)
         self.registers = create_autospec(RegisterMemory, True, True)
         self.alu = create_autospec(ArithmeticLogicUnit, True, True)
         self.control_unit = ControlUnit(
@@ -186,17 +186,17 @@ class TestControlUnit:
 
     def test_fetch_and_decode(self):
         """Abstract class."""
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.fetch_and_decode()
 
     def test_load(self):
         """Abstract class."""
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.load()
 
     def test_write_back(self):
         """Abstract class."""
-        with raises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.control_unit.write_back()
 
     def run_fetch(
@@ -204,6 +204,7 @@ class TestControlUnit:
         value,
         opcode,
         instruction_size,
+        *,
         and_decode=True,
         address_size=BYTE_SIZE,
         ir_size=WORD_SIZE,
@@ -230,15 +231,18 @@ class TestControlUnit:
             self.control_unit.fetch_instruction(instruction_size)
         self.registers.fetch.assert_any_call("PC", address_size)
         self.registers.put.assert_has_calls(
-            [call("RI", value, ir_size), call("PC", address + increment, address_size)]
+            [
+                call("RI", value, ir_size),
+                call("PC", address + increment, address_size),
+            ]
         )
         assert self.control_unit.opcode == opcode
 
     def test_fetch_instruction(self):
         """Right fetch and decode is a half of business."""
-        self.run_fetch(0x01020304, 0x01, WORD_SIZE, False)
+        self.run_fetch(0x01020304, 0x01, WORD_SIZE, and_decode=False)
 
-    def test_basic_execute(self, should_move=True):
+    def test_basic_execute(self, *, should_move=True):
         """Test basic operations."""
         self.registers.put.reset_mock()
         self.registers.fetch.reset_mock()
@@ -287,8 +291,8 @@ class TestControlUnit:
         self.control_unit.execute()
         self.alu.halt.assert_called_once_with()
 
-        with raises(ValueError):
-            self.control_unit.opcode = 0x98
+        self.control_unit.opcode = 0x98
+        with pytest.raises(ValueError, match="Invalid opcode `0x98`"):
             self.control_unit.execute()
 
         assert not self.registers.fetch.called

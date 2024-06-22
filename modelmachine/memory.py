@@ -29,19 +29,20 @@ def little_endian_encode(value, word_size, bits):
         raise ValueError(msg)
     if value == 0:
         return [0] * size
-    else:
-        result = []
-        while value != 0:
-            result.append(value % 2**word_size)
-            value //= 2**word_size
 
-        if len(result) * word_size > bits:
-            msg = f"Integer is too long: {copy_value}, expected " f"{bits} bits integer"
-            raise ValueError(
-                msg
-            )
-        result += [0] * (size - len(result))
-        return result
+    result = []
+    while value != 0:
+        result.append(value % 2**word_size)
+        value //= 2**word_size
+
+    if len(result) * word_size > bits:
+        msg = (
+            f"Integer is too long: {copy_value}, expected "
+            f"{bits} bits integer"
+        )
+        raise ValueError(msg)
+    result += [0] * (size - len(result))
+    return result
 
 
 def big_endian_encode(value, word_size, bits):
@@ -54,7 +55,7 @@ class AbstractMemory(dict):
 
     word_size = None
 
-    def __init__(self, word_size, endianess="big", addresses=None):
+    def __init__(self, *, word_size, endianess="big", addresses=None):
         """Define concrete memory with the word size."""
         if addresses is None:
             addresses = {}
@@ -66,7 +67,10 @@ class AbstractMemory(dict):
         if endianess == "big":
             self.decode, self.encode = big_endian_decode, big_endian_encode
         elif endianess == "little":
-            self.decode, self.encode = little_endian_decode, little_endian_encode
+            self.decode, self.encode = (
+                little_endian_decode,
+                little_endian_encode,
+            )
         else:
             msg = f"Unexpected endianess: {endianess}"
             raise ValueError(msg)
@@ -78,9 +82,7 @@ class AbstractMemory(dict):
                 f"Wrong word format: {word}, "
                 f"should be 0 <= word < {2 ** self.word_size}"
             )
-            raise ValueError(
-                msg
-            )
+            raise ValueError(msg)
 
     def __setitem__(self, address, word):
         """Raise an error, if word has wrong format."""
@@ -97,17 +99,14 @@ class AbstractMemory(dict):
         """Should raise an exception if address is invalid."""
         raise NotImplementedError
 
-    def check_bits_count(self, address, bits):
+    def check_bits_count(self, _address, bits):
         """Check that we want to read integer count of words."""
-        address = address  # May be useful in successors
         if bits % self.word_size != 0:
             msg = (
                 "Cannot operate with non-integer word counter: "
                 f"needs {bits} bits, but word size is {self.word_size}"
             )
-            raise KeyError(
-                msg
-            )
+            raise KeyError(msg)
 
     def fetch(self, address, bits):
         """Load bits by address.
@@ -122,10 +121,10 @@ class AbstractMemory(dict):
         size = bits // self.word_size
         if size == 1:  # Address not always is integer, sometimes string
             return self[address]
-        else:
-            return self.decode(
-                [self[i] for i in range(address, address + size)], self.word_size
-            )
+
+        return self.decode(
+            [self[i] for i in range(address, address + size)], self.word_size
+        )
 
     def put(self, address, value, bits):
         """Put size bits by address.
@@ -156,10 +155,18 @@ class RandomAccessMemory(AbstractMemory):
     """
 
     def __init__(
-        self, word_size, memory_size, endianess, is_protected=True, *vargs, **kvargs
+        self,
+        *,
+        word_size,
+        memory_size,
+        endianess="big",
+        is_protected=True,
+        addresses=None,
     ):
         """Read help(type(x))."""
-        super().__init__(word_size, endianess=endianess, *vargs, **kvargs)
+        super().__init__(
+            word_size=word_size, endianess=endianess, addresses=addresses
+        )
         self.memory_size = memory_size
         self.is_protected = is_protected
 
@@ -177,9 +184,7 @@ class RandomAccessMemory(AbstractMemory):
                 f"Invalid address {hex(address)}, "
                 f"should be 0 <= address < {len(self)}"
             )
-            raise KeyError(
-                msg
-            )
+            raise KeyError(msg)
 
     def __missing__(self, address):
         """If addressed memory not defined."""
@@ -189,24 +194,22 @@ class RandomAccessMemory(AbstractMemory):
                 f"Cannot read memory by address: {hex(address)}, "
                 "it is dirty memory, clean it first"
             )
-            raise KeyError(
-                msg
-            )
-        else:
-            warnings.warn(
-                f"Read memory by address: {hex(address)}, "
-                "it is dirty memory, clean it first",
-                stacklevel=4,
-            )
-            return 0
+            raise KeyError(msg)
+
+        warnings.warn(
+            f"Read memory by address: {hex(address)}, "
+            "it is dirty memory, clean it first",
+            stacklevel=4,
+        )
+        return 0
 
 
 class RegisterMemory(AbstractMemory):
     """Registers."""
 
-    def __init__(self, *vargs, **kvargs):
+    def __init__(self, **kvargs):
         """List of addresses are required."""
-        super().__init__(word_size=0, *vargs, **kvargs)  # There is dynamic
+        super().__init__(word_size=0, **kvargs)  # There is dynamic
         # word size
         self.register_sizes = {}
 
@@ -216,15 +219,16 @@ class RegisterMemory(AbstractMemory):
         Raise an key error if register with this name already exists and
         have another size.
         """
-        if name in self.register_sizes and self.register_sizes[name] != register_size:
+        if (
+            name in self.register_sizes
+            and self.register_sizes[name] != register_size
+        ):
             msg = (
                 f"Cannot add register with name `{name}` and size "
                 f"`{register_size}`, register with this name and "
                 f"`{self.register_sizes[name]}` size already exists"
             )
-            raise KeyError(
-                msg
-            )
+            raise KeyError(msg)
 
         if name not in self.register_sizes:
             self.register_sizes[name] = register_size
@@ -239,9 +243,10 @@ class RegisterMemory(AbstractMemory):
     def check_bits_count(self, name, size):
         """Bit count must be equal to word_size."""
         if size != self.register_sizes[name]:
-            msg = f"Invalid register {name} size: {size}. Should be {self.register_sizes[name]}"
-            raise KeyError(
-                msg
+            msg = (
+                f"Invalid register {name} size: {size}."
+                f" Should be {self.register_sizes[name]}"
             )
-        else:
-            self.word_size = size
+            raise KeyError(msg)
+
+        self.word_size = size

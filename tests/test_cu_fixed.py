@@ -2,10 +2,16 @@
 
 from unittest.mock import call
 
-from pytest import raises
+import pytest
 
 from modelmachine.alu import EQUAL, GREATER, LESS, ArithmeticLogicUnit
-from modelmachine.cu import HALTED, RUNNING, ControlUnit1, ControlUnit2, ControlUnit3
+from modelmachine.cu import (
+    HALTED,
+    RUNNING,
+    ControlUnit1,
+    ControlUnit2,
+    ControlUnit3,
+)
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
 from .test_cu_abstract import (
@@ -33,16 +39,16 @@ from .test_cu_abstract import (
     OP_UJLEQ,
     WORD_SIZE,
 )
-from .test_cu_abstract import TestControlUnit as TBCU
+from .test_cu_abstract import TestControlUnit as TCu
 
 
-class TestControlUnit3(TBCU):
+class TestControlUnit3(TCu):
     """Test case for  Mode Machine 3 Control Unit."""
 
     def setup_method(self):
         """Init state."""
         super().setup_method()
-        self.ram = RandomAccessMemory(WORD_SIZE, 256, "big")
+        self.ram = RandomAccessMemory(word_size=WORD_SIZE, memory_size=256)
         self.control_unit = ControlUnit3(
             WORD_SIZE, BYTE_SIZE, self.registers, self.ram, self.alu, WORD_SIZE
         )
@@ -77,7 +83,7 @@ class TestControlUnit3(TBCU):
             assert self.control_unit.address2 == 0x03
             assert self.control_unit.address3 == 0x04
         for opcode in set(range(2**BYTE_SIZE)) - self.control_unit.opcodes:
-            with raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid opcode"):
                 self.run_fetch(opcode << 24 | 0x020304, opcode, WORD_SIZE)
 
     def test_load(self):
@@ -120,7 +126,9 @@ class TestControlUnit3(TBCU):
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
-            self.registers.put.assert_called_once_with("ADDR", addr3, BYTE_SIZE)
+            self.registers.put.assert_called_once_with(
+                "ADDR", addr3, BYTE_SIZE
+            )
 
         for opcode in (OP_HALT,):
             self.registers.put.reset_mock()
@@ -128,14 +136,14 @@ class TestControlUnit3(TBCU):
             self.control_unit.load()
             assert not self.registers.put.called
 
-    def test_basic_execute(self, should_move=True):
+    def test_basic_execute(self, *, should_move=True):
         """Test basic operations."""
-        super().test_basic_execute(should_move)
+        super().test_basic_execute(should_move=should_move)
 
         for opcode in range(256):
             if opcode not in self.control_unit.opcodes:
-                with raises(ValueError):
-                    self.control_unit.opcode = opcode
+                self.control_unit.opcode = opcode
+                with pytest.raises(ValueError, match="Invalid opcode"):
                     self.control_unit.execute()
 
     def run_cond_jump(self, opcode, signed, mol, equal):
@@ -192,8 +200,10 @@ class TestControlUnit3(TBCU):
             assert size == WORD_SIZE
             if name == "S":
                 return second
-            elif name == "R1":
+
+            if name == "R1":
                 return third
+
             return None
 
         self.registers.fetch.side_effect = get_register
@@ -227,7 +237,10 @@ class TestControlUnit3(TBCU):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -253,7 +266,10 @@ class TestControlUnit3(TBCU):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -309,7 +325,7 @@ class TestControlUnit2(TestControlUnit3):
             assert self.control_unit.address1 == 0x02
             assert self.control_unit.address2 == 0x03
         for opcode in set(range(2**BYTE_SIZE)) - self.control_unit.opcodes:
-            with raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid opcode"):
                 self.run_fetch(opcode << 24 | 0x0203, opcode, WORD_SIZE)
 
     def test_load(self):
@@ -339,7 +355,9 @@ class TestControlUnit2(TestControlUnit3):
             self.registers.put.reset_mock()
             self.control_unit.opcode = opcode
             self.control_unit.load()
-            self.registers.put.assert_called_once_with("ADDR", addr2, BYTE_SIZE)
+            self.registers.put.assert_called_once_with(
+                "ADDR", addr2, BYTE_SIZE
+            )
 
         for opcode in (OP_HALT,):
             self.registers.put.reset_mock()
@@ -381,8 +399,10 @@ class TestControlUnit2(TestControlUnit3):
             assert size == WORD_SIZE
             if name == "R1":
                 return second
-            elif name == "R2":
+
+            if name == "R2":
                 return third
+
             return None
 
         self.registers.fetch.side_effect = get_register
@@ -416,7 +436,10 @@ class TestControlUnit2(TestControlUnit3):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -448,7 +471,10 @@ class TestControlUnit2(TestControlUnit3):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -503,7 +529,7 @@ class TestControlUnit1(TestControlUnit2):
     def test_fetch_and_decode(self):
         """Right fetch and decode is a half of business."""
         for opcode in set(range(2**BYTE_SIZE)) - self.control_unit.opcodes:
-            with raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid opcode"):
                 self.run_fetch(opcode << 24, opcode, WORD_SIZE)
 
         for opcode in self.control_unit.opcodes:
@@ -541,9 +567,9 @@ class TestControlUnit1(TestControlUnit2):
             self.control_unit.load()
             assert not self.registers.put.called
 
-    def test_basic_execute(self, should_move=False):
+    def test_basic_execute(self, *, should_move=False):
         """Test basic operations."""
-        super().test_basic_execute(should_move)
+        super().test_basic_execute(should_move=should_move)
 
     def test_execute_comp(self):
         """Test for comp."""
@@ -618,7 +644,9 @@ class TestControlUnit1(TestControlUnit2):
     def test_write_back(self):
         """Test write back result to the memory."""
         for opcode in (
-            ARITHMETIC_OPCODES | CONDJUMP_OPCODES | {OP_LOAD, OP_SWAP, OP_JUMP, OP_HALT}
+            ARITHMETIC_OPCODES
+            | CONDJUMP_OPCODES
+            | {OP_LOAD, OP_SWAP, OP_JUMP, OP_HALT}
         ):
             self.run_write_back(False, opcode)
 
@@ -630,7 +658,10 @@ class TestControlUnit1(TestControlUnit2):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 
@@ -681,7 +712,10 @@ class TestControlUnit1(TestControlUnit2):
         self.control_unit.registers = self.registers = RegisterMemory()
         self.registers.add_register("RI", WORD_SIZE)
         self.alu = ArithmeticLogicUnit(
-            self.registers, self.control_unit.register_names, WORD_SIZE, BYTE_SIZE
+            self.registers,
+            self.control_unit.register_names,
+            WORD_SIZE,
+            BYTE_SIZE,
         )
         self.control_unit.alu = self.alu
 

@@ -97,13 +97,15 @@ class Integer(Number):
         """
         representation = [(self.value >> i) & 1 for i in range(self.size)]
         representation = representation[key]
+
         if isinstance(representation, int):
             return Integer(representation, 1, False)
-        elif isinstance(representation, list):
+
+        if isinstance(representation, list):
             value = 0
             for i, part in enumerate(representation):
                 value += part << i
             return Integer(value, len(representation), False)
-        else:
-            msg = "Integer indices must be integers"
-            raise TypeError(msg)
+
+        msg = "Integer indices must be integers"
+        raise TypeError(msg)

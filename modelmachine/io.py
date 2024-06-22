@@ -19,16 +19,18 @@ class InputOutputUnit:
 
     def get_int(self, address):
         """Return data by address."""
-        value = Integer(self.ram.fetch(address, self.word_size), self.word_size, True)
+        value = Integer(
+            self.ram.fetch(address, self.word_size), self.word_size, True
+        )
         return value.get_value()
 
     def load_hex(self, start, source):
         """Load data from string into memory by start address."""
         address = start
         block, block_size = 0, 0
-        for part in source.split():
-            part_size = len(part) * 4
-            part = int(part, base=16)
+        for part_str in source.split():
+            part_size = len(part_str) * 4
+            part = int(part_str, base=16)
             block = (block << part_size) | part
             block_size += part_size
             if block_size >= self.ram.word_size:
@@ -43,9 +45,7 @@ class InputOutputUnit:
         """Save data to string."""
         if size % self.ram.word_size != 0:
             msg = f"Cannot save {size} bits, word size is {self.ram.word_size}"
-            raise KeyError(
-                msg
-            )
+            raise KeyError(msg)
         result = []
         block_size = self.ram.word_size
         size //= block_size
