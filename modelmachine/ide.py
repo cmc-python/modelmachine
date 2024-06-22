@@ -119,7 +119,7 @@ def debug(cpu) -> int:
     """Debug cycle."""
 
     print(  # noqa: T201
-        "Wellcome to interactive debug mode.\n"
+        "Welcome to interactive debug mode.\n"
         "Beware: now every error breaks the debugger."
     )
     need_quit = False
