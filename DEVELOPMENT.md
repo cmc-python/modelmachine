@@ -14,6 +14,7 @@ install package with dependencies for you.
 ```shell
 git clone https://github.com/cmc-python/modelmachine.git
 cd modelmachine
+ln -s $(pwd)/.githooks/* .git/hooks
 pip install hatch
 hatch shell
 ```
@@ -28,6 +29,11 @@ hatch test
 Show coverage:
 ```shell
 hatch test --cover
+```
+
+### Linting
+```
+hatch fmt
 ```
 
 ## Publish
