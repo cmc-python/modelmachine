@@ -7,21 +7,21 @@ from modelmachine.__about__ import __version__
 from modelmachine.ide import assemble, debug, get_program
 
 
-def run_program(args):
+def run_program(args) -> int:
     """Get params from args and run file."""
     cpu = get_program(args.filename, args.protect_memory)
-    cpu.run()
+    return cpu.run()
 
 
-def run_debug(args):
+def run_debug(args) -> int:
     """Get params from args and run debug."""
     cpu = get_program(args.filename, args.protect_memory)
-    debug(cpu)
+    return debug(cpu)
 
 
-def run_asm(args):
+def run_asm(args) -> int:
     """Get params from args and run assembler."""
-    assemble(args.asm_file, args.machine_file)
+    return assemble(args.asm_file, args.machine_file)
 
 
 def main(argv, stdout):
@@ -60,8 +60,9 @@ def main(argv, stdout):
 
     if "func" not in args:
         parser.print_help(stdout)
-    else:
-        args.func(args)
+        return 1
+
+    return args.func(args)
 
 
 def exec_main():

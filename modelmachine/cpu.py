@@ -98,10 +98,11 @@ class AbstractCPU:
             ):
                 print(self.io_unit.get_int(address), file=output)
 
-    def run(self, output=sys.stdout):
+    def run(self, output=sys.stdout) -> int:
         """Run all execution cycle."""
         self.control_unit.run()
         self.print_result(output=output)
+        return 0
 
 
 class CPUMM3(AbstractCPU):
