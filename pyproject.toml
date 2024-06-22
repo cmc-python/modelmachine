@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling~=1.24", "hatch-vcs~=0.4"]
 build-backend = "hatchling.build"
 
 [project]
@@ -27,8 +27,8 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "ply>=3.11",
-  "frozendict>=2.4.4",
+  "ply~=3.11",
+  "frozendict~=2.4.4",
 ]
 
 [project.scripts]
