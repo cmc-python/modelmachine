@@ -32,6 +32,28 @@ INSTRUCTION = ANSI(
 
 last_register_state = None
 
+REGISTER_PRIORITY = {
+    "PC": 10,
+    "RI": 20,
+    "FLAGS": 30,
+    "ADDR": 40,
+    "S": 50,
+    "S1": 60,
+    "R": 70,
+    "RZ": 80,
+    "default": 100,
+}
+
+
+def sort_registers(reg: list[str]):
+    return sorted(
+        reg,
+        key=lambda r: (
+            REGISTER_PRIORITY.get(r, REGISTER_PRIORITY["default"]),
+            r,
+        ),
+    )
+
 
 def register_state(cpu: AbstractCPU) -> dict[str, int]:
     return {reg: cpu.registers[reg] for reg in sorted(cpu.registers.keys())}
@@ -89,7 +111,7 @@ def exec_print(cpu, step):
 
     print("RAM access count:", cpu.ram.access_count)
     print("Registers state:")
-    registers = sorted(cpu.registers.keys())
+    registers = sort_registers(cpu.registers.keys())
     for reg in registers:
         size = cpu.registers.register_sizes[reg]
         color = ""
@@ -214,7 +236,6 @@ def assemble(input_filename, output_filename) -> int:
         print("Compilation aborted with errors:")
         for error in error_list:
             print(error, file=sys.stderr)
-        return 1
 
     print("Success compilation.")
     with open(output_filename, "w") as output_file:
