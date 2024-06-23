@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import sys
 import warnings
+from typing import TYPE_CHECKING
 
-from prompt_toolkit import ANSI
+from prompt_toolkit import ANSI, PromptSession, completion
 from prompt_toolkit import print_formatted_text as print  # noqa: A001
+from prompt_toolkit.lexers import Lexer
 
 from modelmachine import asm
 from modelmachine.cpu import CPU_LIST, AbstractCPU
 from modelmachine.cu import HALTED
+
+if TYPE_CHECKING:
+    from prompt_toolkit.document import Document
 
 DEF = "\x1b[39m"
 RED = "\x1b[31m"
@@ -29,7 +34,6 @@ INSTRUCTION = ANSI(
     f"  {BLU}q{DEF}uit\n"
 )
 
-
 last_register_state = None
 
 REGISTER_PRIORITY = {
@@ -43,6 +47,59 @@ REGISTER_PRIORITY = {
     "RZ": 80,
     "default": 100,
 }
+
+COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
+COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
+
+
+def split_to_word_and_spaces(s: str) -> list[str]:
+    res = []
+    if not s:
+        return res
+
+    last = s[0].isspace()
+    word = ""
+    for i, c in enumerate(s):
+        if c.isspace() != last:
+            res.append(word)
+            word = c
+            last = c.isspace()
+        else:
+            word += c
+
+        if i == len(s) - 1 and word:
+            res.append(word)
+
+    return res
+
+
+class CommandLexer(Lexer):
+    def lex_document(self, document: Document):
+        def parse_line(lineno: int):
+            line = document.lines[lineno]
+            result = []
+
+            for i, word in enumerate(split_to_word_and_spaces(line)):
+                if word.isspace():
+                    result.append(("", word))
+                    continue
+
+                if i <= 1:
+                    if word in COMMAND_SET:
+                        result.append(("ansiblue", word))
+                    else:
+                        result.append(("ansired", word))
+                    continue
+
+                try:
+                    int(word, 0)
+                    result.append(("ansicyan", word))
+                except ValueError:
+                    result.append(("ansired", word))
+
+            return result
+
+        return parse_line
 
 
 def sort_registers(reg: list[str]):
@@ -176,6 +233,10 @@ def debug(cpu) -> int:
     step = 0
     global last_register_state  # noqa: PLW0603
     last_register_state = register_state(cpu)
+    session = PromptSession(
+        completer=completion.WordCompleter(COMMAND_LIST, sentence=True),
+        lexer=CommandLexer(),
+    )
 
     while not need_quit:
         if need_help:
@@ -183,7 +244,7 @@ def debug(cpu) -> int:
             need_help = False
 
         try:
-            command = input("> ") + " "  # length > 0
+            command = session.prompt("> ") + " "  # length > 0
         except EOFError:
             command = "quit"
             print(command)
