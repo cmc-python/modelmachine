@@ -58,12 +58,12 @@ class TestAbstractMemory:
                 with pytest.raises(KeyError):
                     self.memory.check_bits_count(0, i)
 
-    def test_setitem(self):
+    def test_set(self):
         """Test that setitem is not implemented."""
         with pytest.raises(NotImplementedError):
-            self.memory[0] = 0
+            self.memory._set(0, 0)
         with pytest.raises(NotImplementedError):
-            self.memory["R1"] = 0
+            self.memory._set("R1", 0)
 
     def test_init(self):
         """Test if we can predefine addresses."""
@@ -125,50 +125,58 @@ class TestRandomAccessMemory:
         with pytest.raises(TypeError):
             self.ram.check_address("R1")
 
-    def test_setitem(self):
+    def test_set(self):
         """Address should be checked."""
         for i in range(len(self.ram)):
-            self.ram[i] = len(self.ram) + i
+            self.ram._set(i, i)
             assert i in self.ram
         for i in range(len(self.ram), 2 * len(self.ram)):
             with pytest.raises(KeyError):
-                self.ram[i] = i
+                self.ram._set(i, i)
             assert i not in self.ram
         with pytest.raises(TypeError):
-            self.ram["R1"] = 10
+            self.ram._set("R1", 10)
         assert "R1" not in self.ram
         with pytest.raises(ValueError, match="Wrong word format: "):
-            self.ram[2] = 2**WORD_SIZE
+            self.ram._set(2, 2**WORD_SIZE)
 
-    def test_getitem(self):
+    def test_get(self):
         """Address should be checked."""
         for i in range(2 * len(self.ram)):
             with pytest.raises(KeyError):
-                self.ram.__getitem__(i)
+                self.ram._get(i)
         with pytest.raises(TypeError):
-            self.ram.__getitem__("R1")
+            self.ram._get("R1")
 
         for i in range(len(self.ram) // 2):
-            self.ram[i] = i
-            assert self.ram[i] == i
+            self.ram._set(i, i + 1)
+            assert self.ram._get(i) == i + 1
 
     def test_not_protected_getitem(self):
         """Test if programmer can shut in his leg."""
         self.ram = RandomAccessMemory(
             word_size=WORD_SIZE, memory_size=512, is_protected=False
         )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        with warnings.catch_warnings(record=True) as warns:
+            warnings.simplefilter("always")
             for i in range(len(self.ram)):
-                assert self.ram[i] == 0
+                assert self.ram._get(i) == 0
+            assert len(warns) == len(self.ram)
+
+        with warnings.catch_warnings(record=True) as warns:
+            warnings.simplefilter("always")
+            for i in range(len(self.ram)):
+                assert self.ram._get(i, warn_dirty=False) == 0
+            assert len(warns) == 0
+
         for i in range(len(self.ram), 2 * len(self.ram)):
             with pytest.raises(KeyError):
-                self.ram.__getitem__(i)
+                self.ram._get(i)
 
     def test_fetch(self):
         """Fetch is basic operation of transfer data."""
         for i in range(5, 9):
-            self.ram[i] = i
+            self.ram._set(i, i)
             assert self.ram.fetch(i, WORD_SIZE) == i
         assert (
             self.ram.fetch(5, 4 * WORD_SIZE)
@@ -178,7 +186,7 @@ class TestRandomAccessMemory:
             [5, 6, 7, 8], WORD_SIZE
         )
 
-        self.ram[5] = 0
+        self.ram._set(5, 0)
         assert self.ram.fetch(5, 4 * WORD_SIZE) == big_endian_decode(
             [0, 6, 7, 8], WORD_SIZE
         )
@@ -196,7 +204,7 @@ class TestRandomAccessMemory:
             word_size=WORD_SIZE, memory_size=512, endianess="little"
         )
         for i in range(5, 9):
-            self.ram[i] = i
+            self.ram._set(i, i)
             assert self.ram.fetch(i, WORD_SIZE) == i
         assert (
             self.ram.fetch(5, 4 * WORD_SIZE)
@@ -215,7 +223,7 @@ class TestRandomAccessMemory:
             self.ram.put(5, 2**WORD_SIZE, WORD_SIZE)
         self.ram.put(4, 4, WORD_SIZE)
         for i in range(5, 9):
-            assert self.ram[i] == value_list[i - 5]
+            assert self.ram._get(i) == value_list[i - 5]
 
         self.ram = RandomAccessMemory(
             word_size=WORD_SIZE, memory_size=512, endianess="little"
@@ -223,7 +231,7 @@ class TestRandomAccessMemory:
         value = little_endian_decode(value_list, WORD_SIZE)
         self.ram.put(5, value, 4 * WORD_SIZE)
         for i in range(5, 9):
-            assert self.ram[i] == value_list[i - 5]
+            assert self.ram._get(i) == value_list[i - 5]
 
 
 class TestRegisterMemory:
@@ -256,7 +264,7 @@ class TestRegisterMemory:
             self.registers.check_address("R3")
         with pytest.raises(KeyError):
             self.registers.check_address("R4")
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             self.registers.check_address(0)
 
     def test_add_register(self):
@@ -275,25 +283,21 @@ class TestRegisterMemory:
         self.registers.put("R3", 10, WORD_SIZE)
         assert self.registers.fetch("R3", WORD_SIZE) == 10
 
-    def test_setitem(self):
+    def test_set(self):
         """Setitem can raise an error."""
+        with pytest.raises(TypeError):
+            self.registers._set(0, 5)
         with pytest.raises(KeyError):
-            self.registers[0] = 5
-        with pytest.raises(KeyError):
-            self.registers.__getitem__(0)
-        with pytest.raises(KeyError):
-            self.registers["R3"] = 5
-        with pytest.raises(KeyError):
-            self.registers.__getitem__("R3")
-        self.registers["R1"] = 5
-        assert self.registers["R1"] == 5
+            self.registers._set("R3", 5)
+        self.registers._set("R1", 5)
+        assert self.registers._get("R1") == 5
         with pytest.raises(ValueError, match="Wrong word format"):
-            self.registers["R2"] = 2**self.registers.word_size
-        assert self.registers["R2"] == 0
+            self.registers._set("R2", 2**self.registers.word_size)
+        assert self.registers._get("R2") == 0
 
     def test_fetch_and_put(self):
         """Test main method to read and write."""
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             self.registers.fetch(0, WORD_SIZE)
         with pytest.raises(KeyError):
             self.registers.put("R3", 5, WORD_SIZE + 1)

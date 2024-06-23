@@ -14,12 +14,16 @@ WORD_SIZE = 32
 class TestIODevice:
     """Test case for IODevice."""
 
-    ram = None
-    io_unit = None
+    ram: RandomAccessMemory
+    io_unit: InputOutputUnit
 
     def setup_method(self):
         """Init state."""
-        self.ram = create_autospec(RandomAccessMemory, True, True)
+        self.ram = create_autospec(
+            RandomAccessMemory(word_size=WORD_SIZE, memory_size=512),
+            True,
+            True,
+        )
         self.ram.word_size = WORD_SIZE
         self.io_unit = InputOutputUnit(self.ram, 10, WORD_SIZE)
 
@@ -34,29 +38,40 @@ class TestIODevice:
 
     def test_store_hex(self):
         """Test save to string method."""
-        first = 0x01020A10
-        second = 0x03040B20
+        mem = {
+            20: 0x11020A10,
+            21: 0x13040B20,
+            22: 0x14050E30,
+        }
 
-        def side_effect(address, size):
+        def side_effect(address, size, *, warn_dirty=True):  # noqa: ARG001
             """Mock memory."""
             assert size == WORD_SIZE
-            assert address in {20, 21}
-            if address == 20:
-                return first
-
-            return second
+            assert address in mem
+            return mem[address]
 
         self.ram.fetch.side_effect = side_effect
 
-        assert self.io_unit.store_hex(20, WORD_SIZE) == "01020a10"
-        self.ram.fetch.assert_called_with(20, WORD_SIZE)
-        assert self.io_unit.store_hex(21, WORD_SIZE) == "03040b20"
-        self.ram.fetch.assert_called_with(21, WORD_SIZE)
+        assert self.io_unit.store_hex(20, WORD_SIZE) == hex(mem[20])[2:]
+        self.ram.fetch.assert_called_with(20, WORD_SIZE, warn_dirty=True)
+        assert self.io_unit.store_hex(21, WORD_SIZE) == hex(mem[21])[2:]
+        self.ram.fetch.assert_called_with(21, WORD_SIZE, warn_dirty=True)
+        assert (
+            self.io_unit.store_hex(22, WORD_SIZE, warn_dirty=False)
+            == hex(mem[22])[2:]
+        )
+        self.ram.fetch.assert_called_with(22, WORD_SIZE, warn_dirty=False)
 
         self.ram.fetch.reset_mock()
-        assert self.io_unit.store_hex(20, 2 * WORD_SIZE) == "01020a10 03040b20"
+        assert (
+            self.io_unit.store_hex(20, 2 * WORD_SIZE)
+            == f"{hex(mem[20])[2:]} {hex(mem[21])[2:]}"
+        )
         self.ram.fetch.assert_has_calls(
-            [call(20, WORD_SIZE), call(21, WORD_SIZE)]
+            [
+                call(20, WORD_SIZE, warn_dirty=True),
+                call(21, WORD_SIZE, warn_dirty=True),
+            ]
         )
 
         with pytest.raises(KeyError):

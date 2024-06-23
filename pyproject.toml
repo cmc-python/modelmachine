@@ -9,8 +9,8 @@ description = "Model machine emulator"
 readme = "README.md"
 license = "WTFPL"
 maintainers = [
-  { name = "Vladimir Liutov", email = "vs@lutov.net" },
-  { name = "Fr. Br. George", email = "georgle@altlinux.org" },
+    { name = "Vladimir Liutov", email = "vs@lutov.net" },
+    { name = "Fr. Br. George", email = "georgle@altlinux.org" },
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -27,9 +27,9 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "ply~=3.11",
-  "frozendict~=2.4.4",
-  "prompt_toolkit~=3.0"
+    "ply~=3.11",
+    "frozendict~=2.4.4",
+    "prompt_toolkit~=3.0"
 ]
 
 [project.scripts]
@@ -55,7 +55,7 @@ source_pkgs = ["modelmachine", "tests"]
 branch = true
 parallel = true
 omit = [
-  "modelmachine/__about__.py",
+    "modelmachine/__about__.py",
 ]
 
 [tool.coverage.paths]
@@ -64,9 +64,9 @@ tests = ["tests"]
 
 [tool.coverage.report]
 exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]
 
 [tool.hatch.format]
@@ -78,7 +78,16 @@ indent-width = 4
 target-version = "py38"
 [tool.ruff.lint]
 ignore = [
-  "T201",
-  "T203",
+    "T201",
+    "T203",
+    "S101",
 ]
-
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*" = [
+    "PLC1901",
+    "PLR2004",
+    "PLR6301",
+    "S",
+    "TID252",
+    "SLF001",
+]

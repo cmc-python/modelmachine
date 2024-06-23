@@ -92,7 +92,11 @@ def sort_registers(reg: list[str]):
 
 
 def register_state(cpu: AbstractCPU) -> dict[str, int]:
-    return {reg: cpu.registers[reg] for reg in sorted(cpu.registers.keys())}
+    return {
+        # TODO: special method for registers
+        reg: cpu.registers.fetch(reg, cpu.registers.register_sizes[reg])
+        for reg in sorted(cpu.registers.keys())
+    }
 
 
 class CommandResult(IntEnum):
@@ -104,7 +108,7 @@ class CommandResult(IntEnum):
 class Ide:
     cpu: AbstractCPU
     last_register_state: dict[str, int]
-    step_no: int = 0
+    cycle: int = 0
 
     def __init__(self, cpu: AbstractCPU):
         self.cpu = cpu
@@ -127,10 +131,10 @@ class Ide:
             return CommandResult.NEED_HELP
 
         for _i in range(count):
-            self.step_no += 1
+            self.cycle += 1
             self.last_register_state = register_state(self.cpu)
             self.cpu.control_unit.step()
-            print(f"step {self.step_no:<4} {self.cpu.registers["RI"]}")
+            print(f"cycle {self.cycle:<4}")
             self.print()
             if self.cpu.control_unit.get_status() == HALTED:
                 print(ANSI(f"{YEL}machine halted{DEF}"))
@@ -160,9 +164,11 @@ class Ide:
             color = ""
             if reg in {"PC", "RI"}:
                 color = YEL
-            elif self.last_register_state[reg] != self.cpu.registers[reg]:
+            elif self.last_register_state[reg] != self.cpu.registers.fetch(
+                reg, size
+            ):
                 color = GRE
-            data = "0x" + hex(self.cpu.registers[reg])[2:].rjust(
+            data = "0x" + hex(self.cpu.registers.fetch(reg, size))[2:].rjust(
                 size // 4, "0"
             )
             print(ANSI(f"  {color}{reg:<5s}  {data}{DEF}"))
@@ -185,7 +191,7 @@ class Ide:
 
         print(
             self.cpu.io_unit.store_hex(
-                begin, (end - begin) * self.cpu.ram.word_size
+                begin, (end - begin) * self.cpu.ram.word_size, warn_dirty=False
             )
         )
 
