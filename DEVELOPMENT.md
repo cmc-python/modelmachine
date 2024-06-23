@@ -45,3 +45,18 @@ hatch fmt
 Publishing is automatic by github actions.
 To publish new version, create a release tag and release itself in github
 web interface.
+
+```shell
+git tag v0.x.y
+git push --tags
+# Now create a release in github web interface
+```
+
+If you prefer upload by yourself:
+```shell
+git tag v0.x.y
+git push --tags
+hatch clean
+hatch build
+hatch publish
+```
