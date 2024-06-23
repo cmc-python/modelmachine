@@ -1,6 +1,4 @@
-line-length = 79
-indent-width = 4
-target-version = "py38"
+line-length = 120
 
 [format]
 docstring-code-format = true
@@ -450,6 +448,8 @@ select = [
   "SLOT001",
   "SLOT002",
   "T100",
+  "T201",
+  "T203",
   "TCH001",
   "TCH002",
   "TCH003",
@@ -555,4 +555,3 @@ known-first-party = ["modelmachine"]
 [lint.flake8-pytest-style]
 fixture-parentheses = false
 mark-parentheses = false
-

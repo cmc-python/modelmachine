@@ -68,3 +68,17 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.hatch.format]
+config-path = "ruff_defaults.toml"
+[tool.ruff]
+extend = "ruff_defaults.toml"
+line-length = 79
+indent-width = 4
+target-version = "py38"
+[tool.ruff.lint]
+ignore = [
+  "T201",
+  "T203",
+]
+
