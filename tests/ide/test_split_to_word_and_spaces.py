@@ -1,4 +1,4 @@
-from modelmachine.ide import split_to_word_and_spaces
+from modelmachine.ide.split_to_word_and_spaces import split_to_word_and_spaces
 
 
 def test_split():

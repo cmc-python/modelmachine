@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 import warnings
 from typing import TYPE_CHECKING
 
@@ -10,12 +9,13 @@ from prompt_toolkit import ANSI, PromptSession, completion
 from prompt_toolkit import print_formatted_text as print  # noqa: A001
 from prompt_toolkit.lexers import Lexer
 
-from modelmachine import asm
-from modelmachine.cpu import CPU_LIST, AbstractCPU
 from modelmachine.cu import HALTED
+from modelmachine.ide.split_to_word_and_spaces import split_to_word_and_spaces
 
 if TYPE_CHECKING:
     from prompt_toolkit.document import Document
+
+    from modelmachine.cpu import AbstractCPU
 
 DEF = "\x1b[39m"
 RED = "\x1b[31m"
@@ -50,27 +50,6 @@ REGISTER_PRIORITY = {
 
 COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
-
-
-def split_to_word_and_spaces(s: str) -> list[str]:
-    res = []
-    if not s:
-        return res
-
-    last = s[0].isspace()
-    word = ""
-    for i, c in enumerate(s):
-        if c.isspace() != last:
-            res.append(word)
-            word = c
-            last = c.isspace()
-        else:
-            word += c
-
-        if i == len(s) - 1 and word:
-            res.append(word)
-
-    return res
 
 
 class CommandLexer(Lexer):
@@ -264,41 +243,4 @@ def debug(cpu) -> int:
             print("machine has halted")
             return 1
 
-    return 0
-
-
-def get_cpu(source, protect_memory) -> AbstractCPU:
-    """Return empty cpu or raise the ValueError."""
-    arch = source[0].strip()
-    if arch in CPU_LIST:
-        return CPU_LIST[arch](protect_memory)
-
-    msg = f"Unexpected arch (found in first line): {arch}"
-    raise ValueError(msg)
-
-
-def get_program(filename, protect_memory) -> AbstractCPU:
-    """Read model machine program."""
-    with open(filename) as source_file:
-        source = source_file.readlines()
-        cpu = get_cpu(source, protect_memory)
-        cpu.load_program(source)
-        return cpu
-
-
-def assemble(input_filename, output_filename) -> int:
-    """Assemble input_filename and wrote output_filename."""
-    with open(input_filename) as input_file:
-        input_data = input_file.read()
-
-    error_list, code = asm.parse(input_data)
-
-    if error_list != []:
-        print("Compilation aborted with errors:")
-        for error in error_list:
-            print(error, file=sys.stderr)
-
-    print("Success compilation.")
-    with open(output_filename, "w") as output_file:
-        print(code, file=output_file)
     return 0
