@@ -1,20 +1,40 @@
 """IDE for model machine."""
 
+from __future__ import annotations
+
 import sys
 import warnings
+
+from prompt_toolkit import ANSI
+from prompt_toolkit import print_formatted_text as print  # noqa: A001
 
 from modelmachine import asm
 from modelmachine.cpu import CPU_LIST, AbstractCPU
 from modelmachine.cu import HALTED
 
-INSTRUCTION = (
+DEF = "\x1b[39m"
+RED = "\x1b[31m"
+GRE = "\x1b[32m"
+YEL = "\x1b[33m"
+BLU = "\x1b[34m"
+MAG = "\x1b[35m"
+CYA = "\x1b[36m"
+
+INSTRUCTION = ANSI(
     "Enter\n"
-    "  `(s)tep [count]` to start execution\n"
-    "  `(c)ontinue` to continue the program until the end\n"
-    "  `(p)rint` registers state\n"
-    "  `(m)emory <begin> <end>` to view random access memory\n"
-    "  `(q)uit` to quit\n"
+    f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
+    f"  {BLU}c{DEF}ontinue             continue the program until the end\n"
+    f"  {BLU}p{DEF}rint                registers state\n"
+    f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
+    f"  {BLU}q{DEF}uit\n"
 )
+
+
+last_register_state = None
+
+
+def register_state(cpu: AbstractCPU) -> dict[str, int]:
+    return {reg: cpu.registers[reg] for reg in sorted(cpu.registers.keys())}
 
 
 def exec_step(cpu, step, command):
@@ -22,7 +42,7 @@ def exec_step(cpu, step, command):
     need_help = False
 
     if cpu.control_unit.get_status() == HALTED:
-        print("cannot execute command: machine halted", file=sys.stderr)
+        print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
     else:
         command = command.split()
         try:
@@ -40,11 +60,13 @@ def exec_step(cpu, step, command):
         else:
             for _i in range(count):
                 step += 1
+                global last_register_state  # noqa: PLW0603
+                last_register_state = register_state(cpu)
                 cpu.control_unit.step()
                 print(f"step {step}:")
                 exec_print(cpu, step)
                 if cpu.control_unit.get_status() == HALTED:
-                    print("machine halted")
+                    print(ANSI(f"{YEL}machine halted{DEF}"))
                     break
 
     return step, need_help, False
@@ -54,10 +76,10 @@ def exec_continue(cpu, step):
     """Exec debug continue command."""
 
     if cpu.control_unit.get_status() == HALTED:
-        print("cannot execute command: machine halted")
+        print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
     else:
         cpu.control_unit.run()
-        print("machine halted")
+        print(ANSI(f"{YEL}machine halted{DEF}"))
 
     return step, False, False
 
@@ -70,8 +92,13 @@ def exec_print(cpu, step):
     registers = sorted(cpu.registers.keys())
     for reg in registers:
         size = cpu.registers.register_sizes[reg]
+        color = ""
+        if reg in {"PC", "RI"}:
+            color = YEL
+        elif last_register_state[reg] != cpu.registers[reg]:
+            color = GRE
         data = "0x" + hex(cpu.registers[reg])[2:].rjust(size // 4, "0")
-        print("  " + reg + " : " + data)
+        print(ANSI(f"  {color}{reg:<5s}  {data}{DEF}"))
 
     return step, False, False
 
@@ -125,6 +152,8 @@ def debug(cpu) -> int:
     need_quit = False
     need_help = True
     step = 0
+    global last_register_state  # noqa: PLW0603
+    last_register_state = register_state(cpu)
 
     while not need_quit:
         if need_help:
