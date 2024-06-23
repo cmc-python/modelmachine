@@ -20,6 +20,11 @@ hatch shell
 ```
 Now you are in local environment and command `modelmachine` is accessable
 
+If separate environment is not needed for you, instead of last 2 commands:
+```shell
+pip install --editable .
+```
+
 ## Test
 Test local version:
 ```shell
@@ -37,6 +42,6 @@ hatch fmt
 ```
 
 ## Publish
-Publishing hhappens automatically by github actions.
+Publishing is automatic by github actions.
 To publish new version, create a release tag and release itself in github
 web interface.
