@@ -22,7 +22,7 @@ def exec_step(cpu, step, command):
     need_help = False
 
     if cpu.control_unit.get_status() == HALTED:
-        print("cannot execute command: machine halted", file=sys.stderr)  # noqa: T201
+        print("cannot execute command: machine halted", file=sys.stderr)
     else:
         command = command.split()
         try:
@@ -41,10 +41,10 @@ def exec_step(cpu, step, command):
             for _i in range(count):
                 step += 1
                 cpu.control_unit.step()
-                print(f"step {step}:")  # noqa: T201
+                print(f"step {step}:")
                 exec_print(cpu, step)
                 if cpu.control_unit.get_status() == HALTED:
-                    print("machine halted")  # noqa: T201
+                    print("machine halted")
                     break
 
     return step, need_help, False
@@ -54,10 +54,10 @@ def exec_continue(cpu, step):
     """Exec debug continue command."""
 
     if cpu.control_unit.get_status() == HALTED:
-        print("cannot execute command: machine halted")  # noqa: T201
+        print("cannot execute command: machine halted")
     else:
         cpu.control_unit.run()
-        print("machine halted")  # noqa: T201
+        print("machine halted")
 
     return step, False, False
 
@@ -65,13 +65,13 @@ def exec_continue(cpu, step):
 def exec_print(cpu, step):
     """Print contents of registers."""
 
-    print("RAM access count:", cpu.ram.access_count)  # noqa: T201
-    print("Registers state:")  # noqa: T201
+    print("RAM access count:", cpu.ram.access_count)
+    print("Registers state:")
     registers = sorted(cpu.registers.keys())
     for reg in registers:
         size = cpu.registers.register_sizes[reg]
         data = "0x" + hex(cpu.registers[reg])[2:].rjust(size // 4, "0")
-        print("  " + reg + " : " + data)  # noqa: T201
+        print("  " + reg + " : " + data)
 
     return step, False, False
 
@@ -88,7 +88,7 @@ def exec_memory(cpu, step, command):
         except ValueError:
             need_help = True
         else:
-            print(  # noqa: T201
+            print(
                 cpu.io_unit.store_hex(begin, (end - begin) * cpu.ram.word_size)
             )
     else:
@@ -118,7 +118,7 @@ def exec_command(cpu, step, command):
 def debug(cpu) -> int:
     """Debug cycle."""
 
-    print(  # noqa: T201
+    print(
         "Welcome to interactive debug mode.\n"
         "Beware: now every error breaks the debugger."
     )
@@ -128,14 +128,14 @@ def debug(cpu) -> int:
 
     while not need_quit:
         if need_help:
-            print(INSTRUCTION)  # noqa: T201
+            print(INSTRUCTION)
             need_help = False
 
         try:
             command = input("> ") + " "  # length > 0
         except EOFError:
             command = "quit"
-            print(command)  # noqa: T201
+            print(command)
 
         try:
             with warnings.catch_warnings(record=True) as warns:
@@ -144,12 +144,12 @@ def debug(cpu) -> int:
                 step, need_help, need_quit = exec_command(cpu, step, command)
 
                 for warn in warns:
-                    print("Warning:", warn.message)  # noqa: T201
+                    print("Warning:", warn.message)
 
         except Exception as error:  # noqa: BLE001
-            print("Error:", error.args[0])  # noqa: T201
+            print("Error:", error.args[0])
             cpu.alu.halt()
-            print("machine has halted")  # noqa: T201
+            print("machine has halted")
             return 1
 
     return 0
@@ -182,12 +182,12 @@ def assemble(input_filename, output_filename) -> int:
     error_list, code = asm.parse(input_data)
 
     if error_list != []:
-        print("Compilation aborted with errors:")  # noqa: T201
+        print("Compilation aborted with errors:")
         for error in error_list:
-            print(error, file=sys.stderr)  # noqa: T201
+            print(error, file=sys.stderr)
         return 1
 
-    print("Success compilation.")  # noqa: T201
+    print("Success compilation.")
     with open(output_filename, "w") as output_file:
         print(code, file=output_file)
     return 0
