@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from prompt_toolkit import ANSI, PromptSession, completion
@@ -34,7 +35,6 @@ INSTRUCTION = ANSI(
     f"  {BLU}q{DEF}uit\n"
 )
 
-last_register_state = None
 
 REGISTER_PRIORITY = {
     "PC": 10,
@@ -95,152 +95,159 @@ def register_state(cpu: AbstractCPU) -> dict[str, int]:
     return {reg: cpu.registers[reg] for reg in sorted(cpu.registers.keys())}
 
 
-def exec_step(cpu, step, command):
-    """Exec debug step command."""
-    need_help = False
+class CommandResult(IntEnum):
+    OK = 0
+    NEED_HELP = 1
+    QUIT = 2
 
-    if cpu.control_unit.get_status() == HALTED:
-        print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
-    else:
+
+class Ide:
+    cpu: AbstractCPU
+    last_register_state: dict[str, int]
+    step_no: int = 0
+
+    def __init__(self, cpu: AbstractCPU):
+        self.cpu = cpu
+        self.last_register_state = register_state(cpu)
+
+    def step(self, command: tuple[str]) -> CommandResult:
+        """Exec debug step command."""
+        if self.cpu.control_unit.get_status() == HALTED:
+            print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
+            return CommandResult.OK
+
         command = command.split()
         try:
-            if len(command) == 2:  # noqa: PLR2004
-                count = int(command[1], 0)  # may be raised value error
-            elif len(command) == 1:
-                count = 1
-            else:
-                raise ValueError  # noqa: TRY301
+            if len(command) > 2:  # noqa: PLR2004
+                msg = "Unexpected cmd arguments"
+                raise ValueError(msg)  # noqa: TRY301
+            count = 1 if len(command) == 1 else int(command[1], 0)
 
         except ValueError:
-            need_help = True
-            count = None
+            return CommandResult.NEED_HELP
 
+        for _i in range(count):
+            self.step_no += 1
+            self.last_register_state = register_state(self.cpu)
+            self.cpu.control_unit.step()
+            print(f"step {self.step_no:<4} {self.cpu.registers["RI"]}")
+            self.print()
+            if self.cpu.control_unit.get_status() == HALTED:
+                print(ANSI(f"{YEL}machine halted{DEF}"))
+                break
+
+        return CommandResult.OK
+
+    def continue_(self) -> CommandResult:
+        """Exec debug continue command."""
+
+        if self.cpu.control_unit.get_status() == HALTED:
+            print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
         else:
-            for _i in range(count):
-                step += 1
-                global last_register_state  # noqa: PLW0603
-                last_register_state = register_state(cpu)
-                cpu.control_unit.step()
-                print(f"step {step}:")
-                exec_print(cpu, step)
-                if cpu.control_unit.get_status() == HALTED:
-                    print(ANSI(f"{YEL}machine halted{DEF}"))
-                    break
+            self.cpu.control_unit.run()
+            print(ANSI(f"{YEL}machine halted{DEF}"))
 
-    return step, need_help, False
+        return CommandResult.OK
 
+    def print(self):
+        """Print contents of registers."""
 
-def exec_continue(cpu, step):
-    """Exec debug continue command."""
+        print("RAM access count:", self.cpu.ram.access_count)
+        print("Registers state:")
+        registers = sort_registers(self.cpu.registers.keys())
+        for reg in registers:
+            size = self.cpu.registers.register_sizes[reg]
+            color = ""
+            if reg in {"PC", "RI"}:
+                color = YEL
+            elif self.last_register_state[reg] != self.cpu.registers[reg]:
+                color = GRE
+            data = "0x" + hex(self.cpu.registers[reg])[2:].rjust(
+                size // 4, "0"
+            )
+            print(ANSI(f"  {color}{reg:<5s}  {data}{DEF}"))
 
-    if cpu.control_unit.get_status() == HALTED:
-        print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
-    else:
-        cpu.control_unit.run()
-        print(ANSI(f"{YEL}machine halted{DEF}"))
+        return CommandResult.OK
 
-    return step, False, False
+    def memory(self, command: tuple[str]):
+        """Print contents of RAM."""
 
-
-def exec_print(cpu, step):
-    """Print contents of registers."""
-
-    print("RAM access count:", cpu.ram.access_count)
-    print("Registers state:")
-    registers = sort_registers(cpu.registers.keys())
-    for reg in registers:
-        size = cpu.registers.register_sizes[reg]
-        color = ""
-        if reg in {"PC", "RI"}:
-            color = YEL
-        elif last_register_state[reg] != cpu.registers[reg]:
-            color = GRE
-        data = "0x" + hex(cpu.registers[reg])[2:].rjust(size // 4, "0")
-        print(ANSI(f"  {color}{reg:<5s}  {data}{DEF}"))
-
-    return step, False, False
-
-
-def exec_memory(cpu, step, command):
-    """Print contents of RAM."""
-    need_help = False
-
-    command = command.split()
-    if len(command) == 3:  # noqa: PLR2004
+        command = command.split()
         try:
+            if len(command) != 3:  # noqa: PLR2004
+                msg = "Unexpected cmd arguments"
+                raise ValueError(msg)  # noqa: TRY301
+
             begin = int(command[1], 0)
             end = int(command[2], 0)
         except ValueError:
-            need_help = True
-        else:
-            print(
-                cpu.io_unit.store_hex(begin, (end - begin) * cpu.ram.word_size)
+            return CommandResult.NEED_HELP
+
+        print(
+            self.cpu.io_unit.store_hex(
+                begin, (end - begin) * self.cpu.ram.word_size
             )
-    else:
-        need_help = True
+        )
 
-    return step, need_help, False
+        return CommandResult.OK
 
+    def cmd(self, command: list[str]):
+        """Exec one command."""
 
-def exec_command(cpu, step, command):
-    """Exec one command and generate step,
-    need_help and need_quit variables."""
+        if command[0] == "s":
+            return self.step(command)
+        if command[0] == "c":
+            return self.continue_()
+        if command[0] == "p":
+            return self.print()
+        if command[0] == "m":
+            return self.memory(command)
+        if command[0] == "q":
+            return CommandResult.QUIT
 
-    if command[0] == "s":
-        return exec_step(cpu, step, command)
-    if command[0] == "c":
-        return exec_continue(cpu, step)
-    if command[0] == "p":
-        return exec_print(cpu, step)
-    if command[0] == "m":
-        return exec_memory(cpu, step, command)
-    if command[0] == "q":
-        return step, False, True
+        return CommandResult.NEED_HELP
 
-    return step, True, False
+    def run(self) -> int:
+        print(
+            "Welcome to interactive debug mode.\n"
+            "Beware: now every error breaks the debugger."
+        )
+
+        session = PromptSession(
+            completer=completion.WordCompleter(COMMAND_LIST, sentence=True),
+            lexer=CommandLexer(),
+        )
+
+        st = CommandResult.NEED_HELP
+        while st != CommandResult.QUIT:
+            if st == CommandResult.NEED_HELP:
+                print(INSTRUCTION)
+
+            try:
+                command = session.prompt("> ") + " "  # length > 0
+            except EOFError:
+                command = "quit"
+                print(command)
+
+            try:
+                with warnings.catch_warnings(record=True) as warns:
+                    warnings.simplefilter("always")
+
+                    st = self.cmd(command)
+
+                    for warn in warns:
+                        print("Warning:", warn.message)
+
+            except Exception as error:  # noqa: BLE001
+                print("Error:", error.args[0])
+                self.cpu.alu.halt()
+                print("machine has halted")
+                return 1
+
+        return 0
 
 
 def debug(cpu) -> int:
     """Debug cycle."""
-
-    print(
-        "Welcome to interactive debug mode.\n"
-        "Beware: now every error breaks the debugger."
-    )
-    need_quit = False
-    need_help = True
-    step = 0
-    global last_register_state  # noqa: PLW0603
-    last_register_state = register_state(cpu)
-    session = PromptSession(
-        completer=completion.WordCompleter(COMMAND_LIST, sentence=True),
-        lexer=CommandLexer(),
-    )
-
-    while not need_quit:
-        if need_help:
-            print(INSTRUCTION)
-            need_help = False
-
-        try:
-            command = session.prompt("> ") + " "  # length > 0
-        except EOFError:
-            command = "quit"
-            print(command)
-
-        try:
-            with warnings.catch_warnings(record=True) as warns:
-                warnings.simplefilter("always")
-
-                step, need_help, need_quit = exec_command(cpu, step, command)
-
-                for warn in warns:
-                    print("Warning:", warn.message)
-
-        except Exception as error:  # noqa: BLE001
-            print("Error:", error.args[0])
-            cpu.alu.halt()
-            print("machine has halted")
-            return 1
-
-    return 0
+    ide = Ide(cpu)
+    return ide.run()
