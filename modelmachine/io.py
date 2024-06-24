@@ -41,7 +41,7 @@ class InputOutputUnit:
             msg = "Cannot save string, wrong size"
             raise ValueError(msg)
 
-    def store_hex(self, start, size, *, warn_dirty=True):
+    def store_hex(self, start, size, *, from_cpu=True):
         """Save data to string."""
         if size % self.ram.word_size != 0:
             msg = f"Cannot save {size} bits, word size is {self.ram.word_size}"
@@ -50,7 +50,7 @@ class InputOutputUnit:
         block_size = self.ram.word_size
         size //= block_size
         for i in range(start, start + size):
-            data = self.ram.fetch(i, block_size, warn_dirty=warn_dirty)
+            data = self.ram.fetch(i, block_size, from_cpu=from_cpu)
             result.append(hex(data)[2:].rjust(block_size // 4, "0"))
         return " ".join(result)
 

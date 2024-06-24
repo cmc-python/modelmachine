@@ -191,7 +191,7 @@ class Ide:
 
         print(
             self.cpu.io_unit.store_hex(
-                begin, (end - begin) * self.cpu.ram.word_size, warn_dirty=False
+                begin, (end - begin) * self.cpu.ram.word_size, from_cpu=False
             )
         )
 

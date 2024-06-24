@@ -6,13 +6,9 @@ Word is long integer.
 from __future__ import annotations
 
 import warnings
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Sequence
-
-
-class Endianess(IntEnum):
-    BIG = 0
-    LITTLE = 1
+from typing import Callable, Sequence
 
 
 def big_endian_decode(array: Sequence[int], word_size: int) -> int:
@@ -59,37 +55,67 @@ def big_endian_encode(value: int, word_size: int, bits: int) -> list[int]:
     return list(reversed(little_endian_encode(value, word_size, bits)))
 
 
-class AbstractMemory:
-    """Class from which inherits concrete memory."""
+class Endianess(IntEnum):
+    BIG = 0
+    LITTLE = 1
+
+
+@dataclass(frozen=True)
+class Deencoder:
+    decode: Callable[[Sequence[int], int], int]
+    encode: Callable[[int, int, int], Sequence[int]]
+
+
+DEENCODERS = {
+    Endianess.BIG: Deencoder(
+        decode=big_endian_decode, encode=big_endian_encode
+    ),
+    Endianess.LITTLE: Deencoder(
+        decode=little_endian_decode, encode=little_endian_encode
+    ),
+}
+
+
+class RandomAccessMemory:
+    """Random access memory.
+
+    Addresses is x: 0 <= x < memory_size.
+    If is_protected == True, you cannot read unassigned memory
+    (useful for debug).
+    """
 
     word_size: int
-    table: dict[str | int, int]
+    _table: dict[int, int]
+    _access_count: int
+    decode: Callable[[Sequence[int], int], int]
+    encode: Callable[[int, int, int], Sequence[int]]
+
+    @property
+    def access_count(self):
+        return self._access_count
 
     def __init__(
         self,
         *,
         word_size: int,
-        endianess="big",
-        addresses: dict[str | int, int] | None = None,
+        memory_size: int,
+        endianess=Endianess.BIG,
+        is_protected=True,
     ):
-        """Define concrete memory with the word size."""
-        if addresses is None:
-            addresses = {}
-
-        self.table = dict(addresses)
+        """Read help(type(x))."""
+        self._table = {}
         self.word_size = word_size
-        self.access_count = 0
+        self._access_count = 0
 
-        if endianess == "big":
-            self.decode, self.encode = big_endian_decode, big_endian_encode
-        elif endianess == "little":
-            self.decode, self.encode = (
-                little_endian_decode,
-                little_endian_encode,
-            )
-        else:
-            msg = f"Unexpected endianess: {endianess}"
-            raise ValueError(msg)
+        self.decode = DEENCODERS[endianess].decode
+        self.encode = DEENCODERS[endianess].encode
+
+        self.memory_size = memory_size
+        self.is_protected = is_protected
+
+    def __len__(self):
+        """Return size of memory in unified form."""
+        return self.memory_size
 
     def check_word_size(self, word: int):
         """Check that value can be represented by word with the size."""
@@ -100,32 +126,7 @@ class AbstractMemory:
             )
             raise ValueError(msg)
 
-    def _set(self, address: int | str, word: int):
-        """Raise an error, if word has wrong format."""
-        self.check_word_size(word)
-        self.check_address(address)
-        self.table[address] = word
-
-    def _missing(self, address: int | str, *, warn_dirty=True):
-        raise NotImplementedError
-
-    def _get(self, address: str | int, *, warn_dirty=True):
-        """Return word."""
-        self.check_address(address)
-        if address in self.table:
-            return self.table[address]
-
-        self._missing(address, warn_dirty=warn_dirty)
-        return 0
-
-    def __contains__(self, address: int | str):
-        return address in self.table
-
-    def check_address(self, address: int | str):
-        """Should raise an exception if address is invalid."""
-        raise NotImplementedError
-
-    def check_bits_count(self, _address: int | str, bits: int):
+    def _check_bits_count(self, bits: int):
         """Check that we want to read integer count of words."""
         if bits % self.word_size != 0:
             msg = (
@@ -134,43 +135,54 @@ class AbstractMemory:
             )
             raise KeyError(msg)
 
-    def fetch(self, address: int | str, bits: int, *, warn_dirty=True):
+    def _set(self, address: int, word: int):
+        """Raise an error, if word has wrong format."""
+        self.check_word_size(word)
+        self._check_address(address)
+        self._table[address] = word
+
+    def _get(self, address: int, *, from_cpu=True):
+        """Return word."""
+        self._check_address(address)
+        if address in self._table:
+            return self._table[address]
+
+        self._missing(address, from_cpu=from_cpu)
+        return 0
+
+    def fetch(self, address: int, bits: int, *, from_cpu=True):
         """Load bits by address.
 
         Size must be divisible by self.word_size.
         """
-        self.check_address(address)
-        self.check_bits_count(address, bits)
 
-        self.access_count += 1
+        self._check_address(address)
+        self._check_bits_count(bits)
 
+        if from_cpu:
+            self._access_count += 1
         size = bits // self.word_size
-        if size == 1:  # Address not always is integer, sometimes string
-            return self._get(address, warn_dirty=warn_dirty)
-
-        if not isinstance(address, int):
-            msg = f"address should be int, got {type(address)} {address}"
-            raise TypeError(msg)
 
         return self.decode(
             [
-                self._get(i, warn_dirty=warn_dirty)
+                self._get(i, from_cpu=from_cpu)
                 for i in range(address, address + size)
             ],
             self.word_size,
         )
 
-    def put(self, address: int | str, value: int, bits: int):
+    def put(self, address: int, value: int, bits: int, *, from_cpu=True):
         """Put size bits by address.
 
         Size must be divisible by self.word_size.
         """
-        self.check_address(address)
-        self.check_bits_count(address, bits)
+        self._check_address(address)
+        self._check_bits_count(bits)
 
         enc_value = self.encode(value, self.word_size, bits)
 
-        self.access_count += 1
+        if from_cpu:
+            self._access_count += 1
 
         size = bits // self.word_size
         if size == 1:  # Address not always is integer, sometimes string
@@ -183,36 +195,7 @@ class AbstractMemory:
             for i in range(size):
                 self._set(address + i, enc_value[i])
 
-
-class RandomAccessMemory(AbstractMemory):
-    """Random access memory.
-
-    Addresses is x: 0 <= x < memory_size.
-    If is_protected == True, you cannot read unassigned memory
-    (useful for debug).
-    """
-
-    def __init__(
-        self,
-        *,
-        word_size: int,
-        memory_size: int,
-        endianess="big",
-        is_protected=True,
-        addresses: dict[int | str, int] | None = None,
-    ):
-        """Read help(type(x))."""
-        super().__init__(
-            word_size=word_size, endianess=endianess, addresses=addresses
-        )
-        self.memory_size = memory_size
-        self.is_protected = is_protected
-
-    def __len__(self):
-        """Return size of memory in unified form."""
-        return self.memory_size
-
-    def check_address(self, address: int | str):
+    def _check_address(self, address: int):
         """Check that adress is valid."""
         if not isinstance(address, int):
             msg = f"Address should be int, not {type(address)} {address}"
@@ -225,9 +208,9 @@ class RandomAccessMemory(AbstractMemory):
             )
             raise KeyError(msg)
 
-    def _missing(self, address: int | str, *, warn_dirty=True):
+    def _missing(self, address: int, *, from_cpu=True):
         """If addressed memory not defined."""
-        self.check_address(address)
+        self._check_address(address)
         if not isinstance(address, int):
             msg = f"address should be int, got {type(address)} {address}"
             raise TypeError(msg)
@@ -239,7 +222,7 @@ class RandomAccessMemory(AbstractMemory):
             )
             raise KeyError(msg)
 
-        if warn_dirty:
+        if from_cpu:
             warnings.warn(
                 f"Read memory by address: {hex(address)}, "
                 "it is dirty memory, clean it first",
@@ -247,14 +230,24 @@ class RandomAccessMemory(AbstractMemory):
             )
 
 
-class RegisterMemory(AbstractMemory):
+class RegisterMemory:
     """Registers."""
 
-    def __init__(self, **kvargs):
-        """List of addresses are required."""
-        super().__init__(word_size=0, **kvargs)  # There is dynamic
-        # word size
+    _table: dict[str, int]
+    register_sizes: dict[str, int]
+    decode: Callable[[Sequence[int], int], int]
+    encode: Callable[[int, int, int], Sequence[int]]
+
+    def __init__(
+        self,
+        *,
+        endianess=Endianess.BIG,
+    ):
+        """Define specific memory with the word size."""
+        self._table = {}
         self.register_sizes = {}
+        self.decode = DEENCODERS[endianess].decode
+        self.encode = DEENCODERS[endianess].encode
 
     def add_register(self, name: str, register_size: int):
         """Add register with specific size.
@@ -262,6 +255,10 @@ class RegisterMemory(AbstractMemory):
         Raise an key error if register with this name already exists and
         have another size.
         """
+        if not isinstance(name, str):
+            msg = f"name should be str, got {type(name)} {name}"
+            raise TypeError(msg)
+
         if (
             name in self.register_sizes
             and self.register_sizes[name] != register_size
@@ -277,22 +274,15 @@ class RegisterMemory(AbstractMemory):
             self.register_sizes[name] = register_size
             self._set(name, 0)
 
-    def check_address(self, name: int | str):
+    def _check_address(self, name: str):
         """Check that we have the register."""
-        if not isinstance(name, str):
-            msg = f"name should be str, got {type(name)} {name}"
-            raise TypeError(msg)
-
         if name not in self.register_sizes:
             msg = f"Invalid register name: {name}"
             raise KeyError(msg)
 
-    def check_bits_count(self, name: str | int, size: int):
+    def _check_bits_count(self, name: str, size: int):
         """Bit count must be equal to word_size."""
-        if not isinstance(name, str):
-            msg = f"name should be str, got {type(name)} {name}"
-            raise TypeError(msg)
-
+        self._check_address(name)
         if size != self.register_sizes[name]:
             msg = (
                 f"Invalid register {name} size: {size}."
@@ -300,7 +290,43 @@ class RegisterMemory(AbstractMemory):
             )
             raise KeyError(msg)
 
-        self.word_size = size
+    def _set(self, name: str, word: int):
+        """Raise an error, if word has wrong format."""
+        self._check_address(name)
 
-    def keys(self):  # TODO: write test
-        return self.table.keys()
+        max_size = 2 ** self.register_sizes[name]
+        if word < 0 or word >= max_size:
+            msg = (
+                f"Wrong value for register '{name}': 0x{word:x}."
+                f" Values should be in [0x0, 0x{max_size - 1:x}]"
+            )
+            raise ValueError(msg)
+
+        self._table[name] = word
+
+    def _get(self, name: int):
+        """Return word."""
+        self._check_address(name)
+        return self._table[name]
+
+    def __contains__(self, name: str):
+        return name in self._table
+
+    def fetch(self, name: str, bits: int):
+        """Load bits by name.
+
+        Size must be divisible by self.word_size.
+        """
+        self._check_bits_count(name, bits)
+        return self._get(name)
+
+    def put(self, name: str, value: int, bits: int):
+        """Put size bits by name.
+
+        Size must be divisible by self.word_size.
+        """
+        self._check_bits_count(name, bits)
+        self._set(name, value)
+
+    def keys(self):
+        return self._table.keys()

@@ -9,10 +9,13 @@ CPU includes:
 * bootstrap loader?
 """
 
+from __future__ import annotations
+
 import sys
 
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.cu import (
+    AbstractControlUnit,
     ControlUnit1,
     ControlUnit2,
     ControlUnit3,
@@ -26,15 +29,17 @@ from modelmachine.memory import RandomAccessMemory, RegisterMemory
 class AbstractCPU:
     """CPU must have methods: load_program, print_result and run_fie."""
 
-    ram = None
-    registers = None
-    register_names = None
-    alu = None
-    control_unit = None
-    io_unit = None
-    config = None
+    ram: RandomAccessMemory
+    registers: RegisterMemory
+    register_names: dict[str, str]
+    alu: ArithmeticLogicUnit
+    control_unit: AbstractControlUnit
+    io_unit: InputOutputUnit
+    config: dict[str, str]
 
-    def load_program(self, program, input_function=input):
+    def load_program(
+        self, program: str, input_function: callable[[], str] = input
+    ):
         """Load source and data to memory."""
 
         def get_section_index(section):

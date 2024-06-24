@@ -44,7 +44,7 @@ class TestIODevice:
             22: 0x14050E30,
         }
 
-        def side_effect(address, size, *, warn_dirty=True):  # noqa: ARG001
+        def side_effect(address, size, *, from_cpu=True):  # noqa: ARG001
             """Mock memory."""
             assert size == WORD_SIZE
             assert address in mem
@@ -53,14 +53,14 @@ class TestIODevice:
         self.ram.fetch.side_effect = side_effect
 
         assert self.io_unit.store_hex(20, WORD_SIZE) == hex(mem[20])[2:]
-        self.ram.fetch.assert_called_with(20, WORD_SIZE, warn_dirty=True)
+        self.ram.fetch.assert_called_with(20, WORD_SIZE, from_cpu=True)
         assert self.io_unit.store_hex(21, WORD_SIZE) == hex(mem[21])[2:]
-        self.ram.fetch.assert_called_with(21, WORD_SIZE, warn_dirty=True)
+        self.ram.fetch.assert_called_with(21, WORD_SIZE, from_cpu=True)
         assert (
-            self.io_unit.store_hex(22, WORD_SIZE, warn_dirty=False)
+            self.io_unit.store_hex(22, WORD_SIZE, from_cpu=False)
             == hex(mem[22])[2:]
         )
-        self.ram.fetch.assert_called_with(22, WORD_SIZE, warn_dirty=False)
+        self.ram.fetch.assert_called_with(22, WORD_SIZE, from_cpu=False)
 
         self.ram.fetch.reset_mock()
         assert (
@@ -69,8 +69,8 @@ class TestIODevice:
         )
         self.ram.fetch.assert_has_calls(
             [
-                call(20, WORD_SIZE, warn_dirty=True),
-                call(21, WORD_SIZE, warn_dirty=True),
+                call(20, WORD_SIZE, from_cpu=True),
+                call(21, WORD_SIZE, from_cpu=True),
             ]
         )
 

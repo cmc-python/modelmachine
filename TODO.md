@@ -10,6 +10,3 @@
 - Edit memory inside ide
 - Disasm
 - Breakpoints
-
-## Memory
-- Split register and ram into independdent classes
