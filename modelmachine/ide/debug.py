@@ -91,14 +91,6 @@ def sort_registers(reg: list[str]):
     )
 
 
-def register_state(cpu: AbstractCPU) -> dict[str, int]:
-    return {
-        # TODO: special method for registers
-        reg: cpu.registers.fetch(reg, cpu.registers.register_sizes[reg])
-        for reg in sorted(cpu.registers.keys())
-    }
-
-
 class CommandResult(IntEnum):
     OK = 0
     NEED_HELP = 1
@@ -108,11 +100,15 @@ class CommandResult(IntEnum):
 class Ide:
     cpu: AbstractCPU
     last_register_state: dict[str, int]
-    cycle: int = 0
+    max_register_size: int
 
     def __init__(self, cpu: AbstractCPU):
         self.cpu = cpu
-        self.last_register_state = register_state(cpu)
+        self.last_register_state = cpu.registers.state()
+        self.max_register_size = (
+            max(cpu.registers.register_sizes[reg] for reg in cpu.registers)
+            // 4
+        )
 
     def step(self, command: tuple[str]) -> CommandResult:
         """Exec debug step command."""
@@ -131,10 +127,9 @@ class Ide:
             return CommandResult.NEED_HELP
 
         for _i in range(count):
-            self.cycle += 1
-            self.last_register_state = register_state(self.cpu)
+            self.last_register_state = self.cpu.registers.state()
             self.cpu.control_unit.step()
-            print(f"cycle {self.cycle:<4}")
+            print(f"cycle {self.cpu.control_unit.cycle:>4}")
             self.print()
             if self.cpu.control_unit.get_status() == HALTED:
                 print(ANSI(f"{YEL}machine halted{DEF}"))
@@ -158,20 +153,19 @@ class Ide:
 
         print("RAM access count:", self.cpu.ram.access_count)
         print("Registers state:")
-        registers = sort_registers(self.cpu.registers.keys())
+        registers = sort_registers(self.cpu.registers)
         for reg in registers:
             size = self.cpu.registers.register_sizes[reg]
+            value = self.cpu.registers.fetch(reg, size)
             color = ""
             if reg in {"PC", "RI"}:
                 color = YEL
-            elif self.last_register_state[reg] != self.cpu.registers.fetch(
-                reg, size
-            ):
+            elif self.last_register_state[reg] != value:
                 color = GRE
-            data = "0x" + hex(self.cpu.registers.fetch(reg, size))[2:].rjust(
-                size // 4, "0"
+            hex_data = f"{value:x}".rjust(size // 4, "0").rjust(
+                self.max_register_size, " "
             )
-            print(ANSI(f"  {color}{reg:<5s}  {data}{DEF}"))
+            print(ANSI(f"  {color}{reg:<5s}  0x{hex_data}{DEF}"))
 
         return CommandResult.OK
 

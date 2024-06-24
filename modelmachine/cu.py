@@ -1,10 +1,18 @@
 """Control unit parse instruction and give the commands
 to another part of computer."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from frozendict import frozendict
 
 from modelmachine.alu import EQUAL, GREATER, HALT, LESS
 from modelmachine.numeric import Integer
+
+if TYPE_CHECKING:
+    from modelmachine.alu import ArithmeticLogicUnit
+    from modelmachine.memory import RandomAccessMemory, RegisterMemory
 
 RUNNING = 1
 HALTED = 2
@@ -13,12 +21,25 @@ HALTED = 2
 class AbstractControlUnit:
     """Abstract control unit allow to execute two methods: step and run."""
 
-    def __init__(self, registers, ram, alu, operand_size):
+    registers: RegisterMemory
+    ram: RandomAccessMemory
+    alu: ArithmeticLogicUnit
+    operand_size: int
+    cycle: int
+
+    def __init__(
+        self,
+        registers: RegisterMemory,
+        ram: RandomAccessMemory,
+        alu: ArithmeticLogicUnit,
+        operand_size: int,
+    ):
         """See help(type(x))."""
         self.registers = registers
         self.ram = ram
         self.alu = alu
         self.operand_size = operand_size
+        self.cycle = 0
 
     def step(self):
         """Execution of one instruction."""
@@ -26,6 +47,7 @@ class AbstractControlUnit:
         self.load()
         self.execute()
         self.write_back()
+        self.cycle += 1
 
     def get_status(self):
         """Show, can we or not execute another one instruction."""
@@ -148,13 +170,14 @@ class ControlUnit(AbstractControlUnit):
 
     register_names = frozendict({"PC": "PC", "ADDR": "ADDR", "RI": "RI"})
     opcode = 0
-    opcodes = None
+    opcodes: set[int]
 
     def __init__(self, ir_size, address_size, *vargs, **kvargs):
         """Create necessary registers."""
         super().__init__(*vargs, **kvargs)
         self.ir_size = ir_size
         self.address_size = address_size
+        self.opcodes = {}
 
         # Instruction register
         for reg in ("PC", "ADDR"):
@@ -173,7 +196,7 @@ class ControlUnit(AbstractControlUnit):
         )
         self.opcode = instruction >> (instruction_size - self.OPCODE_SIZE)
         if self.opcodes and self.opcode not in self.opcodes:
-            msg = f"Invalid opcode `{hex(self.opcode)}`"
+            msg = f"Invalid opcode `0x{self.opcode:0>2x}`"
             raise ValueError(msg)
 
         instruction_pointer += instruction_size // self.ram.word_size
@@ -202,7 +225,7 @@ class ControlUnit(AbstractControlUnit):
         elif self.opcode == self.OPCODES["udivmod"]:
             self.alu.udivmod()
         else:
-            msg = f"Invalid opcode `{hex(self.opcode)}`"
+            msg = f"Invalid opcode `0x{self.opcode:0>2x}`"
             raise ValueError(msg)
 
     def execute_jump(self):
@@ -749,25 +772,21 @@ class ControlUnitM(ControlUnit):
 
         if self.opcode in self.REGISTER_OPCODES:
             r_x = (instruction >> self.reg_addr_size) & reg_mask
-            self.register1 = "R" + hex(r_x).upper()[2:]
+            self.register1 = f"R{r_x:X}"
 
             r_y = instruction & reg_mask
-            self.register2 = "R" + hex(r_y).upper()[2:]
+            self.register2 = f"R{r_y:X}"
         elif self.opcode in self.opcodes - {self.OPCODES["halt"]}:
             r_x = (
                 instruction >> (self.reg_addr_size + self.address_size)
             ) & reg_mask
-            self.register1 = "R" + hex(r_x).upper()[2:]
+            self.register1 = f"R{r_x:X}"
 
+            modificator_address = (instruction >> self.address_size) & reg_mask
+            modificator_name = f"R{modificator_address:X}"
             modificator = (
-                "R"
-                + hex((instruction >> self.address_size) & reg_mask).upper()[
-                    2:
-                ]
-            )
-            modificator = (
-                self.registers.fetch(modificator, self.operand_size)
-                if modificator != "R0"
+                self.registers.fetch(modificator_name, self.operand_size)
+                if modificator_name != "R0"
                 else 0
             )
             self.address = (instruction + modificator) & addr_mask
@@ -839,7 +858,7 @@ class ControlUnitM(ControlUnit):
             self.registers.put(self.register1, value, self.operand_size)
             if self.opcode in self.DIVMOD_OPCODES:
                 next_register = (int(self.register1[1:], 0x10) + 1) % 0x10
-                next_register = "R" + hex(next_register).upper()[2:]
+                next_register = f"R{next_register:X}"
                 value = self.registers.fetch(
                     self.register_names["RES"], self.operand_size
                 )

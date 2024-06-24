@@ -250,6 +250,6 @@ class TestRegisterMemory:
         with pytest.raises(KeyError):
             self.registers.fetch("R1", WORD_SIZE * 2)
 
-    def test_keys(self):
-        """keys() should return existing registers."""
-        assert sorted(self.registers.keys()) == ["R1", "R2", "S"]
+    def test_iter(self):
+        """iter should return existing registers."""
+        assert sorted(self.registers) == ["R1", "R2", "S"]

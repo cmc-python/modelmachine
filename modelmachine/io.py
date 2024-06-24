@@ -51,7 +51,7 @@ class InputOutputUnit:
         size //= block_size
         for i in range(start, start + size):
             data = self.ram.fetch(i, block_size, from_cpu=from_cpu)
-            result.append(hex(data)[2:].rjust(block_size // 4, "0"))
+            result.append(f"{data:x}".rjust(block_size // 4, "0"))
         return " ".join(result)
 
     def load_source(self, source):

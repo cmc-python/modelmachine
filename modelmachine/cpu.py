@@ -12,10 +12,10 @@ CPU includes:
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
 
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.cu import (
-    AbstractControlUnit,
     ControlUnit1,
     ControlUnit2,
     ControlUnit3,
@@ -24,6 +24,9 @@ from modelmachine.cu import (
 )
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory import RandomAccessMemory, RegisterMemory
+
+if TYPE_CHECKING:
+    from modelmachine.cu import AbstractControlUnit
 
 
 class AbstractCPU:

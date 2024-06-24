@@ -8,7 +8,9 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Sequence
+from typing import Callable, Mapping, Sequence
+
+from frozendict import frozendict
 
 
 def big_endian_decode(array: Sequence[int], word_size: int) -> int:
@@ -328,5 +330,8 @@ class RegisterMemory:
         self._check_bits_count(name, bits)
         self._set(name, value)
 
-    def keys(self):
-        return self._table.keys()
+    def __iter__(self):
+        return iter(self._table)
+
+    def state(self) -> Mapping[str, int]:
+        return frozendict(self._table)
