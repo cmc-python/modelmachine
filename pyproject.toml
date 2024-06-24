@@ -69,7 +69,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-[tool.hatch.format]
+[tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff_defaults.toml"
 [tool.ruff]
 extend = "ruff_defaults.toml"
