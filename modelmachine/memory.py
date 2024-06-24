@@ -8,7 +8,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Iterator, Mapping, Sequence
 
 from frozendict import frozendict
 
@@ -93,7 +93,7 @@ class RandomAccessMemory:
     encode: Callable[[int, int, int], Sequence[int]]
 
     @property
-    def access_count(self):
+    def access_count(self) -> int:
         return self._access_count
 
     def __init__(
@@ -101,8 +101,8 @@ class RandomAccessMemory:
         *,
         word_size: int,
         memory_size: int,
-        endianess=Endianess.BIG,
-        is_protected=True,
+        endianess: Endianess = Endianess.BIG,
+        is_protected: bool = True,
     ):
         """Read help(type(x))."""
         self._table = {}
@@ -115,11 +115,11 @@ class RandomAccessMemory:
         self.memory_size = memory_size
         self.is_protected = is_protected
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return size of memory in unified form."""
         return self.memory_size
 
-    def check_word_size(self, word: int):
+    def check_word_size(self, word: int) -> None:
         """Check that value can be represented by word with the size."""
         if not 0 <= word < 2**self.word_size:
             msg = (
@@ -128,7 +128,7 @@ class RandomAccessMemory:
             )
             raise ValueError(msg)
 
-    def _check_bits_count(self, bits: int):
+    def _check_bits_count(self, bits: int) -> None:
         """Check that we want to read integer count of words."""
         if bits % self.word_size != 0:
             msg = (
@@ -137,13 +137,13 @@ class RandomAccessMemory:
             )
             raise KeyError(msg)
 
-    def _set(self, address: int, word: int):
+    def _set(self, address: int, word: int) -> None:
         """Raise an error, if word has wrong format."""
         self.check_word_size(word)
         self._check_address(address)
         self._table[address] = word
 
-    def _get(self, address: int, *, from_cpu=True):
+    def _get(self, address: int, *, from_cpu: bool = True) -> int:
         """Return word."""
         self._check_address(address)
         if address in self._table:
@@ -152,7 +152,7 @@ class RandomAccessMemory:
         self._missing(address, from_cpu=from_cpu)
         return 0
 
-    def fetch(self, address: int, bits: int, *, from_cpu=True):
+    def fetch(self, address: int, bits: int, *, from_cpu: bool = True) -> int:
         """Load bits by address.
 
         Size must be divisible by self.word_size.
@@ -173,7 +173,9 @@ class RandomAccessMemory:
             self.word_size,
         )
 
-    def put(self, address: int, value: int, bits: int, *, from_cpu=True):
+    def put(
+        self, address: int, value: int, bits: int, *, from_cpu: bool = True
+    ) -> None:
         """Put size bits by address.
 
         Size must be divisible by self.word_size.
@@ -197,7 +199,7 @@ class RandomAccessMemory:
             for i in range(size):
                 self._set(address + i, enc_value[i])
 
-    def _check_address(self, address: int):
+    def _check_address(self, address: int) -> None:
         """Check that adress is valid."""
         if not isinstance(address, int):
             msg = f"Address should be int, not {type(address)} {address}"
@@ -210,7 +212,7 @@ class RandomAccessMemory:
             )
             raise KeyError(msg)
 
-    def _missing(self, address: int, *, from_cpu=True):
+    def _missing(self, address: int, *, from_cpu: bool = True) -> None:
         """If addressed memory not defined."""
         self._check_address(address)
         if not isinstance(address, int):
@@ -243,7 +245,7 @@ class RegisterMemory:
     def __init__(
         self,
         *,
-        endianess=Endianess.BIG,
+        endianess: Endianess = Endianess.BIG,
     ):
         """Define specific memory with the word size."""
         self._table = {}
@@ -251,7 +253,7 @@ class RegisterMemory:
         self.decode = DEENCODERS[endianess].decode
         self.encode = DEENCODERS[endianess].encode
 
-    def add_register(self, name: str, register_size: int):
+    def add_register(self, name: str, register_size: int) -> None:
         """Add register with specific size.
 
         Raise an key error if register with this name already exists and
@@ -276,13 +278,13 @@ class RegisterMemory:
             self.register_sizes[name] = register_size
             self._set(name, 0)
 
-    def _check_address(self, name: str):
+    def _check_address(self, name: str) -> None:
         """Check that we have the register."""
         if name not in self.register_sizes:
             msg = f"Invalid register name: {name}"
             raise KeyError(msg)
 
-    def _check_bits_count(self, name: str, size: int):
+    def _check_bits_count(self, name: str, size: int) -> None:
         """Bit count must be equal to word_size."""
         self._check_address(name)
         if size != self.register_sizes[name]:
@@ -292,7 +294,7 @@ class RegisterMemory:
             )
             raise KeyError(msg)
 
-    def _set(self, name: str, word: int):
+    def _set(self, name: str, word: int) -> None:
         """Raise an error, if word has wrong format."""
         self._check_address(name)
 
@@ -306,15 +308,15 @@ class RegisterMemory:
 
         self._table[name] = word
 
-    def _get(self, name: int):
+    def _get(self, name: str) -> int:
         """Return word."""
         self._check_address(name)
         return self._table[name]
 
-    def __contains__(self, name: str):
+    def __contains__(self, name: str) -> bool:
         return name in self._table
 
-    def fetch(self, name: str, bits: int):
+    def fetch(self, name: str, bits: int) -> int:
         """Load bits by name.
 
         Size must be divisible by self.word_size.
@@ -322,7 +324,7 @@ class RegisterMemory:
         self._check_bits_count(name, bits)
         return self._get(name)
 
-    def put(self, name: str, value: int, bits: int):
+    def put(self, name: str, value: int, bits: int) -> None:
         """Put size bits by name.
 
         Size must be divisible by self.word_size.
@@ -330,7 +332,7 @@ class RegisterMemory:
         self._check_bits_count(name, bits)
         self._set(name, value)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self._table)
 
     def state(self) -> Mapping[str, int]:
