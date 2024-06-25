@@ -17,8 +17,6 @@ from modelmachine.memory import (
 BYTE_SIZE = 8
 WORD_SIZE = 32
 
-# TODO: all type: ignore should raise a TypeError
-
 
 def test_endianess() -> None:
     """Simple test."""
@@ -42,16 +40,6 @@ class TestRandomAccessMemory:
         assert self.ram.memory_size == 512
         assert len(self.ram) == 512
         assert self.ram.is_protected is True
-
-    def test_check_address(self) -> None:
-        """It a second part of information protection."""
-        for i in range(len(self.ram)):
-            self.ram._check_address(i)
-        for i in range(len(self.ram), 2 * len(self.ram)):
-            with pytest.raises(KeyError):
-                self.ram._check_address(i)
-        with pytest.raises(TypeError):
-            self.ram._check_address("R1")  # type: ignore
 
     def test_set(self) -> None:
         """Address should be checked."""
@@ -192,19 +180,8 @@ class TestRegisterMemory:
         assert self.registers.fetch("S", WORD_SIZE) == 0
         assert "R3" not in self.registers
         assert "R4" not in self.registers
-        assert 0 not in self.registers  # type: ignore
-
-    def test_check_address(self) -> None:
-        """Should raise an error for undefined registers."""
-        self.registers._check_address("R1")
-        self.registers._check_address("R2")
-        self.registers._check_address("S")
-        with pytest.raises(KeyError):
-            self.registers._check_address("R3")
-        with pytest.raises(KeyError):
-            self.registers._check_address("R4")
-        with pytest.raises(KeyError):
-            self.registers._check_address(0)  # type: ignore
+        with pytest.raises(TypeError):
+            _x = 0 in self.registers  # type: ignore
 
     def test_add_register(self) -> None:
         """Register with exist name should be addable."""
@@ -224,7 +201,7 @@ class TestRegisterMemory:
 
     def test_set(self) -> None:
         """Setitem can raise an error."""
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             self.registers._set(0, 5)  # type: ignore
         with pytest.raises(KeyError):
             self.registers._set("R3", 5)
@@ -236,7 +213,7 @@ class TestRegisterMemory:
 
     def test_fetch_and_put(self) -> None:
         """Test main method to read and write."""
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             self.registers.fetch(0, WORD_SIZE)  # type: ignore
         with pytest.raises(KeyError):
             self.registers.put("R3", 5, WORD_SIZE + 1)

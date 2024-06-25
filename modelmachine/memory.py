@@ -253,15 +253,19 @@ class RegisterMemory:
         self.decode = DEENCODERS[endianess].decode
         self.encode = DEENCODERS[endianess].encode
 
+    @staticmethod
+    def _check_name_type(name: str) -> None:
+        if not isinstance(name, str):
+            msg = f"name should be str, got {type(name)} {name}"
+            raise TypeError(msg)
+
     def add_register(self, name: str, register_size: int) -> None:
         """Add register with specific size.
 
         Raise an key error if register with this name already exists and
         have another size.
         """
-        if not isinstance(name, str):
-            msg = f"name should be str, got {type(name)} {name}"
-            raise TypeError(msg)
+        self._check_name_type(name)
 
         if (
             name in self.register_sizes
@@ -278,15 +282,17 @@ class RegisterMemory:
             self.register_sizes[name] = register_size
             self._set(name, 0)
 
-    def _check_address(self, name: str) -> None:
+    def _check_name(self, name: str) -> None:
         """Check that we have the register."""
+        self._check_name_type(name)
+
         if name not in self.register_sizes:
             msg = f"Invalid register name: {name}"
             raise KeyError(msg)
 
     def _check_bits_count(self, name: str, size: int) -> None:
         """Bit count must be equal to word_size."""
-        self._check_address(name)
+        self._check_name(name)
         if size != self.register_sizes[name]:
             msg = (
                 f"Invalid register {name} size: {size}."
@@ -296,7 +302,7 @@ class RegisterMemory:
 
     def _set(self, name: str, word: int) -> None:
         """Raise an error, if word has wrong format."""
-        self._check_address(name)
+        self._check_name(name)
 
         max_size = 2 ** self.register_sizes[name]
         if word < 0 or word >= max_size:
@@ -310,10 +316,11 @@ class RegisterMemory:
 
     def _get(self, name: str) -> int:
         """Return word."""
-        self._check_address(name)
+        self._check_name(name)
         return self._table[name]
 
     def __contains__(self, name: str) -> bool:
+        self._check_name_type(name)
         return name in self._table
 
     def fetch(self, name: str, bits: int) -> int:
