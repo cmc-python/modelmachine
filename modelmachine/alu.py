@@ -1,235 +1,200 @@
 """Arithmetic logic unit make operations with internal registers."""
 
-from modelmachine.numeric import Integer
+from __future__ import annotations
 
-CF = 2**0
-OF = 2**1
-SF = 2**2
-ZF = 2**3
-HALT = 2**4
+from dataclasses import dataclass
+from enum import Flag
+from typing import TYPE_CHECKING, Callable, Final
+
+from modelmachine.cell import Cell, div_to_zero
+from modelmachine.memory.register import RegisterName
+
+if TYPE_CHECKING:
+    from modelmachine.memory.register import RegisterMemory
+
+
+class Flags(Flag):
+    CLEAR = 0
+    CF = 0b00001
+    OF = 0b00010
+    SF = 0b00100
+    ZF = 0b01000
+    HALT = 0b10000
+
+
+FLAG_BITS = 5
 
 LESS = -1
 EQUAL = 0
 GREATER = 1
 
 
+@dataclass
+class AluRegisters:
+    S: RegisterName
+    RES: RegisterName
+    R1: RegisterName
+    R2: RegisterName
+
+
+class AluZeroDivisionError(ZeroDivisionError):
+    pass
+
+
 class ArithmeticLogicUnit:
     """Arithmetic logic unit.
 
-    register_names - dict of register names
+    alu_registers - map of register names
 
     ALU uses registers from this list with names:
-    * R1, R2 - operands for arithmetic commands (operand_size)
-    * S, RES - summator and residual (for divmod) (operand_size)
-    * FLAGS - flag register (operand_size)
-    * ADDR - address for jump instructions (operand_size)
-    * PC - instruction pointer for jump instructions (address_size)
+    * R1, R2 - operands for arithmetic commands (operand_bits)
+    * S, RES - summator and residual (for divmod) (operand_bits)
     """
 
-    def __init__(self, registers, register_names, operand_size, address_size):
+    _registers: Final[RegisterMemory]
+    operand_bits: Final[int]
+    _address_bits: Final[int]
+    alu_registers: Final[AluRegisters]
+
+    def __init__(
+        self,
+        *,
+        registers: RegisterMemory,
+        alu_registers: AluRegisters,
+        operand_bits: int,
+        address_bits: int,
+    ) -> None:
         """See help(type(x))."""
-        self.registers = registers
+        assert operand_bits >= FLAG_BITS
+        self._registers = registers
 
-        self.operand_size = operand_size
-        self.address_size = address_size
-        self.register_names = register_names
+        self.operand_bits = operand_bits
+        self._address_bits = address_bits
+        self.alu_registers = alu_registers
 
-        for reg in ("R1", "R2", "S", "RES", "FLAGS"):
-            self.registers.add_register(register_names[reg], operand_size)
+        self._registers.add_register(RegisterName.PC, bits=address_bits)
+        self._registers.add_register(RegisterName.ADDR, bits=address_bits)
 
-        for reg in ("PC", "ADDR"):
-            self.registers.add_register(register_names[reg], address_size)
+        self._registers.add_register(alu_registers.S, bits=operand_bits)
+        self._registers.add_register(alu_registers.RES, bits=operand_bits)
+        self._registers.add_register(alu_registers.R1, bits=operand_bits)
+        self._registers.add_register(alu_registers.R2, bits=operand_bits)
+        self._registers.add_register(RegisterName.FLAGS, bits=operand_bits)
 
-    def set_flags(self, signed, unsigned):
+    def _set_flags(self, *, signed: int, unsigned: int) -> None:
         """Set flags."""
-        flags = 0
-        data = self.registers.fetch(
-            self.register_names["S"], self.operand_size
-        )
-        value = Integer(data, self.operand_size, True).get_value()
+        flags = Flags.CLEAR
+        value = self._registers[self.alu_registers.S]
         if value == 0:
-            flags |= ZF
-        if value < 0:
-            flags |= SF
+            flags |= Flags.ZF
+        if value.is_negative:
+            flags |= Flags.SF
 
-        if value != signed:
-            flags |= OF
+        if value.signed != signed:
+            flags |= Flags.OF
 
-        data = self.registers.fetch(
-            self.register_names["S"], self.operand_size
-        )
-        value = Integer(data, self.operand_size, False).get_value()
-        if value != unsigned:
-            flags |= CF
+        if value.unsigned != unsigned:
+            flags |= Flags.CF
 
-        self.registers.put(
-            self.register_names["FLAGS"], flags, self.operand_size
+        self._registers[RegisterName.FLAGS] = Cell(
+            flags.value, bits=self.operand_bits
         )
 
-    def get_signed_ops(self):
+    @property
+    def _operands(self) -> tuple[Cell, Cell]:
         """Read and return R1 and R2."""
-        operand1 = self.registers.fetch(
-            self.register_names["R1"], self.operand_size
+        return (
+            self._registers[self.alu_registers.R1],
+            self._registers[self.alu_registers.R2],
         )
-        operand1 = Integer(operand1, self.operand_size, True)
-        operand2 = self.registers.fetch(
-            self.register_names["R2"], self.operand_size
-        )
-        operand2 = Integer(operand2, self.operand_size, True)
-        return (operand1, operand2)
 
-    def get_unsigned_ops(self):
-        """Read and return unsigned R1 and R2."""
-        operand1 = self.registers.fetch(
-            self.register_names["R1"], self.operand_size
-        )
-        operand1 = Integer(operand1, self.operand_size, False)
-        operand2 = self.registers.fetch(
-            self.register_names["R2"], self.operand_size
-        )
-        operand2 = Integer(operand2, self.operand_size, False)
-        return (operand1, operand2)
+    class OperationType(Flag):
+        SIGNED = 1
+        UNSIGNED = 2
+        BOTH = 3
 
-    def add(self):
+    def _binary_op(
+        self,
+        int_op: Callable[[int, int], int],
+        cell_op: Callable[[Cell, Cell], Cell],
+        *,
+        op_type: OperationType = OperationType.BOTH,
+    ) -> None:
+        op1, op2 = self._operands
+        s = cell_op(op1, op2)
+        self._registers[self.alu_registers.S] = s
+        unsigned = int_op(op1.unsigned, op2.unsigned)
+        signed = int_op(op1.signed, op2.signed)
+
+        match op_type:
+            case self.OperationType.BOTH:
+                self._set_flags(signed=signed, unsigned=unsigned)
+            case self.OperationType.SIGNED:
+                self._set_flags(signed=signed, unsigned=s.unsigned)
+            case self.OperationType.UNSIGNED:
+                self._set_flags(signed=s.signed, unsigned=unsigned)
+            case _:
+                raise NotImplementedError
+
+    def add(self) -> None:
         """S := R1 + R2."""
-        operand1, operand2 = self.get_signed_ops()
-        summator = operand1 + operand2
-        signed = operand1.get_value() + operand2.get_value()
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = operand1.get_value() + operand2.get_value()
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(signed, unsigned)
+        self._binary_op(lambda a, b: a + b, lambda a, b: a + b)
 
-    def sub(self):
+    def sub(self) -> None:
         """S := R1 - R2."""
-        operand1, operand2 = self.get_signed_ops()
-        summator = operand1 - operand2
-        signed = operand1.get_value() - operand2.get_value()
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = operand1.get_value() - operand2.get_value()
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(signed, unsigned)
+        self._binary_op(lambda a, b: a - b, lambda a, b: a - b)
 
-    def umul(self):
+    def umul(self) -> None:
         """S := R1 * R2 (unsigned)."""
-        operand1, operand2 = self.get_unsigned_ops()
-        summator = operand1 * operand2
-        unsigned = operand1.get_value() * operand2.get_value()
-        operand1, operand2 = self.get_signed_ops()
-        signed = operand1.get_value() * operand2.get_value()
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
+        self._binary_op(
+            lambda a, b: a * b,
+            lambda a, b: a.umul(b),
+            op_type=self.OperationType.UNSIGNED,
         )
-        self.set_flags(signed, unsigned)
 
-    def smul(self):
+    def smul(self) -> None:
         """S := R1 * R2 (signed)."""
-        operand1, operand2 = self.get_signed_ops()
-        summator = operand1 * operand2
-        signed = operand1.get_value() * operand2.get_value()
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = operand1.get_value() * operand2.get_value()
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
+        self._binary_op(
+            lambda a, b: a * b,
+            lambda a, b: a.smul(b),
+            op_type=self.OperationType.SIGNED,
         )
-        self.set_flags(signed, unsigned)
 
-    def sdiv(self):
-        """S := R1 div R2 (signed)."""
-        operand1, operand2 = self.get_signed_ops()
-        summator = operand1 // operand2
-
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = (operand1 // operand2).get_value()
-
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(summator.get_value(), unsigned)
-
-    def smod(self):
-        """S := R1 mod R2 (signed)."""
-        operand1, operand2 = self.get_signed_ops()
-        summator = operand1 % operand2
-
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = (operand1 % operand2).get_value()
-
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(summator.get_value(), unsigned)
-
-    def udiv(self):
-        """S := R1 div R2 (unsigned)."""
-        operand1, operand2 = self.get_unsigned_ops()
-        summator = operand1 // operand2
-
-        operand1, operand2 = self.get_signed_ops()
-        signed = (operand1 // operand2).get_value()
-
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(signed, summator.get_value())
-
-    def umod(self):
-        """S := R1 mod R2 (unsigned)."""
-        operand1, operand2 = self.get_unsigned_ops()
-        summator = operand1 % operand2
-
-        operand1, operand2 = self.get_signed_ops()
-        signed = (operand1 % operand2).get_value()
-
-        self.registers.put(
-            self.register_names["S"], summator.get_data(), self.operand_size
-        )
-        self.set_flags(signed, summator.get_value())
-
-    def sdivmod(self):
+    def sdivmod(self) -> None:
         """S := R1 div R2, R1 := R1 % R2 (signed)."""
-        operand1, operand2 = self.get_signed_ops()
-        div, mod = divmod(operand1, operand2)
+        op1, op2 = self._operands
+        try:
+            div, mod = op1.sdivmod(op2)
+        except ZeroDivisionError as e:
+            msg = f"Division by zero: {op1.signed} / {op2.signed}"
+            raise AluZeroDivisionError(msg) from e
 
-        operand1, operand2 = self.get_unsigned_ops()
-        unsigned = (operand1 // operand2).get_value()
+        self._registers[self.alu_registers.S] = div
+        self._registers[self.alu_registers.RES] = mod
+        signed = div_to_zero(op1.signed, op2.signed)
+        self._set_flags(signed=signed, unsigned=div.unsigned)
 
-        self.registers.put(
-            self.register_names["S"], div.get_data(), self.operand_size
-        )
-        self.registers.put(
-            self.register_names["RES"], mod.get_data(), self.operand_size
-        )
-        self.set_flags(div.get_value(), unsigned)
-
-    def udivmod(self):
+    def udivmod(self) -> None:
         """S := R1 div R2, R1 := R1 % R2 (unsigned)."""
-        operand1, operand2 = self.get_unsigned_ops()
-        div, mod = divmod(operand1, operand2)
+        op1, op2 = self._operands
 
-        operand1, operand2 = self.get_signed_ops()
-        signed = (operand1 // operand2).get_value()
+        try:
+            div, mod = op1.udivmod(op2)
+        except ZeroDivisionError as e:
+            msg = f"Division by zero: {op1.unsigned} / {op2.unsigned}"
+            raise AluZeroDivisionError(msg) from e
 
-        self.registers.put(
-            self.register_names["S"], div.get_data(), self.operand_size
-        )
-        self.registers.put(
-            self.register_names["RES"], mod.get_data(), self.operand_size
-        )
-        self.set_flags(signed, div.get_value())
+        self._registers[self.alu_registers.S] = div
+        self._registers[self.alu_registers.RES] = mod
+        unsigned = div_to_zero(op1.unsigned, op2.unsigned)
+        self._set_flags(signed=div.signed, unsigned=unsigned)
 
-    def jump(self):
+    def jump(self) -> None:
         """PC := R1."""
-        addr = self.registers.fetch(
-            self.register_names["ADDR"], self.address_size
-        )
-        self.registers.put(self.register_names["PC"], addr, self.address_size)
+        addr = self._registers[RegisterName.ADDR]
+        self._registers[RegisterName.PC] = addr
 
-    def cond_jump(self, signed, comparasion, equal):
+    def cond_jump(self, *, signed: bool, comp: int, equal: bool) -> None:
         """All jumps: more, less, less_or_equal etc.
 
         signed may be True or False.
@@ -238,76 +203,40 @@ class ArithmeticLogicUnit:
 
         >>> alu.cond_jump(signed=False, comparasion=1, equal=False)  # a > b
         """
-        flags = self.registers.fetch(
-            self.register_names["FLAGS"], self.operand_size
-        )
+        flags = Flags(self._registers[RegisterName.FLAGS].unsigned)
+        zf = bool(flags & Flags.ZF)
 
-        def _signed_cond_jump():
-            """Conditional jump if comparasion != 0 and signed == True."""
-            if comparasion == LESS:
-                if equal:
-                    if bool(flags & OF) != bool(flags & SF) or bool(
-                        flags & ZF
-                    ):
-                        self.jump()
-                elif bool(flags & OF) != bool(flags & SF):
-                    self.jump()
-            elif equal:
-                if bool(flags & OF) == bool(flags & SF):
-                    self.jump()
-            elif bool(flags & OF) == bool(flags & SF) and not bool(flags & ZF):
-                self.jump()
-
-        def _unsigned_cond_jump():
-            """Conditional jump if comparasion != 0 and signed == False."""
-            if comparasion == LESS:
-                if equal:
-                    if bool(flags & CF) or bool(flags & ZF):
-                        self.jump()
-                elif bool(flags & CF):
-                    self.jump()
-            elif equal:
-                if not bool(flags & CF):
-                    self.jump()
-            elif not bool(flags & CF) and not bool(flags & ZF):
-                self.jump()
-
-        if comparasion == EQUAL:
+        if zf:
             if equal:
-                if bool(flags & ZF):
-                    self.jump()
-            elif not bool(flags & ZF):
                 self.jump()
-        elif signed:
-            _signed_cond_jump()
-        else:  # unsigned
-            _unsigned_cond_jump()
+            return
 
-    def halt(self):
+        if comp == 0:
+            if equal is zf:
+                self.jump()
+            return
+
+        if signed:
+            less = bool(flags & Flags.SF) ^ bool(flags & Flags.OF)
+            if (comp < 0) == less:
+                self.jump()
+            return
+
+        # signed is False
+        cf = bool(flags & Flags.CF)
+        if (comp < 0) == cf:
+            self.jump()
+
+    def halt(self) -> None:
         """Stop the machine."""
-        self.registers.put(
-            self.register_names["FLAGS"], HALT, self.operand_size
+        self._registers[RegisterName.FLAGS] = Cell(
+            Flags.HALT.value, bits=self.operand_bits
         )
 
-    def move(self, source="R1", dest="S"):
-        """dest := source."""
-        value = self.registers.fetch(
-            self.register_names[source], self.operand_size
-        )
-        self.registers.put(self.register_names[dest], value, self.operand_size)
-
-    def swap(self, reg1="S", reg2="RES"):
+    def swap(self) -> None:
         """S := R1."""
-        reg1_value = self.registers.fetch(
-            self.register_names[reg1], self.operand_size
-        )
-        reg2_value = self.registers.fetch(
-            self.register_names[reg2], self.operand_size
-        )
+        s = self._registers[self.alu_registers.S]
+        res = self._registers[self.alu_registers.RES]
 
-        self.registers.put(
-            self.register_names[reg1], reg2_value, self.operand_size
-        )
-        self.registers.put(
-            self.register_names[reg2], reg1_value, self.operand_size
-        )
+        self._registers[self.alu_registers.S] = res
+        self._registers[self.alu_registers.RES] = s

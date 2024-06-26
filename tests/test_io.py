@@ -1,129 +1,158 @@
 """Test case for input/output device."""
 
-from unittest.mock import call, create_autospec
+from unittest.mock import NonCallableMagicMock, call, create_autospec
 
 import pytest
 
+from modelmachine.cell import Cell
 from modelmachine.io import InputOutputUnit
-from modelmachine.memory import RandomAccessMemory
+from modelmachine.memory.ram import RandomAccessMemory
 
-BYTE_SIZE = 8
-WORD_SIZE = 32
+AB = 5
+WB = 16
 
 
 class TestIODevice:
     """Test case for IODevice."""
 
-    ram: RandomAccessMemory
+    ram: NonCallableMagicMock
     io_unit: InputOutputUnit
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Init state."""
         self.ram = create_autospec(
-            RandomAccessMemory(word_size=WORD_SIZE, memory_size=512),
+            RandomAccessMemory(address_bits=AB, word_bits=WB),
             True,
             True,
         )
-        self.ram.word_size = WORD_SIZE
-        self.io_unit = InputOutputUnit(self.ram, 10, WORD_SIZE)
+        self.ram.word_bits = WB
+        self.ram.address_bits = AB
+        self.ram.memory_size = 1 << AB
+        self.io_unit = InputOutputUnit(ram=self.ram)
 
-    def test_load_hex(self):
+    def test_input(self) -> None:
+        """Test load data by addresses."""
+        self.io_unit.input([10, 11, 12], ["-123", "456", "0x456"])
+        self.ram.put.assert_has_calls(
+            [
+                call(address=Cell(10, bits=AB), value=Cell(-123, bits=WB)),
+                call(address=Cell(11, bits=AB), value=Cell(456, bits=WB)),
+                call(address=Cell(12, bits=AB), value=Cell(0x456, bits=WB)),
+            ]
+        )
+
+        with pytest.raises(ValueError, match="Unexpected address for input"):
+            self.io_unit.input([0xFF], ["-123"])
+
+        with pytest.raises(ValueError, match="Cannot parse input integer"):
+            self.io_unit.input([0x1], ["hello"])
+
+        with pytest.raises(ValueError, match="Input value is too long"):
+            self.io_unit.input([0x1], ["0xffffffffff"])
+
+    def test_load_source(self) -> None:
         """Test loading from string."""
-        self.io_unit.load_hex(20, "01 02 0A 0a 10153264")
-        self.ram.put.assert_any_call(20, 0x01020A0A, WORD_SIZE)
-        self.ram.put.assert_any_call(21, 0x10153264, WORD_SIZE)
+        self.io_unit.load_source("01020A0a10153264")
+        self.ram.put.assert_has_calls(
+            [
+                call(
+                    address=Cell(0, bits=AB),
+                    value=Cell(0x0102, bits=WB),
+                    from_cpu=False,
+                ),
+                call(
+                    address=Cell(1, bits=AB),
+                    value=Cell(0x0A0A, bits=WB),
+                    from_cpu=False,
+                ),
+                call(
+                    address=Cell(2, bits=AB),
+                    value=Cell(0x1015, bits=WB),
+                    from_cpu=False,
+                ),
+                call(
+                    address=Cell(3, bits=AB),
+                    value=Cell(0x3264, bits=WB),
+                    from_cpu=False,
+                ),
+            ]
+        )
 
-        with pytest.raises(ValueError, match="Cannot save string, wrong size"):
-            self.io_unit.load_hex(20, "01")
+        with pytest.raises(ValueError, match="Unexpected source"):
+            self.io_unit.load_source("hello")
 
-    def test_store_hex(self):
+        with pytest.raises(
+            ValueError, match="Unexpected length of source code"
+        ):
+            self.io_unit.load_source("01")
+
+        self.io_unit.load_source("0102" * (self.ram.memory_size))
+        with pytest.raises(ValueError, match="Too long source code"):
+            self.io_unit.load_source("0102" * (self.ram.memory_size + 1))
+
+    def test_store_source(self) -> None:
         """Test save to string method."""
         mem = {
-            20: 0x11020A10,
-            21: 0x13040B20,
-            22: 0x14050E30,
+            20: 0x1A10,
+            21: 0x1B20,
+            22: 0x1C30,
         }
 
-        def side_effect(address, size, *, from_cpu=True):  # noqa: ARG001
+        def side_effect(*, address: Cell, bits: int, from_cpu: bool) -> Cell:
             """Mock memory."""
-            assert size == WORD_SIZE
-            assert address in mem
-            return mem[address]
+            assert address.bits == AB
+            assert address.unsigned in mem
+            assert bits == WB
+            assert from_cpu is False
+            return Cell(mem[address.unsigned], bits=bits)
 
         self.ram.fetch.side_effect = side_effect
 
-        assert self.io_unit.store_hex(20, WORD_SIZE) == hex(mem[20])[2:]
-        self.ram.fetch.assert_called_with(20, WORD_SIZE, from_cpu=True)
-        assert self.io_unit.store_hex(21, WORD_SIZE) == hex(mem[21])[2:]
-        self.ram.fetch.assert_called_with(21, WORD_SIZE, from_cpu=True)
-        assert (
-            self.io_unit.store_hex(22, WORD_SIZE, from_cpu=False)
-            == hex(mem[22])[2:]
+        assert self.io_unit.store_source(start=20, bits=WB) == "1a10"
+        self.ram.fetch.assert_called_once_with(
+            address=Cell(20, bits=AB), bits=WB, from_cpu=False
         )
-        self.ram.fetch.assert_called_with(22, WORD_SIZE, from_cpu=False)
 
-        self.ram.fetch.reset_mock()
-        assert (
-            self.io_unit.store_hex(20, 2 * WORD_SIZE)
-            == f"{hex(mem[20])[2:]} {hex(mem[21])[2:]}"
-        )
+        assert self.io_unit.store_source(start=21, bits=2 * WB) == "1b20 1c30"
         self.ram.fetch.assert_has_calls(
             [
-                call(20, WORD_SIZE, from_cpu=True),
-                call(21, WORD_SIZE, from_cpu=True),
+                call(address=Cell(21, bits=AB), bits=WB, from_cpu=False),
+                call(address=Cell(22, bits=AB), bits=WB, from_cpu=False),
             ]
         )
 
-        with pytest.raises(KeyError):
-            self.io_unit.store_hex(0, WORD_SIZE + 1)
-
-    def test_put_int(self):
-        """Test load data method."""
-        address, value = 0x55, 0x1234
-        self.io_unit.put_int(address, value)
-        self.ram.put.assert_called_once_with(
-            address, value % 2**WORD_SIZE, WORD_SIZE
+    def test_store_source_assert(self) -> None:
+        self.ram.fetch.return_value = Cell(0xABCD, bits=WB)
+        assert self.io_unit.store_source(start=0, bits=WB) == "abcd"
+        assert (
+            self.io_unit.store_source(start=(1 << AB) - 1, bits=WB) == "abcd"
         )
 
-        self.ram.put.reset_mock()
-        value *= -1
-        self.io_unit.put_int(address, value)
-        self.ram.put.assert_called_once_with(
-            address, value % 2**WORD_SIZE, WORD_SIZE
-        )
+        with pytest.raises(AssertionError):
+            self.io_unit.store_source(start=0, bits=WB + 1)
+        with pytest.raises(AssertionError):
+            self.io_unit.store_source(start=-1, bits=WB)
+        with pytest.raises(AssertionError):
+            self.io_unit.store_source(start=1 << AB, bits=WB)
+        with pytest.raises(AssertionError):
+            self.io_unit.store_source(start=(1 << AB) - 1, bits=2 * WB)
+        with pytest.raises(AssertionError):
+            self.io_unit.store_source(start=(1 << AB), bits=WB)
 
-    def test_get_int(self):
+    def test_output(self) -> None:
         """Test load data method."""
-        address, value = 0x55, 0x1234
-        self.ram.fetch.return_value = value
-        assert self.io_unit.get_int(address) == value
-        self.ram.fetch.assert_called_once_with(address, WORD_SIZE)
+        address, value = 0x11, 0x1234
+        self.ram.fetch.return_value = Cell(value, bits=WB)
+        assert self.io_unit.output(address) == value
+        self.ram.fetch.assert_called_once_with(Cell(address, bits=AB), bits=WB)
 
         self.ram.fetch.reset_mock()
-        self.ram.fetch.return_value = -value % 2**WORD_SIZE
-        assert self.io_unit.get_int(address) == -value
-        self.ram.fetch.assert_called_once_with(address, WORD_SIZE)
+        self.ram.fetch.return_value = Cell(-value, bits=WB)
+        assert self.io_unit.output(address) == -value
+        self.ram.fetch.assert_called_once_with(Cell(address, bits=AB), bits=WB)
 
-    def test_load_source(self):
-        """Test load source code method."""
-        self.io_unit.load_source(
-            ["", "03 02 02 03", "99 00 00 00", "", "00000002"]
-        )
-        self.ram.put.assert_has_calls(
-            [
-                call(10, 0x03020203, WORD_SIZE),
-                call(11, 0x99000000, WORD_SIZE),
-                call(12, 0x00000002, WORD_SIZE),
-            ]
-        )
+        with pytest.raises(ValueError, match="Unexpected address"):
+            self.io_unit.output(0xFF)
 
-    def test_load_data(self):
-        """Test load data by addresses."""
-        self.io_unit.load_data([100, 101, 102], ["-123", "456", "0x456"])
-        self.ram.put.assert_has_calls(
-            [
-                call(100, -123 % 2**WORD_SIZE, WORD_SIZE),
-                call(101, 456, WORD_SIZE),
-                call(102, 0x456, WORD_SIZE),
-            ]
-        )
+        with pytest.raises(ValueError, match="Unexpected address"):
+            self.io_unit.output(-1)

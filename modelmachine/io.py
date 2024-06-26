@@ -1,70 +1,115 @@
 """Allow to input and output program and data."""
 
-from modelmachine.numeric import Integer
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Final
+
+from modelmachine.cell import Cell
+
+if TYPE_CHECKING:
+    from modelmachine.memory.ram import RandomAccessMemory
+
+ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 
 
 class InputOutputUnit:
     """Allow to input and output program and data."""
 
-    def __init__(self, ram, start_address, word_size):
+    ram: Final[RandomAccessMemory]
+
+    def __init__(self, *, ram: RandomAccessMemory):
         """See help(type(x))."""
+        assert ram.word_bits % 4 == 0
         self.ram = ram
-        self.start_address = start_address
-        self.word_size = word_size
 
-    def put_int(self, address, value):
-        """Load data from string into memory by address."""
-        value = Integer(value, self.word_size, True)
-        self.ram.put(address, value.get_data(), self.word_size)
+    def input(self, addresses: list[int], data: list[str]) -> None:
+        """Data loader (decimal numbers)."""
+        for address, value in zip(addresses, data):
+            if not 0 <= address < self.ram.memory_size:
+                msg = (
+                    f"Unexpected address for input: 0x{address:x}, expected"
+                    f" interval is [0, 0x{self.ram.memory_size:x})"
+                )
+                raise ValueError(msg)
 
-    def get_int(self, address):
+            try:
+                v = int(value, 0)
+            except ValueError as e:
+                msg = f"Cannot parse input integer: {value}"
+                raise ValueError(msg) from e
+
+            min_v = -(1 << (self.ram.word_bits - 1))
+            max_v = 1 << self.ram.word_bits
+            if not (min_v <= v < max_v):
+                msg = (
+                    f"Input value is too long: {v} expected interval is"
+                    f" [{min_v}, {max_v})"
+                )
+                raise ValueError(msg)
+            self.ram.put(
+                address=Cell(address, bits=self.ram.address_bits),
+                value=Cell(v, bits=self.ram.word_bits),
+            )
+
+    def output(self, address: int) -> int:
         """Return data by address."""
-        value = Integer(
-            self.ram.fetch(address, self.word_size), self.word_size, True
-        )
-        return value.get_value()
+        if not 0 <= address < self.ram.memory_size:
+            msg = (
+                f"Unexpected address for output: 0x{address:x}, expected"
+                f" interval is [0, 0x{self.ram.memory_size:x})"
+            )
+            raise ValueError(msg)
+        return self.ram.fetch(
+            Cell(address, bits=self.ram.address_bits), bits=self.ram.word_bits
+        ).signed
 
-    def load_hex(self, start, source):
-        """Load data from string into memory by start address."""
-        address = start
-        block, block_size = 0, 0
-        for part_str in source.split():
-            part_size = len(part_str) * 4
-            part = int(part_str, base=16)
-            block = (block << part_size) | part
-            block_size += part_size
-            if block_size >= self.ram.word_size:
-                self.ram.put(address, block, block_size)
-                address += block_size // self.ram.word_size
-                block, block_size = 0, 0
-        if block_size != 0:
-            msg = "Cannot save string, wrong size"
+    def store_source(self, *, start: int, bits: int) -> str:
+        """Save data to string."""
+        assert 0 <= start < self.ram.memory_size
+        assert bits > 0
+
+        assert bits % self.ram.word_bits == 0
+        end = start + bits // self.ram.word_bits
+        assert 0 <= end <= self.ram.memory_size
+
+        return " ".join(
+            [
+                self.ram.fetch(
+                    address=Cell(i, bits=self.ram.address_bits),
+                    bits=self.ram.word_bits,
+                    from_cpu=False,
+                ).hex()
+                for i in range(start, end)
+            ]
+        )
+
+    def load_source(self, source: str) -> None:
+        """Source code loader."""
+
+        for c in source:
+            if c not in ACCEPTED_CHARS:
+                msg = f"Unexpected source: {source}, expected hex code"
+                raise ValueError(msg)
+
+        word_hex = self.ram.word_bits // 4
+
+        if len(source) % word_hex != 0:
+            msg = (
+                f"Unexpected length of source code: {len(source)}"
+                f" hex should be divided by ram word size={word_hex}"
+            )
             raise ValueError(msg)
 
-    def store_hex(self, start, size, *, from_cpu=True):
-        """Save data to string."""
-        if size % self.ram.word_size != 0:
-            msg = f"Cannot save {size} bits, word size is {self.ram.word_size}"
-            raise KeyError(msg)
-        result = []
-        block_size = self.ram.word_size
-        size //= block_size
-        for i in range(start, start + size):
-            data = self.ram.fetch(i, block_size, from_cpu=from_cpu)
-            result.append(f"{data:x}".rjust(block_size // 4, "0"))
-        return " ".join(result)
+        if len(source) // word_hex > self.ram.memory_size:
+            msg = (
+                f"Too long source code: {len(source)}"
+                f" hex should be less than ram words={self.ram.memory_size}"
+            )
+            raise ValueError(msg)
 
-    def load_source(self, source):
-        """Source code loader."""
-        program = ""
-        for line in source:
-            if line == "":
-                continue
-            program += " " + line
-        self.load_hex(self.start_address, program)
-
-    def load_data(self, addresses, data):
-        """Data loader (decimal numbers)."""
-        data = [int(value, 0) for value in data]
-        for address, value in zip(addresses, data):
-            self.put_int(address, value)
+        for i in range(0, len(source), word_hex):
+            self.ram.put(
+                address=Cell(i // word_hex, bits=self.ram.address_bits),
+                value=Cell.from_hex(source[i : i + word_hex]),
+                from_cpu=False,
+            )
