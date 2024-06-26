@@ -1,299 +1,231 @@
 """Test case for abstract control units."""
 
-from unittest.mock import call, create_autospec
+from unittest.mock import NonCallableMagicMock, call, create_autospec
 
 import pytest
 
-from modelmachine.alu import HALT, ArithmeticLogicUnit
-from modelmachine.cu import HALTED, RUNNING, AbstractControlUnit, ControlUnit
-from modelmachine.memory import RandomAccessMemory, RegisterMemory
+from modelmachine.alu import (
+    AluRegisters,
+    ArithmeticLogicUnit,
+    Flags,
+)
+from modelmachine.cell import Cell
+from modelmachine.cu import (
+    OPCODE_BITS,
+    ControlUnit,
+    Opcode,
+    OpcodeBitset,
+    Status,
+    WrongOpcodeError,
+)
+from modelmachine.ram import RandomAccessMemory
+from modelmachine.register import RegisterMemory, RegisterName
 
-BYTE_SIZE = 8
-HALF_SIZE = 16
-WORD_SIZE = 32
-
-OP_MOVE = 0x00
-OP_LOAD = 0x00
-OP_ADD, OP_SUB = 0x01, 0x02
-OP_SMUL, OP_SDIVMOD = 0x03, 0x04
-OP_COMP = 0x05
-OP_STORE = 0x10
-OP_ADDR = 0x11
-OP_UMUL, OP_UDIVMOD = 0x13, 0x14
-OP_SWAP = 0x20
-OP_RMOVE = 0x20
-OP_RADD, OP_RSUB = 0x21, 0x22
-OP_RSMUL, OP_RSDIVMOD = 0x23, 0x24
-OP_RCOMP = 0x25
-OP_RUMUL, OP_RUDIVMOD = 0x33, 0x34
-OP_STPUSH, OP_STPOP, OP_STDUP, OP_STSWAP = 0x5A, 0x5B, 0x5C, 0x5D
-OP_JUMP = 0x80
-OP_JEQ, OP_JNEQ = 0x81, 0x82
-OP_SJL, OP_SJGEQ, OP_SJLEQ, OP_SJG = 0x83, 0x84, 0x85, 0x86
-OP_UJL, OP_UJGEQ, OP_UJLEQ, OP_UJG = 0x93, 0x94, 0x95, 0x96
-OP_HALT = 0x99
-
-ARITHMETIC_OPCODES = {OP_ADD, OP_SUB, OP_SMUL, OP_SDIVMOD, OP_UMUL, OP_UDIVMOD}
-CONDJUMP_OPCODES = {
-    OP_JEQ,
-    OP_JNEQ,
-    OP_SJL,
-    OP_SJGEQ,
-    OP_SJLEQ,
-    OP_SJG,
-    OP_UJL,
-    OP_UJGEQ,
-    OP_UJLEQ,
-    OP_UJG,
-}
-JUMP_OPCODES = CONDJUMP_OPCODES | {OP_JUMP}
-REGISTER_OPCODES = {
-    OP_RMOVE,
-    OP_RADD,
-    OP_RSUB,
-    OP_RSMUL,
-    OP_RSDIVMOD,
-    OP_RCOMP,
-    OP_RUMUL,
-    OP_RUDIVMOD,
-}
+AB = 16
 
 
-class TestAbstractControlUnit:
-    """Test case for abstract control unit."""
+def test_opcode_bitset() -> None:
+    for op in Opcode:
+        bs = OpcodeBitset([op])
+        assert len(bs) == 1
 
-    ram = None
-    registers = None
-    alu = None
-    control_unit = None
+        for op2 in bs:
+            assert op2 is op
 
-    def setup_method(self):
-        """Init state."""
-        self.ram = create_autospec(RandomAccessMemory, True, True)
-        self.registers = create_autospec(RegisterMemory, True, True)
-        self.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.control_unit = AbstractControlUnit(
-            self.registers, self.ram, self.alu, WORD_SIZE
-        )
-        assert self.control_unit.operand_size == WORD_SIZE
+        for op2 in Opcode:
+            if op2 is op:
+                assert op2 in bs
 
-    def test_get_status(self):
-        """Test halt interaction between ALU and CU."""
-        self.registers.fetch.return_value = 0
-        assert self.control_unit.get_status() == RUNNING
-        self.registers.fetch.return_value = HALT
-        assert self.control_unit.get_status() == HALTED
+                bs2 = bs | {op2}
+                assert isinstance(bs2, OpcodeBitset)
+                assert bs2 == {op}
+            else:
+                assert op2 not in bs
 
-    def test_abstract_methods(self):
-        """Abstract class."""
-        with pytest.raises(NotImplementedError):
-            self.control_unit.fetch_and_decode()
-        with pytest.raises(NotImplementedError):
-            self.control_unit.load()
-        with pytest.raises(NotImplementedError):
-            self.control_unit.execute()
-        with pytest.raises(NotImplementedError):
-            self.control_unit.write_back()
+                bs2 = bs | {op2}
+                assert isinstance(bs2, OpcodeBitset)
+                assert bs2 == {op, op2}
 
-    def test_step_and_run(self):
-        """Test command execution."""
 
-        def do_nothing():
-            """Empty function."""
-
-        self.control_unit.fetch_and_decode = create_autospec(do_nothing)
-        self.control_unit.load = create_autospec(do_nothing)
-        self.control_unit.execute = create_autospec(do_nothing)
-        self.control_unit.write_back = create_autospec(do_nothing)
-
-        self.control_unit.step()
-        self.control_unit.fetch_and_decode.assert_called_once_with()
-        self.control_unit.load.assert_called_once_with()
-        self.control_unit.execute.assert_called_once_with()
-        self.control_unit.write_back.assert_called_once_with()
-
-        self.control_unit.get_status = create_autospec(do_nothing)
-        self.control_unit.get_status.return_value = HALTED
-
-        self.control_unit.run()
-        self.control_unit.get_status.assert_called_with()
-        self.control_unit.fetch_and_decode.assert_called_once_with()
-        self.control_unit.load.assert_called_once_with()
-        self.control_unit.execute.assert_called_once_with()
-        self.control_unit.write_back.assert_called_once_with()
+def test_opcode_bitset_sub() -> None:
+    bs1 = OpcodeBitset((Opcode.add, Opcode.sub))
+    assert repr(bs1) == "OpcodeBitset((<Opcode.add: 1>, <Opcode.sub: 2>))"
+    assert str(bs1) == "OpcodeBitset((<Opcode.add: 1>, <Opcode.sub: 2>))"
+    bs2 = {Opcode.add, Opcode.udivmod}
+    assert bs1 - bs2 == {Opcode.sub}
 
 
 class TestControlUnit:
-    """Test case for abstract bordachenkova control unit."""
+    """Test case for abstract control unit."""
 
-    ram = None
-    registers = None
-    alu = None
-    control_unit = None
+    ram: RandomAccessMemory
+    registers: NonCallableMagicMock
+    alu: NonCallableMagicMock
+    control_unit: ControlUnit
 
-    arithmetic_opcodes = None
-    condjump_opcodes = None
+    IR_BITS = 3 * AB + OPCODE_BITS
+    WB = IR_BITS
+    OPERAND_BITS = IR_BITS
 
-    ir_size = 32
-    operand_size = WORD_SIZE
-    address_size = BYTE_SIZE
-
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Init state."""
-        self.ram = RandomAccessMemory(word_size=WORD_SIZE, memory_size=256)
-        self.registers = create_autospec(RegisterMemory, True, True)
-        self.alu = create_autospec(ArithmeticLogicUnit, True, True)
-        self.control_unit = ControlUnit(
-            WORD_SIZE, BYTE_SIZE, self.registers, self.ram, self.alu, WORD_SIZE
+        self.ram = RandomAccessMemory(word_bits=self.WB, address_bits=AB)
+        self.registers = create_autospec(RegisterMemory(), True, True)
+        self.alu = create_autospec(
+            ArithmeticLogicUnit(
+                registers=self.registers,
+                register_map=AluRegisters(
+                    S=RegisterName.S,
+                    RES=RegisterName.R1,
+                    R1=RegisterName.R1,
+                    R2=RegisterName.R2,
+                ),
+                address_bits=AB,
+                operand_bits=self.OPERAND_BITS,
+            ),
+            True,
+            True,
         )
-        self.test_const()
+        self.alu.operand_bits = self.OPERAND_BITS
+        self.control_unit = ControlUnit(
+            name="cu_abstract",
+            registers=self.registers,
+            ram=self.ram,
+            alu=self.alu,
+            known_opcodes=OpcodeBitset(
+                (
+                    Opcode.move,
+                    Opcode.halt,
+                    Opcode.add,
+                    Opcode.sub,
+                    Opcode.umul,
+                    Opcode.smul,
+                    Opcode.sdivmod,
+                    Opcode.udivmod,
+                )
+            ),
+            ir_bits=self.IR_BITS,
+        )
 
-    def test_const(self):
-        """Test internal constants."""
-        assert isinstance(self.control_unit, AbstractControlUnit)
-        assert isinstance(self.control_unit, ControlUnit)
-        assert self.control_unit.ir_size == self.ir_size
-        assert self.control_unit.operand_size == self.operand_size
-        assert self.control_unit.address_size == self.address_size
-        assert self.control_unit.OPCODE_SIZE == BYTE_SIZE
-        assert self.control_unit.OPCODES["move"] == OP_MOVE
-        assert self.control_unit.OPCODES["load"] == OP_LOAD
-        assert self.control_unit.OPCODES["store"] == OP_STORE
-        assert self.control_unit.OPCODES["swap"] == OP_SWAP
-        assert self.control_unit.OPCODES["add"] == OP_ADD
-        assert self.control_unit.OPCODES["sub"] == OP_SUB
-        assert self.control_unit.OPCODES["smul"] == OP_SMUL
-        assert self.control_unit.OPCODES["sdivmod"] == OP_SDIVMOD
-        assert self.control_unit.OPCODES["umul"] == OP_UMUL
-        assert self.control_unit.OPCODES["udivmod"] == OP_UDIVMOD
-        assert self.control_unit.OPCODES["comp"] == OP_COMP
-        assert self.control_unit.OPCODES["stpush"] == OP_STPUSH
-        assert self.control_unit.OPCODES["stpop"] == OP_STPOP
-        assert self.control_unit.OPCODES["stdup"] == OP_STDUP
-        assert self.control_unit.OPCODES["stswap"] == OP_STSWAP
-        assert self.control_unit.OPCODES["jump"] == OP_JUMP
-        assert self.control_unit.OPCODES["jeq"] == OP_JEQ
-        assert self.control_unit.OPCODES["jneq"] == OP_JNEQ
-        assert self.control_unit.OPCODES["sjl"] == OP_SJL
-        assert self.control_unit.OPCODES["sjgeq"] == OP_SJGEQ
-        assert self.control_unit.OPCODES["sjleq"] == OP_SJLEQ
-        assert self.control_unit.OPCODES["sjg"] == OP_SJG
-        assert self.control_unit.OPCODES["ujl"] == OP_UJL
-        assert self.control_unit.OPCODES["ujgeq"] == OP_UJGEQ
-        assert self.control_unit.OPCODES["ujleq"] == OP_UJLEQ
-        assert self.control_unit.OPCODES["ujg"] == OP_UJG
-        assert self.control_unit.OPCODES["halt"] == OP_HALT
+    def test_status_running(self) -> None:
+        self.registers.__getitem__.return_value = Cell(0, bits=7 * 8)
+        assert self.control_unit.status is Status.RUNNING
 
-    def test_fetch_and_decode(self):
-        """Abstract class."""
-        with pytest.raises(NotImplementedError):
-            self.control_unit.fetch_and_decode()
+    def test_status_halted(self) -> None:
+        self.registers.__getitem__.return_value = Cell(Flags.HALT.value, bits=7 * 8)
+        assert self.control_unit.status is Status.HALTED
 
-    def test_load(self):
-        """Abstract class."""
-        with pytest.raises(NotImplementedError):
-            self.control_unit.load()
+    def test_step_and_run(self) -> None:
+        """Test command execution."""
 
-    def test_write_back(self):
-        """Abstract class."""
-        with pytest.raises(NotImplementedError):
-            self.control_unit.write_back()
+        def do_nothing() -> None:
+            """Empty function."""
+
+        self.control_unit._fetch_and_decode = create_autospec(do_nothing)  # type: ignore
+        self.control_unit._load = create_autospec(do_nothing)  # type: ignore
+        self.control_unit._write_back = create_autospec(do_nothing)  # type: ignore
+        self.registers.__getitem__.return_value = Cell(Flags.CLEAR.value, bits=7 * 8)
+
+        self.control_unit.step()
+        self.control_unit._fetch_and_decode.assert_called_once_with()  # type: ignore
+        self.control_unit._load.assert_called_once_with()  # type: ignore
+        self.control_unit._write_back.assert_called_once_with()  # type: ignore
+
+        self.registers.__getitem__.return_value = Cell(Flags.HALT.value, bits=7 * 8)
+
+        self.control_unit.run()
+        self.control_unit._fetch_and_decode.assert_called_once_with()  # type: ignore
+        self.control_unit._load.assert_called_once_with()  # type: ignore
+        self.control_unit._write_back.assert_called_once_with()  # type: ignore
 
     def run_fetch(
         self,
-        value,
-        opcode,
-        instruction_size,
         *,
-        and_decode=True,
-        address_size=BYTE_SIZE,
-        ir_size=WORD_SIZE,
-    ):
+        instruction: Cell,
+        opcode: Opcode,
+        and_decode: bool = True,
+    ) -> None:
         """Run one fetch test."""
-        address = 10
-        self.ram.put(address, value, instruction_size)
-        increment = instruction_size // self.ram.word_size
+        address = Cell(10, bits=AB)
+        self.ram.put(address=address, value=instruction)
+        increment = Cell(instruction.bits // self.ram.word_bits, bits=AB)
 
-        self.registers.fetch.reset_mock()
-        self.registers.put.reset_mock()
-
-        def get_register(name, size):
+        def get_register(name: RegisterName) -> Cell:
             """Get PC."""
-            assert name == "PC"
-            assert size == self.control_unit.address_size
-            return address
+            if name is RegisterName.PC:
+                return address
 
-        self.registers.fetch.side_effect = get_register
+            raise NotImplementedError
+
+        self.registers.__getitem__.side_effect = get_register
 
         if and_decode:
-            self.control_unit.fetch_and_decode()
+            self.control_unit._fetch_and_decode()
         else:
-            self.control_unit.fetch_instruction(instruction_size)
-        self.registers.fetch.assert_any_call("PC", address_size)
-        self.registers.put.assert_has_calls(
+            self.control_unit._fetch_instruction(instruction.bits)
+
+        self.registers.__getitem__.assert_any_call(RegisterName.PC)
+        self.registers.__setitem__.assert_has_calls(
             [
-                call("RI", value, ir_size),
-                call("PC", address + increment, address_size),
+                call(RegisterName.RI, instruction),
+                call(RegisterName.PC, address + increment),
             ]
         )
-        assert self.control_unit.opcode == opcode
+        assert self.control_unit._opcode == opcode
 
-    def test_fetch_instruction(self):
-        """Right fetch and decode is a half of business."""
-        self.run_fetch(0x01020304, 0x01, WORD_SIZE, and_decode=False)
+    def test_fetch_instruction(self) -> None:
+        for opcode in self.control_unit._known_opcodes:
+            self.run_fetch(
+                instruction=Cell(
+                    opcode.value << (self.IR_BITS - OPCODE_BITS),
+                    bits=self.IR_BITS,
+                ),
+                opcode=opcode,
+                and_decode=False,
+            )
 
-    def test_basic_execute(self, *, should_move=True):
+    def test_fetch_unknown_instruction(self) -> None:
+        for opcode in set(Opcode) - self.control_unit._known_opcodes:
+            with pytest.raises(WrongOpcodeError):
+                self.run_fetch(
+                    instruction=Cell(
+                        opcode.value << (self.IR_BITS - OPCODE_BITS),
+                        bits=self.IR_BITS,
+                    ),
+                    opcode=opcode,
+                    and_decode=False,
+                )
+
+    def test_fail_decode(self) -> None:
+        for opcode in set(Opcode) - self.control_unit._known_opcodes:
+            self.control_unit._opcode = opcode
+            with pytest.raises(WrongOpcodeError):
+                self.control_unit._execute()
+
+    def test_move_execute(self, *, should_move: bool = True) -> None:
         """Test basic operations."""
-        self.registers.put.reset_mock()
-        self.registers.fetch.reset_mock()
-
         if should_move is not None:
-            self.control_unit.opcode = OP_MOVE
-            self.alu.move.reset_mock()
-            self.control_unit.execute()
+            self.control_unit._opcode = Opcode.move
+            self.control_unit._execute()
             if should_move:
                 self.alu.move.assert_called_once_with()
             else:
                 assert not self.alu.move.called
 
-        self.control_unit.opcode = OP_ADD
-        self.alu.add.reset_mock()
-        self.control_unit.execute()
-        self.alu.add.assert_called_once_with()
-
-        self.control_unit.opcode = OP_SUB
-        self.alu.sub.reset_mock()
-        self.control_unit.execute()
-        self.alu.sub.assert_called_once_with()
-
-        self.control_unit.opcode = OP_SMUL
-        self.alu.smul.reset_mock()
-        self.control_unit.execute()
-        self.alu.smul.assert_called_once_with()
-
-        self.control_unit.opcode = OP_UMUL
-        self.alu.umul.reset_mock()
-        self.control_unit.execute()
-        self.alu.umul.assert_called_once_with()
-
-        self.control_unit.opcode = OP_SDIVMOD
-        self.alu.sdivmod.reset_mock()
-        self.control_unit.execute()
-        self.alu.sdivmod.assert_called_once_with()
-
-        self.control_unit.opcode = OP_UDIVMOD
-        self.alu.udivmod.reset_mock()
-        self.control_unit.execute()
-        self.alu.udivmod.assert_called_once_with()
-
-        self.control_unit.opcode = OP_HALT
-        self.alu.halt.reset_mock()
-        self.control_unit.execute()
-        self.alu.halt.assert_called_once_with()
-
-        self.control_unit.opcode = 0x98
-        with pytest.raises(ValueError, match="Invalid opcode `0x98`"):
-            self.control_unit.execute()
-
-        assert not self.registers.fetch.called
-        assert not self.registers.put.called
+    @pytest.mark.parametrize(
+        ("opcode", "alu_method"),
+        [
+            (Opcode.move, "move"),
+            (Opcode.add, "add"),
+            (Opcode.sub, "sub"),
+            (Opcode.smul, "smul"),
+            (Opcode.umul, "umul"),
+            (Opcode.sdivmod, "sdivmod"),
+            (Opcode.udivmod, "udivmod"),
+            (Opcode.halt, "halt"),
+        ],
+    )
+    def test_alu_execute(self, opcode: Opcode, alu_method: str) -> None:
+        self.control_unit._opcode = opcode
+        self.control_unit._execute()
+        self.alu.__getattribute__(alu_method).assert_called_once_with()
