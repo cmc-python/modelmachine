@@ -32,23 +32,16 @@ class TestIODevice:
 
     def test_input(self) -> None:
         """Test load data by addresses."""
-        self.io_unit.input([10, 11, 12], ["-123", "456", "0x456"])
-        self.ram.put.assert_has_calls(
-            [
-                call(address=Cell(10, bits=AB), value=Cell(-123, bits=WB)),
-                call(address=Cell(11, bits=AB), value=Cell(456, bits=WB)),
-                call(address=Cell(12, bits=AB), value=Cell(0x456, bits=WB)),
-            ]
+        self.io_unit.input(10, "Slot 10", -123)
+        self.ram.put.assert_called_once_with(
+            address=Cell(10, bits=AB), value=Cell(-123, bits=WB)
         )
 
         with pytest.raises(ValueError, match="Unexpected address for input"):
-            self.io_unit.input([0xFF], ["-123"])
-
-        with pytest.raises(ValueError, match="Cannot parse input integer"):
-            self.io_unit.input([0x1], ["hello"])
+            self.io_unit.input(0xFF, None, -123)
 
         with pytest.raises(ValueError, match="Input value is too long"):
-            self.io_unit.input([0x1], ["0xffffffffff"])
+            self.io_unit.input(0x1, None, 0xFFFFFFFFFF)
 
     def test_load_source(self) -> None:
         """Test loading from string."""
@@ -81,9 +74,7 @@ class TestIODevice:
         with pytest.raises(ValueError, match="Unexpected source"):
             self.io_unit.load_source("hello")
 
-        with pytest.raises(
-            ValueError, match="Unexpected length of source code"
-        ):
+        with pytest.raises(ValueError, match="Unexpected length of source code"):
             self.io_unit.load_source("01")
 
         self.io_unit.load_source("0102" * (self.ram.memory_size))
@@ -124,9 +115,7 @@ class TestIODevice:
     def test_store_source_assert(self) -> None:
         self.ram.fetch.return_value = Cell(0xABCD, bits=WB)
         assert self.io_unit.store_source(start=0, bits=WB) == "abcd"
-        assert (
-            self.io_unit.store_source(start=(1 << AB) - 1, bits=WB) == "abcd"
-        )
+        assert self.io_unit.store_source(start=(1 << AB) - 1, bits=WB) == "abcd"
 
         with pytest.raises(AssertionError):
             self.io_unit.store_source(start=0, bits=WB + 1)

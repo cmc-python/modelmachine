@@ -1,7 +1,6 @@
 """Test case for memory module."""
 
 import pytest
-from frozendict import frozendict
 
 from modelmachine.cell import (
     Cell,
@@ -71,10 +70,8 @@ class TestRegisterMemory:
     def test_state(self) -> None:
         """iter should return existing registers."""
         self.registers[RegisterName.R1] = Cell(1, bits=WB)
-        assert self.registers.state == frozendict(
-            {
-                RegisterName.S: Cell(0, bits=WB),
-                RegisterName.R1: Cell(1, bits=WB),
-                RegisterName.R2: Cell(0, bits=WB),
-            }
-        )
+        assert self.registers.state == {
+            RegisterName.S: Cell(0, bits=WB),
+            RegisterName.R1: Cell(1, bits=WB),
+            RegisterName.R2: Cell(0, bits=WB),
+        }

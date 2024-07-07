@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING, Final
+from traceback import print_exc
+
+from prompt_toolkit import prompt, print_formatted_text as print
 
 from modelmachine.cell import Cell
 
@@ -16,40 +20,57 @@ class InputOutputUnit:
     """Allow to input and output program and data."""
 
     ram: Final[RandomAccessMemory]
+    _min_v: Final[int]
+    _max_v: Final[int]
 
     def __init__(self, *, ram: RandomAccessMemory):
         """See help(type(x))."""
         assert ram.word_bits % 4 == 0
         self.ram = ram
+        self._min_v = -(1 << (self.ram.word_bits - 1))
+        self._max_v = 1 << self.ram.word_bits
 
-    def input(self, addresses: list[int], data: list[str]) -> None:
-        """Data loader (decimal numbers)."""
-        for address, value in zip(addresses, data):
-            if not 0 <= address < self.ram.memory_size:
-                msg = (
-                    f"Unexpected address for input: 0x{address:x}, expected"
-                    f" interval is [0, 0x{self.ram.memory_size:x})"
-                )
-                raise ValueError(msg)
-
-            try:
-                v = int(value, 0)
-            except ValueError as e:
-                msg = f"Cannot parse input integer: {value}"
-                raise ValueError(msg) from e
-
-            min_v = -(1 << (self.ram.word_bits - 1))
-            max_v = 1 << self.ram.word_bits
-            if not (min_v <= v < max_v):
-                msg = (
-                    f"Input value is too long: {v} expected interval is"
-                    f" [{min_v}, {max_v})"
-                )
-                raise ValueError(msg)
-            self.ram.put(
-                address=Cell(address, bits=self.ram.address_bits),
-                value=Cell(v, bits=self.ram.word_bits),
+    def _check_word(self, word: int) -> int:
+        if not (self._min_v <= word < self._max_v):
+            msg = (
+                f"Input value is too long: {word}; expected interval is"
+                f" [{self._min_v}, {self._max_v})"
             )
+            raise ValueError(msg)
+        return word
+
+    def input(self, address: int, help: str | None, value: int | None) -> None:
+        """Data loader (decimal numbers)."""
+        if not 0 <= address < self.ram.memory_size:
+            msg = (
+                f"Unexpected address for input: 0x{address:x}, expected"
+                f" interval is [0, 0x{self.ram.memory_size:x})"
+            )
+            raise ValueError(msg)
+
+        addr = Cell(address, bits=self.ram.address_bits)
+
+        while value is None:
+            if not sys.stdin.isatty():
+                value = int(input(), 0)
+                break
+
+            if help is None:
+                help = f"Input integer for address {addr}"
+
+            value_str = prompt(f"{help}: ")
+            try:
+                value = self._check_word(int(value_str, 0))
+            except ValueError:
+                print_exc()
+                print(f"Cannot parse integer '{value_str}', please repeat")
+
+        self._check_word(value)
+
+        self.ram.put(
+            address=addr,
+            value=Cell(value, bits=self.ram.word_bits),
+        )
 
     def output(self, address: int) -> int:
         """Return data by address."""

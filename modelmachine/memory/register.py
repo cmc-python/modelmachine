@@ -8,8 +8,6 @@ from __future__ import annotations
 from enum import IntEnum, auto
 from typing import TYPE_CHECKING
 
-from frozendict import frozendict
-
 from modelmachine.cell import Cell
 from modelmachine.memory.ram import MAX_WORD_BITS
 
@@ -101,4 +99,4 @@ class RegisterMemory:
             val = self._table[reg]
             if val is not None:
                 res[reg] = val
-        return frozendict(res)
+        return res
