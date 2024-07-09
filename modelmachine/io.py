@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Final
 from traceback import print_exc
+from typing import TYPE_CHECKING, Final
 
-from prompt_toolkit import prompt, print_formatted_text as print
+from prompt_toolkit import print_formatted_text as print
+from prompt_toolkit import prompt
 
 from modelmachine.cell import Cell
 

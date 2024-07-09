@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from modelmachine.cpu.source import source
 from modelmachine.cell import Cell
+from modelmachine.cpu.source import source
 
 AB = 16
 WB = 3 * 8

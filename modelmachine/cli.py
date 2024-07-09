@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import inspect
 import argparse
-from typing import Callable
+import inspect
 from dataclasses import dataclass
+from typing import Callable
 
 import pyparsing as pp
-from pyparsing import Word as W
 from pyparsing import CaselessLiteral as L
 from pyparsing import Group as G
+from pyparsing import Word as W
 
 from modelmachine.__about__ import __version__
 
@@ -45,11 +45,11 @@ class Cli:
         self._parser = argparse.ArgumentParser(description=description)
         self._subparsers = self._parser.add_subparsers(title="commands")
 
-    def __call__(self, f: Callable[..., None]) -> Callable[..., None]:
-        cmd = self._subparsers.add_parser(f.__name__, help=f.__doc__.split(".")[0])
+    def __call__(self, f: Callable[..., int]) -> Callable[..., int]:
+        docstring = str(inspect.getdoc(f))
+        cmd = self._subparsers.add_parser(f.__name__, help=docstring.split(".")[0])
         cmd.set_defaults(func=f)
 
-        docstring = inspect.getdoc(f)
         params: dict[str, Param] = {
             p[0].name: p[0] for p in param.search_string(docstring)
         }
@@ -81,14 +81,14 @@ class Cli:
                     else:
                         assert arg.default is True
                         cmd.add_argument(
-                            *short, f"--{p.name}", action="store_false", help=p.help
+                            *short, f"--no-{p.name}", action="store_false", help=p.help
                         )
                 else:
                     raise NotImplementedError
 
         return f
 
-    def main(self):
+    def main(self) -> int:
         args = self._parser.parse_args()
 
         if "func" not in args:
@@ -96,34 +96,37 @@ class Cli:
             return 1
 
         print(args)
-        args.func(args)
+        return int(args.func(args))
 
 
 cli = Cli(f"Modelmachine {__version__}")
 
 
 @cli
-def run(*, filename: str, protect_memory: bool = False) -> None:
+def run(*, filename: str, protect_memory: bool = False) -> int:
     """Run program.
 
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
     """
+    return 0
 
 
 @cli
-def debug(*, filename: str, protect_memory: bool = False) -> None:
+def debug(*, filename: str, protect_memory: bool = False) -> int:
     """Debug the program.
 
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
     """
+    return 0
 
 
 @cli
-def asm(*, input_file: str, output_file: str):
+def asm(*, input_file: str, output_file: str) -> int:
     """Assemble program.
 
     input_file -- asm source, '-' for stdin
     output_file -- machine code file, '-' for stdout
     """
+    return 0

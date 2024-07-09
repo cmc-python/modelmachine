@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pyparsing as pp
 from pyparsing import CaselessKeyword as KW
-from pyparsing import Word as W
 from pyparsing import Group as G
+from pyparsing import Word as W
 
 from modelmachine.cpu.cpu import CPU_MAP, Cpu, IOReq
 

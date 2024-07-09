@@ -1,4 +1,2 @@
 hatch~=1.12
 mypy~=1.10
-pytest~=8.2
-ruff~=0.4
