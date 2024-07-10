@@ -57,7 +57,9 @@ class Cli:
         docstring = str(inspect.getdoc(f))
         sig = inspect.signature(f)
 
-        cmd = self._subparsers.add_parser(f.__name__, help=docstring.split(".")[0])
+        cmd = self._subparsers.add_parser(
+            f.__name__, help=docstring.split(".")[0]
+        )
 
         params: dict[str, Param] = {
             p[0].name: p[0] for p in param.search_string(docstring)
@@ -81,7 +83,9 @@ class Cli:
             else:
                 short = [p.short] if p.short is not None else []
                 if arg.annotation == "str":
-                    cmd.add_argument(*short, f"--{cli_key}", help=p.help, dest=key)
+                    cmd.add_argument(
+                        *short, f"--{cli_key}", help=p.help, dest=key
+                    )
                 if arg.annotation == "bool":
                     if arg.default is False:
                         cmd.add_argument(
@@ -129,7 +133,10 @@ cli = Cli(f"Modelmachine {__version__}")
 
 @cli
 def run(
-    *, filename: str, protect_memory: bool = False, enter_is_stdin: bool = False
+    *,
+    filename: str,
+    protect_memory: bool = False,
+    enter_is_stdin: bool = False,
 ) -> int:
     """Run program.
 
@@ -146,7 +153,9 @@ def run(
     else:
         with open(filename) as fin:
             cpu = source(
-                fin.read(), protect_memory=protect_memory, enter_is_stdin=enter_is_stdin
+                fin.read(),
+                protect_memory=protect_memory,
+                enter_is_stdin=enter_is_stdin,
             )
 
     cpu.control_unit.run()
@@ -160,7 +169,10 @@ def run(
 
 @cli
 def debug(
-    *, filename: str, protect_memory: bool = False, enter_is_stdin: bool = False
+    *,
+    filename: str,
+    protect_memory: bool = False,
+    enter_is_stdin: bool = False,
 ) -> int:
     """Debug the program.
 
@@ -170,7 +182,9 @@ def debug(
     """
     with open(filename) as fin:
         cpu = source(
-            fin.read(), protect_memory=protect_memory, enter_is_stdin=enter_is_stdin
+            fin.read(),
+            protect_memory=protect_memory,
+            enter_is_stdin=enter_is_stdin,
         )
 
     return ide_debug(cpu)

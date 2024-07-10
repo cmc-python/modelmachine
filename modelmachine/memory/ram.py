@@ -103,7 +103,9 @@ class RandomAccessMemory:
         self._missing(address, from_cpu=from_cpu)
         return Cell(0, bits=self.word_bits)
 
-    def fetch(self, address: Cell, *, bits: int, from_cpu: bool = True) -> Cell:
+    def fetch(
+        self, address: Cell, *, bits: int, from_cpu: bool = True
+    ) -> Cell:
         """Load bits by address.
 
         Size must be divisible by self.word_bits.
@@ -131,7 +133,9 @@ class RandomAccessMemory:
             endianess=self.endianess,
         )
 
-    def put(self, *, address: Cell, value: Cell, from_cpu: bool = True) -> None:
+    def put(
+        self, *, address: Cell, value: Cell, from_cpu: bool = True
+    ) -> None:
         """Put size bits by address.
 
         Size must be divisible by self.word_bits.

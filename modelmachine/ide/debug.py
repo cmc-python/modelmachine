@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import warnings
 from enum import IntEnum
+from traceback import print_exc
 from typing import TYPE_CHECKING
 
 from prompt_toolkit import PromptSession
 
+from modelmachine.cell import Cell
 from modelmachine.cu.status import Status
 from modelmachine.memory.register import RegisterName
-from modelmachine.prompt import printf, BLU, DEF, RED, YEL, GRE
-from modelmachine.cell import Cell
+from modelmachine.prompt import BLU, DEF, GRE, RED, YEL, printf
 
 if TYPE_CHECKING:
-    # from prompt_toolkit.document import Document
     from typing import Final
 
     from modelmachine.cpu.cpu import Cpu
@@ -111,7 +111,7 @@ class Ide:
             self.cpu.control_unit.step()
             printf(f"cycle {self.cpu.control_unit.cycle:>4}")
             self.print()
-            if self.cpu.control_unit.status == Status.HALTED:
+            if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
                 break
 
@@ -210,10 +210,8 @@ class Ide:
                     for warn in warns:
                         printf(f"Warning: {warn.message}")
 
-            except Exception as error:  # noqa: BLE001
-                printf(f"Error: {error.args[0]}")
-                self.cpu._alu.halt()
-                printf("machine has halted")
+            except Exception:  # noqa: BLE001
+                print_exc()
                 return 1
 
         return 0

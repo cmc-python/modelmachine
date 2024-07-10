@@ -34,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install hatch
+        pip install hatch mypy
     - name: Build package
       run: |
         hatch build
@@ -44,3 +44,6 @@ jobs:
     - name: Test with pytest
       run: |
         hatch test
+    - name: Check types
+      run: |
+        mypy --strict .

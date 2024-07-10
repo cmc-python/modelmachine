@@ -73,6 +73,8 @@ class InputOutputUnit:
             if not sys.stdin.isatty():
                 break
 
+        if value is None:
+            sys.exit(1)
         self._check_word(value)
 
         self.ram.put(
@@ -81,7 +83,11 @@ class InputOutputUnit:
         )
 
     def output(
-        self, *, address: int, message: str | None = None, file: TextIO = sys.stdout
+        self,
+        *,
+        address: int,
+        message: str | None = None,
+        file: TextIO = sys.stdout,
     ) -> None:
         """Return data by address."""
         if not 0 <= address < self.ram.memory_size:

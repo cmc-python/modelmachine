@@ -194,4 +194,6 @@ class Cell:
             return self.encode(bits=bits, endianess=Endianess.LITTLE)[::-1]
 
         assert self.bits % bits == 0
-        return [self[shift : shift + bits] for shift in range(0, self.bits, bits)]
+        return [
+            self[shift : shift + bits] for shift in range(0, self.bits, bits)
+        ]

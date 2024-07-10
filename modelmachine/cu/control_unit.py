@@ -63,11 +63,15 @@ class ControlUnit:
 
         raise NotImplementedError
 
-    def _wrong_opcode(self, opcode: int | Opcode, e: Exception | None = None) -> None:
+    def _wrong_opcode(
+        self, opcode: int | Opcode, e: Exception | None = None
+    ) -> None:
         msg = f"Invalid opcode 0x{int(opcode):0>2x} for {self.NAME}"
         raise WrongOpcodeError(msg) from e
 
-    def _expect_zero(self, start: int | None = None, end: int | None = None) -> None:
+    def _expect_zero(
+        self, start: int | None = None, end: int | None = None
+    ) -> None:
         ir_operands = self._ir[:-OPCODE_BITS]
 
         start_bit, end_bit, _ = slice(start, end).indices(ir_operands.bits)
@@ -103,8 +107,12 @@ class ControlUnit:
         self._cycle = 0
         self._failed = False
 
-        self._registers.add_register(RegisterName.PC, bits=self._ram.address_bits)
-        self._registers.add_register(RegisterName.ADDR, bits=self._ram.address_bits)
+        self._registers.add_register(
+            RegisterName.PC, bits=self._ram.address_bits
+        )
+        self._registers.add_register(
+            RegisterName.ADDR, bits=self._ram.address_bits
+        )
         self._registers.add_register(RegisterName.IR, bits=self.IR_BITS)
 
     def step(self) -> None:

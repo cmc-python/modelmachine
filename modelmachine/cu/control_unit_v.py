@@ -24,7 +24,9 @@ class ControlUnitV(ControlUnit):
 
     NAME = "mm-v"
     KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES | JUMP_OPCODES | {Opcode.move, Opcode.halt, Opcode.comp}
+        ARITHMETIC_OPCODES
+        | JUMP_OPCODES
+        | {Opcode.move, Opcode.halt, Opcode.comp}
     )
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = 8
@@ -47,9 +49,9 @@ class ControlUnitV(ControlUnit):
         """Fetch 2 addresses."""
         assert instruction_bits is None
         instruction_pointer = self._registers[RegisterName.PC]
-        word = self._ram.fetch(address=instruction_pointer, bits=self._ram.word_bits)[
-            -OPCODE_BITS:
-        ].unsigned
+        word = self._ram.fetch(
+            address=instruction_pointer, bits=self._ram.word_bits
+        )[-OPCODE_BITS:].unsigned
 
         try:
             opcode = Opcode(word)

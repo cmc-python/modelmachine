@@ -98,7 +98,9 @@ class ArithmeticLogicUnit:
         if value.unsigned != unsigned:
             flags |= Flags.CF
 
-        self._registers[RegisterName.FLAGS] = Cell(flags.value, bits=self.operand_bits)
+        self._registers[RegisterName.FLAGS] = Cell(
+            flags.value, bits=self.operand_bits
+        )
 
     @property
     def _operands(self) -> tuple[Cell, Cell]:

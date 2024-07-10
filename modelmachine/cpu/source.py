@@ -31,7 +31,9 @@ nl = pp.Char("\n").set_parse_action(ignore)
 
 decinteger = pp.Word(pp.nums, "_" + pp.nums)
 hexinteger = "0x" + pp.Word(hexnums, "_" + hexnums)
-posinteger = (decinteger ^ hexinteger).set_parse_action(lambda t: [int("".join(t), 0)])
+posinteger = (decinteger ^ hexinteger).set_parse_action(
+    lambda t: [int("".join(t), 0)]
+)
 
 integer = (pp.Opt("-") + decinteger ^ hexinteger).set_parse_action(
     lambda t: int("".join(t), 0)

@@ -98,15 +98,17 @@ class ControlUnitR(ControlUnit):
                 RegisterName(reg_no), bits=self._alu.operand_bits
             )
 
-    _ONE_WORD_OPCODES: Final[frozenset[Opcode]] = REGISTER_OPCODES | {Opcode.halt}
+    _ONE_WORD_OPCODES: Final[frozenset[Opcode]] = REGISTER_OPCODES | {
+        Opcode.halt
+    }
 
     def _fetch(self, *, instruction_bits: int | None = None) -> None:
         """Fetch operands."""
         assert instruction_bits is None
         instruction_pointer = self._registers[RegisterName.PC]
-        word = self._ram.fetch(address=instruction_pointer, bits=self._ram.word_bits)[
-            -OPCODE_BITS:
-        ].unsigned  # higher bits if word
+        word = self._ram.fetch(
+            address=instruction_pointer, bits=self._ram.word_bits
+        )[-OPCODE_BITS:].unsigned  # higher bits if word
 
         try:
             opcode = Opcode(word)
@@ -143,7 +145,9 @@ class ControlUnitR(ControlUnit):
         Opcode.load,
     }
     _LOAD_S: Final[frozenset[Opcode]] = (
-        ARITHMETIC_OPCODES | REGISTER_ARITH_OPCODES | {Opcode.comp, Opcode.store}
+        ARITHMETIC_OPCODES
+        | REGISTER_ARITH_OPCODES
+        | {Opcode.comp, Opcode.store}
     )
 
     def _load(self) -> None:
@@ -165,7 +169,9 @@ class ControlUnitR(ControlUnit):
     _EXEC_SUB: Final[frozenset[Opcode]] = frozenset(
         {Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub}
     )
-    _EXEC_MOV: Final[frozenset[Opcode]] = frozenset({Opcode.load, Opcode.rmove})
+    _EXEC_MOV: Final[frozenset[Opcode]] = frozenset(
+        {Opcode.load, Opcode.rmove}
+    )
 
     def _execute(self) -> None:
         """Execute the command."""
@@ -187,7 +193,9 @@ class ControlUnitR(ControlUnit):
             super()._execute()
 
     WB_R1: frozenset[Opcode] = (
-        ARITHMETIC_OPCODES | REGISTER_ARITH_OPCODES | {Opcode.load, Opcode.rmove}
+        ARITHMETIC_OPCODES
+        | REGISTER_ARITH_OPCODES
+        | {Opcode.load, Opcode.rmove}
     )
     _WB_R_NEXT: Final[frozenset[Opcode]] = frozenset(
         {Opcode.udiv, Opcode.sdiv, Opcode.rudiv, Opcode.rsdiv}
@@ -202,4 +210,6 @@ class ControlUnitR(ControlUnit):
             self._registers[self._r_next] = self._registers[RegisterName.S1]
 
         if self._opcode is Opcode.store:
-            self._ram.put(address=self._address, value=self._registers[RegisterName.S])
+            self._ram.put(
+                address=self._address, value=self._registers[RegisterName.S]
+            )

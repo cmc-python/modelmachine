@@ -4,3 +4,4 @@ set -ex
 
 hatch fmt --check
 hatch test
+mypy --strict .

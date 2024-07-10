@@ -75,7 +75,9 @@ class TestIODevice:
         with pytest.raises(ValueError, match="Unexpected source"):
             self.io_unit.load_source("hello")
 
-        with pytest.raises(ValueError, match="Unexpected length of source code"):
+        with pytest.raises(
+            ValueError, match="Unexpected length of source code"
+        ):
             self.io_unit.load_source("01")
 
         self.io_unit.load_source("0102" * (self.ram.memory_size))
@@ -116,7 +118,9 @@ class TestIODevice:
     def test_store_source_assert(self) -> None:
         self.ram.fetch.return_value = Cell(0xABCD, bits=WB)
         assert self.io_unit.store_source(start=0, bits=WB) == "abcd"
-        assert self.io_unit.store_source(start=(1 << AB) - 1, bits=WB) == "abcd"
+        assert (
+            self.io_unit.store_source(start=(1 << AB) - 1, bits=WB) == "abcd"
+        )
 
         with pytest.raises(AssertionError):
             self.io_unit.store_source(start=0, bits=WB + 1)

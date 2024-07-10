@@ -25,7 +25,9 @@ class TestControlUnit1:
 
     def setup_method(self) -> None:
         self.registers = RegisterMemory()
-        self.ram = RandomAccessMemory(word_bits=self.OPERAND_BITS, address_bits=AB)
+        self.ram = RandomAccessMemory(
+            word_bits=self.OPERAND_BITS, address_bits=AB
+        )
         self.alu = ArithmeticLogicUnit(
             registers=self.registers,
             alu_registers=ControlUnit1.ALU_REGISTERS,
@@ -60,7 +62,9 @@ class TestControlUnit1:
             warnings.simplefilter("ignore")
             self.control_unit.step()
         assert self.control_unit.cycle == 1
-        assert self.ram.fetch(Cell(0x21, bits=AB), bits=self.OPERAND_BITS) == 0x99
+        assert (
+            self.ram.fetch(Cell(0x21, bits=AB), bits=self.OPERAND_BITS) == 0x99
+        )
 
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
@@ -72,7 +76,10 @@ class TestControlUnit1:
                 continue
             assert self.registers[RegisterName.PC] == 0x10
             assert self.registers[RegisterName.FLAGS] == Flags.HALT
-            assert self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == 0x10
+            assert (
+                self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS)
+                == 0x10
+            )
             assert self.control_unit.status is Status.HALTED
 
     @pytest.mark.parametrize(
@@ -163,7 +170,9 @@ class TestControlUnit1:
         assert self.registers[RegisterName.FLAGS] == 0
         assert self.registers[RegisterName.S] == 0x41
         assert self.registers[RegisterName.S1] == 0x88
-        assert self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == 0x41
+        assert (
+            self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == 0x41
+        )
         assert self.control_unit.status is Status.RUNNING
 
     @pytest.mark.parametrize(
@@ -192,7 +201,9 @@ class TestControlUnit1:
             self.run_opcode(opcode=Opcode.comp, a=a, b=b)
             self.ram.put(
                 address=Cell(0x11, bits=AB),
-                value=Cell((opcode.value << AB) | 0x40, bits=self.OPERAND_BITS),
+                value=Cell(
+                    (opcode.value << AB) | 0x40, bits=self.OPERAND_BITS
+                ),
             )
             self.ram.put(
                 address=Cell(0x40, bits=AB),
@@ -204,8 +215,14 @@ class TestControlUnit1:
             )
             self.control_unit.step()
             assert self.registers[RegisterName.PC] == (0x40 if j else 0x12)
-            assert self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS) == 0x77
-            assert self.ram.fetch(Cell(0x41, bits=AB), bits=self.OPERAND_BITS) == 0x88
+            assert (
+                self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
+                == 0x77
+            )
+            assert (
+                self.ram.fetch(Cell(0x41, bits=AB), bits=self.OPERAND_BITS)
+                == 0x88
+            )
             assert self.control_unit.status is Status.RUNNING
 
         cond(Opcode.jeq, a=a, b=b, j=eq)
@@ -272,7 +289,9 @@ class TestControlUnit1:
             value=Cell(10, bits=self.OPERAND_BITS),
         )
         self.control_unit.run()
-        assert self.ram.fetch(Cell(0x102, bits=AB), bits=self.OPERAND_BITS) == 22
+        assert (
+            self.ram.fetch(Cell(0x102, bits=AB), bits=self.OPERAND_BITS) == 22
+        )
         assert self.registers[RegisterName.PC] == 7
         assert self.control_unit.status is Status.HALTED
         assert self.control_unit.cycle == 6

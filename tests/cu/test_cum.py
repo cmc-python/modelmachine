@@ -37,7 +37,9 @@ class TestControlUnitM:
             registers=self.registers, ram=self.ram, alu=self.alu
         )
 
-    def run_opcode(self, *, opcode: Opcode | int, o: int, a: int, b: int) -> None:
+    def run_opcode(
+        self, *, opcode: Opcode | int, o: int, a: int, b: int
+    ) -> None:
         self.setup_method()
         if o == 1:
             v = (int(opcode) << 2 * RB) | 0x48
@@ -78,7 +80,8 @@ class TestControlUnitM:
                 assert self.registers[RegisterName.R4] == 0x41
                 assert self.registers[RegisterName.R5] == 0x88
                 assert (
-                    self.ram.fetch(Cell(0x22, bits=AB), bits=self.OPERAND_BITS) == 0x10
+                    self.ram.fetch(Cell(0x22, bits=AB), bits=self.OPERAND_BITS)
+                    == 0x10
                 )
                 assert self.registers[RegisterName.S] == 0
                 assert self.registers[RegisterName.S1] == 0
@@ -244,7 +247,9 @@ class TestControlUnitM:
         assert self.registers[RegisterName.FLAGS] == 0
         assert self.registers[RegisterName.R4] == 0x41
         assert self.registers[RegisterName.R5] == 0x88
-        assert self.ram.fetch(Cell(0x22, bits=AB), bits=self.OPERAND_BITS) == 0x41
+        assert (
+            self.ram.fetch(Cell(0x22, bits=AB), bits=self.OPERAND_BITS) == 0x41
+        )
         assert self.control_unit.status is Status.RUNNING
 
     @pytest.mark.parametrize(
@@ -288,8 +293,14 @@ class TestControlUnitM:
             )
             self.control_unit.step()
             assert self.registers[RegisterName.PC] == (0x42 if j else 0x14)
-            assert self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS) == 0x77
-            assert self.ram.fetch(Cell(0x42, bits=AB), bits=self.OPERAND_BITS) == 0x88
+            assert (
+                self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
+                == 0x77
+            )
+            assert (
+                self.ram.fetch(Cell(0x42, bits=AB), bits=self.OPERAND_BITS)
+                == 0x88
+            )
             assert self.control_unit.status is Status.RUNNING
 
         cond(Opcode.jeq, a=a, b=b, j=eq)
@@ -385,7 +396,9 @@ class TestControlUnitM:
             value=Cell(10, bits=self.OPERAND_BITS),
         )
         self.control_unit.run()
-        assert self.ram.fetch(Cell(0x100, bits=AB), bits=self.OPERAND_BITS) == 22
+        assert (
+            self.ram.fetch(Cell(0x100, bits=AB), bits=self.OPERAND_BITS) == 22
+        )
         assert self.registers[RegisterName.PC] == 0x56
         assert self.control_unit.status is Status.HALTED
         assert self.control_unit.cycle == 6

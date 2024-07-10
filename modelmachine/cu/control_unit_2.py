@@ -24,7 +24,9 @@ class ControlUnit2(ControlUnit):
 
     NAME = "mm-2"
     KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES | JUMP_OPCODES | {Opcode.move, Opcode.halt, Opcode.comp}
+        ARITHMETIC_OPCODES
+        | JUMP_OPCODES
+        | {Opcode.move, Opcode.halt, Opcode.comp}
     )
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = IR_BITS

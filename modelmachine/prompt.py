@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from prompt_toolkit import print_formatted_text, ANSI
+from prompt_toolkit import ANSI, print_formatted_text
 from prompt_toolkit import prompt as pprompt
 
 if TYPE_CHECKING:

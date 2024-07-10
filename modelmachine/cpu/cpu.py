@@ -67,7 +67,9 @@ class Cpu:
             address_bits=control_unit.ADDRESS_BITS,
             is_protected=protect_memory,
         )
-        self._io_unit = InputOutputUnit(ram=self.ram, io_bits=control_unit.IR_BITS)
+        self._io_unit = InputOutputUnit(
+            ram=self.ram, io_bits=control_unit.IR_BITS
+        )
         self._alu = ArithmeticLogicUnit(
             registers=self.registers,
             alu_registers=control_unit.ALU_REGISTERS,
@@ -92,13 +94,19 @@ class Cpu:
 
         for req, value in zip_longest(input_req, enter):
             self._io_unit.input(
-                address=req.address, message=req.message, value=value, file=file
+                address=req.address,
+                message=req.message,
+                value=value,
+                file=file,
             )
 
     def print_result(self, file: TextIO = sys.stdout) -> None:
         """Print calculation result."""
+        assert self._output_req is not None
         for req in self._output_req:
-            self._io_unit.output(address=req.address, message=req.message, file=file)
+            self._io_unit.output(
+                address=req.address, message=req.message, file=file
+            )
 
 
 CPU_MAP = {

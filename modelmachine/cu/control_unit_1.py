@@ -46,7 +46,9 @@ class ControlUnit1(ControlUnit):
     def _address(self) -> Cell:
         return self._ir[: self._ram.address_bits]
 
-    _EXPECT_ZERO_ADDR: Final[frozenset[Opcode]] = frozenset({Opcode.swap, Opcode.halt})
+    _EXPECT_ZERO_ADDR: Final[frozenset[Opcode]] = frozenset(
+        {Opcode.swap, Opcode.halt}
+    )
 
     def _decode(self) -> None:
         if self._opcode in self._EXPECT_ZERO_ADDR:
@@ -83,4 +85,6 @@ class ControlUnit1(ControlUnit):
     def _write_back(self) -> None:
         """Write result back."""
         if self._opcode is Opcode.store:
-            self._ram.put(address=self._address, value=self._registers[RegisterName.S])
+            self._ram.put(
+                address=self._address, value=self._registers[RegisterName.S]
+            )

@@ -196,9 +196,9 @@ class TestCell:
             [self.first, self.second], endianess=Endianess.LITTLE
         ) == Cell((12 << 8) | 10, bits=16)
 
-        assert Cell.decode([self.first, self.second], endianess=Endianess.BIG) == Cell(
-            (10 << 8) | 12, bits=16
-        )
+        assert Cell.decode(
+            [self.first, self.second], endianess=Endianess.BIG
+        ) == Cell((10 << 8) | 12, bits=16)
 
     def test_encode(self) -> None:
         assert self.second.encode(bits=2, endianess=Endianess.LITTLE) == [
