@@ -39,10 +39,15 @@ class ControlUnit:
     _operand_words: Final[Cell]
 
     _cycle: int
+    _failed: bool
 
     @property
     def cycle(self) -> int:
         return self._cycle
+
+    @property
+    def failed(self) -> bool:
+        return self._failed
 
     @property
     def _ir(self) -> Cell:
@@ -96,6 +101,7 @@ class ControlUnit:
         assert alu.alu_registers is self.ALU_REGISTERS
 
         self._cycle = 0
+        self._failed = False
 
         self._registers.add_register(RegisterName.PC, bits=self._ram.address_bits)
         self._registers.add_register(RegisterName.ADDR, bits=self._ram.address_bits)
@@ -114,6 +120,7 @@ class ControlUnit:
         except (WrongOpcodeError, RamAccessError, AluZeroDivisionError):
             print_exc()
             warn("Because of previous exception cpu halted", stacklevel=1)
+            self._failed = True
             self._alu.halt()
 
     @property

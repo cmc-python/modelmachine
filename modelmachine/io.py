@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import sys
 from traceback import print_exc
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell
 from modelmachine.prompt import printf, prompt
 
 if TYPE_CHECKING:
-    from typing import Final
+    from typing import Final, TextIO
+
     from modelmachine.memory.ram import RandomAccessMemory
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
@@ -20,15 +21,17 @@ class InputOutputUnit:
     """Allow to input and output program and data."""
 
     ram: Final[RandomAccessMemory]
+    _io_bits: Final[int]
     _min_v: Final[int]
     _max_v: Final[int]
 
-    def __init__(self, *, ram: RandomAccessMemory):
+    def __init__(self, *, ram: RandomAccessMemory, io_bits: int):
         """See help(type(x))."""
         assert ram.word_bits % 4 == 0
         self.ram = ram
-        self._min_v = -(1 << (self.ram.word_bits - 1))
-        self._max_v = 1 << self.ram.word_bits
+        self._io_bits = io_bits
+        self._min_v = -(1 << (io_bits - 1))
+        self._max_v = 1 << io_bits
 
     def _check_word(self, word: int) -> int:
         if not (self._min_v <= word < self._max_v):
@@ -39,7 +42,14 @@ class InputOutputUnit:
             raise ValueError(msg)
         return word
 
-    def input(self, address: int, message: Optional[str], value: Optional[int]) -> None:
+    def input(
+        self,
+        *,
+        address: int,
+        value: int | None = None,
+        message: str | None = None,
+        file: TextIO = sys.stdin,
+    ) -> None:
         """Data loader (decimal numbers)."""
         if not 0 <= address < self.ram.memory_size:
             msg = (
@@ -49,12 +59,11 @@ class InputOutputUnit:
             raise ValueError(msg)
 
         addr = Cell(address, bits=self.ram.address_bits)
+        if message is None:
+            message = f"Ram[{addr}]"
 
         while value is None:
-            if message is None:
-                message = f"Input integer for address {addr}"
-
-            value_str = prompt(f"{message}: ")
+            value_str = prompt(f"{message} = ", file=file)
             try:
                 value = self._check_word(int(value_str, 0))
             except ValueError:
@@ -68,10 +77,12 @@ class InputOutputUnit:
 
         self.ram.put(
             address=addr,
-            value=Cell(value, bits=self.ram.word_bits),
+            value=Cell(value, bits=self._io_bits),
         )
 
-    def output(self, address: int) -> int:
+    def output(
+        self, *, address: int, message: str | None = None, file: TextIO = sys.stdout
+    ) -> None:
         """Return data by address."""
         if not 0 <= address < self.ram.memory_size:
             msg = (
@@ -79,9 +90,16 @@ class InputOutputUnit:
                 f" interval is [0, 0x{self.ram.memory_size:x})"
             )
             raise ValueError(msg)
-        return self.ram.fetch(
-            Cell(address, bits=self.ram.address_bits), bits=self.ram.word_bits
-        ).signed
+
+        addr = Cell(address, bits=self.ram.address_bits)
+        if message is None:
+            message = f"Ram[{addr}]"
+
+        value = self.ram.fetch(addr, bits=self._io_bits).signed
+        if file.isatty():
+            printf(f"{message} = {value}", file=file)
+        else:
+            printf(str(value), file=file)
 
     def store_source(self, *, start: int, bits: int) -> str:
         """Save data to string."""
@@ -93,14 +111,12 @@ class InputOutputUnit:
         assert 0 <= end <= self.ram.memory_size
 
         return " ".join(
-            [
-                self.ram.fetch(
-                    address=Cell(i, bits=self.ram.address_bits),
-                    bits=self.ram.word_bits,
-                    from_cpu=False,
-                ).hex()
-                for i in range(start, end)
-            ]
+            self.ram.fetch(
+                address=Cell(i, bits=self.ram.address_bits),
+                bits=self.ram.word_bits,
+                from_cpu=False,
+            ).hex()
+            for i in range(start, end)
         )
 
     def load_source(self, source: str) -> None:

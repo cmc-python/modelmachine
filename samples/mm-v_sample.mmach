@@ -1,10 +1,10 @@
-mm-v
+.cpu mm-v
 
-[config]
-input = 0x100,0x105
-output = 0x10f
+.input 0x100 a
+.input 0x105 b
+.output 0x10f x
 
-[code]
+.code
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
 00 010a 0100 ; [10a] := a
 03 010a 001a ; [10a] := a * -21
@@ -16,5 +16,4 @@ output = 0x10f
 FFFFFFFFEB ; -21
 0000000032 ; 50
 
-[input]
--123 456
+.enter -123 456

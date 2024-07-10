@@ -1,5 +1,6 @@
 """Test case for input/output device."""
 
+import io
 from unittest.mock import NonCallableMagicMock, call, create_autospec
 
 import pytest
@@ -28,20 +29,20 @@ class TestIODevice:
         self.ram.word_bits = WB
         self.ram.address_bits = AB
         self.ram.memory_size = 1 << AB
-        self.io_unit = InputOutputUnit(ram=self.ram)
+        self.io_unit = InputOutputUnit(ram=self.ram, io_bits=WB)
 
     def test_input(self) -> None:
         """Test load data by addresses."""
-        self.io_unit.input(10, "Slot 10", -123)
+        self.io_unit.input(address=10, message="Slot 10", value=-123)
         self.ram.put.assert_called_once_with(
             address=Cell(10, bits=AB), value=Cell(-123, bits=WB)
         )
 
         with pytest.raises(ValueError, match="Unexpected address for input"):
-            self.io_unit.input(0xFF, None, -123)
+            self.io_unit.input(address=0xFF)
 
         with pytest.raises(ValueError, match="Input value is too long"):
-            self.io_unit.input(0x1, None, 0xFFFFFFFFFF)
+            self.io_unit.input(address=0x1, value=0xFFFFFFFFFF)
 
     def test_load_source(self) -> None:
         """Test loading from string."""
@@ -132,16 +133,20 @@ class TestIODevice:
         """Test load data method."""
         address, value = 0x11, 0x1234
         self.ram.fetch.return_value = Cell(value, bits=WB)
-        assert self.io_unit.output(address) == value
+        with io.StringIO() as fout:
+            self.io_unit.output(address=address, file=fout)
+            assert fout.getvalue() == f"{value}\n"
         self.ram.fetch.assert_called_once_with(Cell(address, bits=AB), bits=WB)
 
         self.ram.fetch.reset_mock()
         self.ram.fetch.return_value = Cell(-value, bits=WB)
-        assert self.io_unit.output(address) == -value
+        with io.StringIO() as fout:
+            self.io_unit.output(address=address, file=fout)
+            assert fout.getvalue() == f"{-value}\n"
         self.ram.fetch.assert_called_once_with(Cell(address, bits=AB), bits=WB)
 
         with pytest.raises(ValueError, match="Unexpected address"):
-            self.io_unit.output(0xFF)
+            self.io_unit.output(address=0xFF)
 
         with pytest.raises(ValueError, match="Unexpected address"):
-            self.io_unit.output(-1)
+            self.io_unit.output(address=-1)

@@ -6,19 +6,20 @@ import warnings
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
-from prompt_toolkit import ANSI, PromptSession, completion
-from prompt_toolkit import print_formatted_text as print  # noqa: A001
-from prompt_toolkit.lexers import Lexer
+from prompt_toolkit import PromptSession
 
-from modelmachine.cu import HALTED
-from modelmachine.ide.split_to_word_and_spaces import split_to_word_and_spaces
+from modelmachine.cu.status import Status
+from modelmachine.memory.register import RegisterName
+from modelmachine.prompt import printf, BLU, DEF, RED, YEL, GRE
+from modelmachine.cell import Cell
 
 if TYPE_CHECKING:
-    from prompt_toolkit.document import Document
+    # from prompt_toolkit.document import Document
+    from typing import Final
 
-    from modelmachine.cpu import AbstractCPU
+    from modelmachine.cpu.cpu import Cpu
 
-INSTRUCTION = ANSI(
+INSTRUCTION = (
     "Enter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
     f"  {BLU}c{DEF}ontinue             continue the program until the end\n"
@@ -30,13 +31,12 @@ INSTRUCTION = ANSI(
 
 REGISTER_PRIORITY = {
     "PC": 10,
-    "RI": 20,
+    "IR": 20,
     "FLAGS": 30,
     "ADDR": 40,
     "S": 50,
     "S1": 60,
     "R": 70,
-    "RZ": 80,
     "default": 100,
 }
 
@@ -44,43 +44,33 @@ COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
 
 
-class CommandLexer(Lexer):
-    def lex_document(self, document: Document):
-        def parse_line(lineno: int):
-            line = document.lines[lineno]
-            result = []
-
-            for i, word in enumerate(split_to_word_and_spaces(line)):
-                if word.isspace():
-                    result.append(("", word))
-                    continue
-
-                if i <= 1:
-                    if word in COMMAND_SET:
-                        result.append(("ansiblue", word))
-                    else:
-                        result.append(("ansired", word))
-                    continue
-
-                try:
-                    int(word, 0)
-                    result.append(("ansicyan", word))
-                except ValueError:
-                    result.append(("ansired", word))
-
-            return result
-
-        return parse_line
-
-
-def sort_registers(reg: list[str]):
-    return sorted(
-        reg,
-        key=lambda r: (
-            REGISTER_PRIORITY.get(r, REGISTER_PRIORITY["default"]),
-            r,
-        ),
-    )
+# class CommandLexer(Lexer):
+#     def lex_document(self, document: Document):
+#         def parse_line(lineno: int):
+#             line = document.lines[lineno]
+#             result = []
+#
+#             for i, word in enumerate(split_to_word_and_spaces(line)):
+#                 if word.isspace():
+#                     result.append(("", word))
+#                     continue
+#
+#                 if i <= 1:
+#                     if word in COMMAND_SET:
+#                         result.append(("ansiblue", word))
+#                     else:
+#                         result.append(("ansired", word))
+#                     continue
+#
+#                 try:
+#                     int(word, 0)
+#                     result.append(("ansicyan", word))
+#                 except ValueError:
+#                     result.append(("ansired", word))
+#
+#             return result
+#
+#         return parse_line
 
 
 class CommandResult(IntEnum):
@@ -90,24 +80,23 @@ class CommandResult(IntEnum):
 
 
 class Ide:
-    cpu: AbstractCPU
-    last_register_state: dict[str, int]
-    max_register_size: int
+    cpu: Cpu
+    last_register_state: dict[RegisterName, Cell]
+    max_register_hex: Final[int]
 
-    def __init__(self, cpu: AbstractCPU):
+    def __init__(self, cpu: Cpu):
         self.cpu = cpu
-        self.last_register_state = cpu.registers.state()
-        self.max_register_size = (
-            max(cpu.registers.register_sizes[reg] for reg in cpu.registers) // 4
+        self.last_register_state = cpu.registers.state
+        self.max_register_hex = (
+            max(cpu.registers[reg].bits for reg in cpu.registers) // 4 + 2
         )
 
-    def step(self, command: tuple[str]) -> CommandResult:
+    def step(self, command: list[str]) -> CommandResult:
         """Exec debug step command."""
-        if self.cpu.control_unit.get_status() == HALTED:
-            print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
+        if self.cpu.control_unit.status == Status.HALTED:
+            printf(f"{RED}cannot execute command: machine halted{DEF}")
             return CommandResult.OK
 
-        command = command.split()
         try:
             if len(command) > 2:  # noqa: PLR2004
                 msg = "Unexpected cmd arguments"
@@ -118,12 +107,12 @@ class Ide:
             return CommandResult.NEED_HELP
 
         for _i in range(count):
-            self.last_register_state = self.cpu.registers.state()
+            self.last_register_state = self.cpu.registers.state
             self.cpu.control_unit.step()
-            print(f"cycle {self.cpu.control_unit.cycle:>4}")
+            printf(f"cycle {self.cpu.control_unit.cycle:>4}")
             self.print()
-            if self.cpu.control_unit.get_status() == HALTED:
-                print(ANSI(f"{YEL}machine halted{DEF}"))
+            if self.cpu.control_unit.status == Status.HALTED:
+                printf(f"{YEL}machine halted{DEF}")
                 break
 
         return CommandResult.OK
@@ -131,39 +120,33 @@ class Ide:
     def continue_(self) -> CommandResult:
         """Exec debug continue command."""
 
-        if self.cpu.control_unit.get_status() == HALTED:
-            print(ANSI(f"{RED}cannot execute command: machine halted{DEF}"))
+        if self.cpu.control_unit.status == Status.HALTED:
+            printf(f"{RED}cannot execute command: machine halted{DEF}")
         else:
             self.cpu.control_unit.run()
-            print(ANSI(f"{YEL}machine halted{DEF}"))
+            printf(f"{YEL}machine halted{DEF}")
 
         return CommandResult.OK
 
-    def print(self):
+    def print(self) -> CommandResult:
         """Print contents of registers."""
 
-        print("RAM access count:", self.cpu.ram.access_count)
-        print("Registers state:")
-        registers = sort_registers(self.cpu.registers)
-        for reg in registers:
-            size = self.cpu.registers.register_sizes[reg]
-            value = self.cpu.registers.fetch(reg, size)
+        printf(f"RAM access count: {self.cpu.ram.access_count}")
+        printf("Registers state:")
+        for reg, value in self.cpu.registers.state.items():
             color = ""
-            if reg in {"PC", "RI"}:
+            if reg in {RegisterName.PC, RegisterName.IR}:
                 color = YEL
             elif self.last_register_state[reg] != value:
                 color = GRE
-            hex_data = f"{value:x}".rjust(size // 4, "0").rjust(
-                self.max_register_size, " "
-            )
-            print(ANSI(f"  {color}{reg:<5s}  0x{hex_data}{DEF}"))
+            hex_data = str(value).rjust(self.max_register_hex, " ")
+            printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
 
         return CommandResult.OK
 
-    def memory(self, command: tuple[str]):
+    def memory(self, command: list[str]) -> CommandResult:
         """Print contents of RAM."""
 
-        command = command.split()
         try:
             if len(command) != 3:  # noqa: PLR2004
                 msg = "Unexpected cmd arguments"
@@ -174,15 +157,20 @@ class Ide:
         except ValueError:
             return CommandResult.NEED_HELP
 
-        print(
-            self.cpu.io_unit.store_hex(
-                begin, (end - begin) * self.cpu.ram.word_size, from_cpu=False
+        printf(
+            " ".join(
+                self.cpu.ram.fetch(
+                    address=Cell(i, bits=self.cpu.ram.address_bits),
+                    bits=self.cpu.ram.word_bits,
+                    from_cpu=False,
+                ).hex()
+                for i in range(begin, end)
             )
         )
 
         return CommandResult.OK
 
-    def cmd(self, command: list[str]):
+    def cmd(self, command: list[str]) -> CommandResult:
         """Exec one command."""
 
         if command[0] == "s":
@@ -199,26 +187,19 @@ class Ide:
         return CommandResult.NEED_HELP
 
     def run(self) -> int:
-        print(
-            "Welcome to interactive debug mode.\n"
-            "Beware: now every error breaks the debugger."
-        )
+        printf("Welcome to interactive debug mode.")
 
-        session = PromptSession(
-            completer=completion.WordCompleter(COMMAND_LIST, sentence=True),
-            lexer=CommandLexer(),
-        )
+        session: PromptSession[str] = PromptSession()
 
         st = CommandResult.NEED_HELP
         while st != CommandResult.QUIT:
             if st == CommandResult.NEED_HELP:
-                print(INSTRUCTION)
+                printf(INSTRUCTION)
 
             try:
-                command = session.prompt("> ") + " "  # length > 0
+                command = session.prompt("> ").split()
             except EOFError:
-                command = "quit"
-                print(command)
+                printf("quit")
 
             try:
                 with warnings.catch_warnings(record=True) as warns:
@@ -227,18 +208,18 @@ class Ide:
                     st = self.cmd(command)
 
                     for warn in warns:
-                        print("Warning:", warn.message)
+                        printf(f"Warning: {warn.message}")
 
             except Exception as error:  # noqa: BLE001
-                print("Error:", error.args[0])
-                self.cpu.alu.halt()
-                print("machine has halted")
+                printf(f"Error: {error.args[0]}")
+                self.cpu._alu.halt()
+                printf("machine has halted")
                 return 1
 
         return 0
 
 
-def debug(cpu) -> int:
+def debug(cpu: Cpu) -> int:
     """Debug cycle."""
     ide = Ide(cpu)
     return ide.run()

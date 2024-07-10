@@ -1,10 +1,13 @@
-mm-m
+.cpu mm-m
 
-[config]
-input = 0x100, 0x102, 0x104, 0x106, 0x108
-output = 0x10A
+.input 0x100
+.input 0x102
+.input 0x104
+.input 0x106
+.input 0x108
+.output 0x10A
 
-[code]
+.code
 ; output = sum(input)
 0020 0012 ; load R2, SIZE_WORD
 00F0 0014 ; load RF, SIZE_ARRAY
@@ -21,5 +24,4 @@ output = 0x10A
 00000002 ; SIZE_WORD = 2
 0000000A ; SIZE_ARRAY = 5
 
-[input]
--1 2 3 4 5
+.enter -1 2 3 4 5

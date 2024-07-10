@@ -13,6 +13,7 @@ from pyparsing import Word as Wd
 
 from modelmachine.__about__ import __version__
 from modelmachine.cpu.source import source
+from modelmachine.ide.debug import debug as ide_debug
 
 
 @dataclass
@@ -64,6 +65,7 @@ class Cli:
 
         for key, arg in sig.parameters.items():
             p = params.get(key)
+            cli_key = key.replace("_", "-")
             if p is None:
                 msg = (
                     f"Cannot find parameter '{key}' in docstring of"
@@ -73,29 +75,33 @@ class Cli:
                 raise KeyError(msg)
             if arg.default is inspect.Parameter.empty:
                 if arg.annotation == "str":
-                    cmd.add_argument(key, help=p.help)
+                    cmd.add_argument(cli_key, help=p.help)
                 else:
                     raise NotImplementedError
             else:
                 short = [p.short] if p.short is not None else []
                 if arg.annotation == "str":
-                    cmd.add_argument(*short, f"--{p.name}", help=p.help)
+                    cmd.add_argument(*short, f"--{cli_key}", help=p.help, dest=key)
                 if arg.annotation == "bool":
                     if arg.default is False:
                         cmd.add_argument(
                             *short,
-                            f"--{p.name}",
+                            f"--{cli_key}",
                             action="store_true",
                             help=p.help,
+                            dest=key,
                         )
-                    else:
+                    elif arg.default is True:
                         assert arg.default is True
                         cmd.add_argument(
                             *short,
-                            f"--no-{p.name}",
+                            f"--no-{cli_key}",
                             action="store_false",
                             help=p.help,
+                            dest=key,
                         )
+                    else:
+                        raise NotImplementedError
                 else:
                     raise NotImplementedError
 
@@ -122,37 +128,52 @@ cli = Cli(f"Modelmachine {__version__}")
 
 
 @cli
-def run(*, filename: str, protect_memory: bool = False) -> int:
+def run(
+    *, filename: str, protect_memory: bool = False, enter_is_stdin: bool = False
+) -> int:
     """Run program.
 
     filename -- file containing machine code, '-' for stdin
     protect_memory, -m -- halt, if program tries to read dirty memory
+    enter_is_stdin, -e -- disables .enter directive
     """
+    if enter_is_stdin and filename == "-":
+        msg = "Cannot set both enter_is_stdin and filename is stdin"
+        raise ValueError(msg)
+
     if filename == "-":
         cpu = source(sys.stdin.read())
     else:
         with open(filename) as fin:
-            cpu = source(fin.read())
+            cpu = source(
+                fin.read(), protect_memory=protect_memory, enter_is_stdin=enter_is_stdin
+            )
 
     cpu.control_unit.run()
+    if cpu.control_unit.failed:
+        return 1
+
     cpu.print_result(sys.stdout)
 
     return 0
 
 
 @cli
-def debug(*, filename: str, protect_memory: bool = False) -> int:
+def debug(
+    *, filename: str, protect_memory: bool = False, enter_is_stdin: bool = False
+) -> int:
     """Debug the program.
 
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
+    enter_is_stdin, -e -- disables .enter directive
     """
     with open(filename) as fin:
-        cpu = source(fin.read())
+        cpu = source(
+            fin.read(), protect_memory=protect_memory, enter_is_stdin=enter_is_stdin
+        )
 
-    debug(cpu)
-
-    return 0
+    return ide_debug(cpu)
 
 
 # @cli

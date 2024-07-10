@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import warnings
-from typing import Union
 
 import pytest
 
@@ -38,7 +37,7 @@ class TestControlUnitV:
             registers=self.registers, ram=self.ram, alu=self.alu
         )
 
-    def run_opcode(self, *, opcode: Union[Opcode, int], o: int, a: int, b: int) -> None:
+    def run_opcode(self, *, opcode: Opcode | int, o: int, a: int, b: int) -> None:
         self.setup_method()
         if o == 1:
             v = int(opcode)

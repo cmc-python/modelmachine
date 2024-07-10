@@ -1,11 +1,10 @@
-cpu mm-1
+.cpu mm-1
 
-input 0x100 a
-input 0x101 b
-stdin -123 456
-output 0x102 x
+.input 0x100 a
+.input 0x101 b
+.output 0x102 x
 
-code
+.code
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
 00 0100 ; S := a
 03 0009 ; S := S * -21
@@ -19,3 +18,5 @@ code
 ; ---------------------
 FFFFEB ; -21
 000032 ; 50
+
+.enter -123 456

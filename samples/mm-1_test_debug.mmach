@@ -1,11 +1,7 @@
-mm-1
+.cpu mm-1
 
-[config]
-
-[code]
+.code
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
 00 0100 ; S := a
 42 0000 ; trouble-maker
 99 0000 ; halt
-
-[input]

@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class IOReq:
     address: int
-    help: str | None
+    message: str | None
 
 
 class Cpu:
@@ -57,7 +57,7 @@ class Cpu:
         self,
         *,
         control_unit: type[ControlUnit],
-        is_protected: bool = True,
+        protect_memory: bool = True,
     ):
         self.name = control_unit.NAME
 
@@ -65,9 +65,9 @@ class Cpu:
         self.ram = RandomAccessMemory(
             word_bits=control_unit.WORD_BITS,
             address_bits=control_unit.ADDRESS_BITS,
-            is_protected=is_protected,
+            is_protected=protect_memory,
         )
-        self._io_unit = InputOutputUnit(ram=self.ram)
+        self._io_unit = InputOutputUnit(ram=self.ram, io_bits=control_unit.IR_BITS)
         self._alu = ArithmeticLogicUnit(
             registers=self.registers,
             alu_registers=control_unit.ALU_REGISTERS,
@@ -80,21 +80,25 @@ class Cpu:
 
     def load_program(
         self,
+        *,
         code: str,
         input_req: Sequence[IOReq],
         output_req: Sequence[IOReq],
-        stdin: Sequence[int],
+        enter: Sequence[int],
+        file: TextIO = sys.stdin,
     ) -> None:
         self._io_unit.load_source(code)
         self._output_req = output_req
 
-        for req, value in zip_longest(input_req, stdin):
-            self._io_unit.input(req.address, req.help, value)
+        for req, value in zip_longest(input_req, enter):
+            self._io_unit.input(
+                address=req.address, message=req.message, value=value, file=file
+            )
 
-    def print_result(self, output: TextIO = sys.stdout) -> None:
+    def print_result(self, file: TextIO = sys.stdout) -> None:
         """Print calculation result."""
         for req in self._output_req:
-            print(self._io_unit.output(req.address), file=output)
+            self._io_unit.output(address=req.address, message=req.message, file=file)
 
 
 CPU_MAP = {
