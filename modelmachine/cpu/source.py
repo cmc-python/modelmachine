@@ -39,7 +39,7 @@ integer = (pp.Opt("-") + decinteger ^ hexinteger).set_parse_action(
     lambda t: int("".join(t), 0)
 )
 
-cpu_name = pp.MatchFirst(pp.CaselessKeyword(name) for name in CPU_MAP)
+cpu_name = pp.MatchFirst([pp.CaselessKeyword(name) for name in CPU_MAP])
 cpu = (kw(".cpu") + cpu_name + nl)("cpu")
 
 inputd = Gr(kw(".input") + posinteger + string[0, 1] + nl)("input")

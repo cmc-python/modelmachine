@@ -37,7 +37,7 @@ class TestRandomAccessMemory:
         for i in range(2):
             assert self._get(i) == i + 1
         for i in range(2, 3):
-            with pytest.raises(KeyError):
+            with pytest.raises(RamAccessError):
                 self._get(i)
 
     def test_not_protected_getitem(self) -> None:
@@ -71,7 +71,7 @@ class TestRandomAccessMemory:
 
         with pytest.raises(AssertionError):
             self.ram.fetch(Cell(5, bits=AB), bits=4 * WB - 1)
-        with pytest.raises(KeyError):
+        with pytest.raises(RamAccessError):
             self.ram.fetch(Cell(4, bits=AB), bits=4 * WB)
 
         ram = RandomAccessMemory(

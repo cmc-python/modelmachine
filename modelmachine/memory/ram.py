@@ -13,7 +13,7 @@ MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
 
 
-class RamAccessError(KeyError):
+class RamAccessError(Exception):
     pass
 
 

@@ -39,8 +39,14 @@ class AluRegisters:
     R2: RegisterName
 
 
-class AluZeroDivisionError(ZeroDivisionError):
+class AluZeroDivisionError(Exception):
     pass
+
+
+class OperationType(Flag):
+    SIGNED = 1
+    UNSIGNED = 2
+    BOTH = 3
 
 
 class ArithmeticLogicUnit:
@@ -110,11 +116,6 @@ class ArithmeticLogicUnit:
             self._registers[self.alu_registers.R2],
         )
 
-    class OperationType(Flag):
-        SIGNED = 1
-        UNSIGNED = 2
-        BOTH = 3
-
     def _binary_op(
         self,
         int_op: Callable[[int, int], int],
@@ -128,11 +129,11 @@ class ArithmeticLogicUnit:
         unsigned = int_op(op1.unsigned, op2.unsigned)
         signed = int_op(op1.signed, op2.signed)
 
-        if op_type is self.OperationType.BOTH:
+        if op_type is OperationType.BOTH:
             self._set_flags(signed=signed, unsigned=unsigned)
-        elif op_type is self.OperationType.SIGNED:
+        elif op_type is OperationType.SIGNED:
             self._set_flags(signed=signed, unsigned=s.unsigned)
-        elif op_type is self.OperationType.UNSIGNED:
+        elif op_type is OperationType.UNSIGNED:
             self._set_flags(signed=s.signed, unsigned=unsigned)
         else:
             raise NotImplementedError
@@ -150,7 +151,7 @@ class ArithmeticLogicUnit:
         self._binary_op(
             lambda a, b: a * b,
             lambda a, b: a.umul(b),
-            op_type=self.OperationType.UNSIGNED,
+            op_type=OperationType.UNSIGNED,
         )
 
     def smul(self) -> None:
@@ -158,7 +159,7 @@ class ArithmeticLogicUnit:
         self._binary_op(
             lambda a, b: a * b,
             lambda a, b: a.smul(b),
-            op_type=self.OperationType.SIGNED,
+            op_type=OperationType.SIGNED,
         )
 
     def sdivmod(self) -> None:

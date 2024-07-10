@@ -16,7 +16,7 @@ from modelmachine.cu.opcode import (
 from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
-    from typing import Final
+    from typing import ClassVar, Final
 
     from modelmachine.alu import ArithmeticLogicUnit
     from modelmachine.memory.ram import RandomAccessMemory
@@ -192,7 +192,7 @@ class ControlUnitR(ControlUnit):
         else:
             super()._execute()
 
-    WB_R1: frozenset[Opcode] = (
+    WB_R1: ClassVar[frozenset[Opcode]] = (
         ARITHMETIC_OPCODES
         | REGISTER_ARITH_OPCODES
         | {Opcode.load, Opcode.rmove}
