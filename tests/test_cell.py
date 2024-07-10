@@ -43,7 +43,9 @@ class TestCell:
 
     def test_repr(self) -> None:
         assert repr(self.first) == "Cell(0x0a, bits=8)"
-        assert str(self.first) == "Cell(0x0a, bits=8)"
+
+    def test_str(self) -> None:
+        assert str(self.first) == "0x0a"
 
     def test_check_compatibility(self) -> None:
         """Test check compatibility method."""
@@ -194,9 +196,9 @@ class TestCell:
             [self.first, self.second], endianess=Endianess.LITTLE
         ) == Cell((12 << 8) | 10, bits=16)
 
-        assert Cell.decode(
-            [self.first, self.second], endianess=Endianess.BIG
-        ) == Cell((10 << 8) | 12, bits=16)
+        assert Cell.decode([self.first, self.second], endianess=Endianess.BIG) == Cell(
+            (10 << 8) | 12, bits=16
+        )
 
     def test_encode(self) -> None:
         assert self.second.encode(bits=2, endianess=Endianess.LITTLE) == [

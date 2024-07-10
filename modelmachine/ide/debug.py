@@ -18,14 +18,6 @@ if TYPE_CHECKING:
 
     from modelmachine.cpu import AbstractCPU
 
-DEF = "\x1b[39m"
-RED = "\x1b[31m"
-GRE = "\x1b[32m"
-YEL = "\x1b[33m"
-BLU = "\x1b[34m"
-MAG = "\x1b[35m"
-CYA = "\x1b[36m"
-
 INSTRUCTION = ANSI(
     "Enter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
@@ -106,8 +98,7 @@ class Ide:
         self.cpu = cpu
         self.last_register_state = cpu.registers.state()
         self.max_register_size = (
-            max(cpu.registers.register_sizes[reg] for reg in cpu.registers)
-            // 4
+            max(cpu.registers.register_sizes[reg] for reg in cpu.registers) // 4
         )
 
     def step(self, command: tuple[str]) -> CommandResult:

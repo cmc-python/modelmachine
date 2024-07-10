@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling~=1.25", "hatch-vcs~=0.4"]
+requires = ["hatchling>=1.17", "hatch-vcs>=0.3"]
 build-backend = "hatchling.build"
 
 [project]
@@ -25,10 +25,10 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Utilities",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.7"
 dependencies = [
     "pyparsing~=3.1",
-    "prompt_toolkit~=3.0"
+    "prompt_toolkit~=3.0",
 ]
 
 [project.scripts]
@@ -74,11 +74,9 @@ config-path = "ruff_defaults.toml"
 extend = "ruff_defaults.toml"
 line-length = 79
 indent-width = 4
-target-version = "py38"
+target-version = "py37"
 [tool.ruff.lint]
 ignore = [
-    "T201",
-    "T203",
     "S101",
 ]
 [tool.ruff.lint.per-file-ignores]

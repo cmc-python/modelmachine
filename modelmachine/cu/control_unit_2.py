@@ -14,6 +14,8 @@ from modelmachine.cu.opcode import (
 from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
+    from typing import Final
+
     from modelmachine.cell import Cell
 
 
@@ -22,9 +24,7 @@ class ControlUnit2(ControlUnit):
 
     NAME = "mm-2"
     KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | JUMP_OPCODES
-        | {Opcode.move, Opcode.halt, Opcode.comp}
+        ARITHMETIC_OPCODES | JUMP_OPCODES | {Opcode.move, Opcode.halt, Opcode.comp}
     )
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = IR_BITS
@@ -50,7 +50,7 @@ class ControlUnit2(ControlUnit):
         if self._opcode is Opcode.halt:
             self._expect_zero()
 
-    LOAD_R1R2 = ARITHMETIC_OPCODES | {Opcode.comp}
+    _LOAD_R1R2: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.comp}
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
@@ -59,7 +59,7 @@ class ControlUnit2(ControlUnit):
                 address=self._address2, bits=self._alu.operand_bits
             )
 
-        if self._opcode in self.LOAD_R1R2:
+        if self._opcode in self._LOAD_R1R2:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address1, bits=self._alu.operand_bits
             )
@@ -78,11 +78,11 @@ class ControlUnit2(ControlUnit):
         else:
             super()._execute()
 
-    WB_R1 = ARITHMETIC_OPCODES | {Opcode.move}
+    _WB_R1: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.move}
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode in self.WB_R1:
+        if self._opcode in self._WB_R1:
             self._ram.put(
                 address=self._address1, value=self._registers[RegisterName.R1]
             )

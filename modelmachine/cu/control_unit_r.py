@@ -16,6 +16,8 @@ from modelmachine.cu.opcode import (
 from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
+    from typing import Final
+
     from modelmachine.alu import ArithmeticLogicUnit
     from modelmachine.memory.ram import RandomAccessMemory
     from modelmachine.memory.register import RegisterMemory
@@ -96,15 +98,15 @@ class ControlUnitR(ControlUnit):
                 RegisterName(reg_no), bits=self._alu.operand_bits
             )
 
-    ONE_WORD_OPCODES = REGISTER_OPCODES | {Opcode.halt}
+    _ONE_WORD_OPCODES: Final[frozenset[Opcode]] = REGISTER_OPCODES | {Opcode.halt}
 
     def _fetch(self, *, instruction_bits: int | None = None) -> None:
         """Fetch operands."""
         assert instruction_bits is None
         instruction_pointer = self._registers[RegisterName.PC]
-        word = self._ram.fetch(
-            address=instruction_pointer, bits=self._ram.word_bits
-        )[-OPCODE_BITS:].unsigned  # higher bits if word
+        word = self._ram.fetch(address=instruction_pointer, bits=self._ram.word_bits)[
+            -OPCODE_BITS:
+        ].unsigned  # higher bits if word
 
         try:
             opcode = Opcode(word)
@@ -113,21 +115,21 @@ class ControlUnitR(ControlUnit):
         if opcode not in self.KNOWN_OPCODES:
             self._wrong_opcode(word)
 
-        if opcode in self.ONE_WORD_OPCODES:
+        if opcode in self._ONE_WORD_OPCODES:
             instruction_bits = self._ram.word_bits
         else:
             instruction_bits = 2 * self._ram.word_bits
 
         super()._fetch(instruction_bits=instruction_bits)
 
-    EXPECT_ZERO_RY = ARITHMETIC_OPCODES | {
+    _EXPECT_ZERO_RY: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {
         Opcode.comp,
         Opcode.load,
         Opcode.store,
     }
 
     def _decode(self) -> None:
-        if self._opcode in self.EXPECT_ZERO_RY:
+        if self._opcode in self._EXPECT_ZERO_RY:
             self._expect_zero(self._ram.address_bits, -REG_NO_BITS)
 
         if self._opcode in JUMP_OPCODES:
@@ -136,16 +138,17 @@ class ControlUnitR(ControlUnit):
         if self._opcode is Opcode.halt:
             self._expect_zero()
 
-    LOAD_FROM_MEMORY = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.load}
-    LOAD_S = (
-        ARITHMETIC_OPCODES
-        | REGISTER_ARITH_OPCODES
-        | {Opcode.comp, Opcode.store}
+    _LOAD_FROM_MEMORY: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {
+        Opcode.comp,
+        Opcode.load,
+    }
+    _LOAD_S: Final[frozenset[Opcode]] = (
+        ARITHMETIC_OPCODES | REGISTER_ARITH_OPCODES | {Opcode.comp, Opcode.store}
     )
 
     def _load(self) -> None:
         """Load registers S and S1."""
-        if self._opcode in self.LOAD_FROM_MEMORY:
+        if self._opcode in self._LOAD_FROM_MEMORY:
             self._registers[RegisterName.S1] = self._ram.fetch(
                 address=self._address, bits=self._alu.operand_bits
             )
@@ -153,20 +156,22 @@ class ControlUnitR(ControlUnit):
         if self._opcode in REGISTER_OPCODES:
             self._registers[RegisterName.S1] = self._registers[self._ry]
 
-        if self._opcode in self.LOAD_S:
+        if self._opcode in self._LOAD_S:
             self._registers[RegisterName.S] = self._registers[self._rx]
 
         if self._opcode in JUMP_OPCODES:
             self._registers[RegisterName.ADDR] = self._address
 
-    EXEC_SUB = frozenset({Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub})
-    EXEC_MOV = frozenset({Opcode.load, Opcode.rmove})
+    _EXEC_SUB: Final[frozenset[Opcode]] = frozenset(
+        {Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub}
+    )
+    _EXEC_MOV: Final[frozenset[Opcode]] = frozenset({Opcode.load, Opcode.rmove})
 
     def _execute(self) -> None:
         """Execute the command."""
-        if self._opcode in self.EXEC_SUB:
+        if self._opcode in self._EXEC_SUB:
             self._alu.sub()
-        elif self._opcode in self.EXEC_MOV:
+        elif self._opcode in self._EXEC_MOV:
             self._registers[RegisterName.S] = self._registers[RegisterName.S1]
         elif self._opcode is Opcode.radd:
             self._alu.add()
@@ -181,12 +186,10 @@ class ControlUnitR(ControlUnit):
         else:
             super()._execute()
 
-    WB_R1 = (
-        ARITHMETIC_OPCODES
-        | REGISTER_ARITH_OPCODES
-        | {Opcode.load, Opcode.rmove}
+    WB_R1: frozenset[Opcode] = (
+        ARITHMETIC_OPCODES | REGISTER_ARITH_OPCODES | {Opcode.load, Opcode.rmove}
     )
-    WB_R_NEXT = frozenset(
+    _WB_R_NEXT: Final[frozenset[Opcode]] = frozenset(
         {Opcode.udiv, Opcode.sdiv, Opcode.rudiv, Opcode.rsdiv}
     )
 
@@ -195,10 +198,8 @@ class ControlUnitR(ControlUnit):
         if self._opcode in self.WB_R1 and self._rx != RegisterName.R0:
             self._registers[self._rx] = self._registers[RegisterName.S]
 
-        if self._opcode in self.WB_R_NEXT and self._r_next != RegisterName.R0:
+        if self._opcode in self._WB_R_NEXT and self._r_next != RegisterName.R0:
             self._registers[self._r_next] = self._registers[RegisterName.S1]
 
         if self._opcode is Opcode.store:
-            self._ram.put(
-                address=self._address, value=self._registers[RegisterName.S]
-            )
+            self._ram.put(address=self._address, value=self._registers[RegisterName.S])

@@ -12,7 +12,7 @@ from modelmachine.cell import Cell
 from modelmachine.memory.ram import MAX_WORD_BITS
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Iterator
 
 
 class RegisterName(IntEnum):
@@ -93,7 +93,7 @@ class RegisterMemory:
                 yield reg
 
     @property
-    def state(self) -> Mapping[RegisterName, Cell]:
+    def state(self) -> dict[RegisterName, Cell]:
         res: dict[RegisterName, Cell] = {}
         for reg in RegisterName:
             val = self._table[reg]

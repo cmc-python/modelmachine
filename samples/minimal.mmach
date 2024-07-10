@@ -1,9 +1,3 @@
-mms
-
-[config]
-
-[code]
-99 ; halt
-
-[input]
-
+cpu mm-1
+code
+99 0000 ; halt

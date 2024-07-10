@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from modelmachine.cell import Cell
 from modelmachine.cpu.source import source
 

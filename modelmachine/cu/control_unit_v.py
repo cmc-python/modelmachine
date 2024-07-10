@@ -14,6 +14,8 @@ from modelmachine.cu.opcode import (
 from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
+    from typing import Final
+
     from modelmachine.cell import Cell
 
 
@@ -22,9 +24,7 @@ class ControlUnitV(ControlUnit):
 
     NAME = "mm-v"
     KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | JUMP_OPCODES
-        | {Opcode.move, Opcode.halt, Opcode.comp}
+        ARITHMETIC_OPCODES | JUMP_OPCODES | {Opcode.move, Opcode.halt, Opcode.comp}
     )
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = 8
@@ -47,9 +47,9 @@ class ControlUnitV(ControlUnit):
         """Fetch 2 addresses."""
         assert instruction_bits is None
         instruction_pointer = self._registers[RegisterName.PC]
-        word = self._ram.fetch(
-            address=instruction_pointer, bits=self._ram.word_bits
-        )[-OPCODE_BITS:].unsigned
+        word = self._ram.fetch(address=instruction_pointer, bits=self._ram.word_bits)[
+            -OPCODE_BITS:
+        ].unsigned
 
         try:
             opcode = Opcode(word)
@@ -67,7 +67,7 @@ class ControlUnitV(ControlUnit):
 
         super()._fetch(instruction_bits=instruction_bits)
 
-    LOAD_R1R2 = ARITHMETIC_OPCODES | {Opcode.comp}
+    _LOAD_R1R2: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.comp}
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
@@ -76,7 +76,7 @@ class ControlUnitV(ControlUnit):
                 address=self._address2, bits=self._alu.operand_bits
             )
 
-        if self._opcode in self.LOAD_R1R2:
+        if self._opcode in self._LOAD_R1R2:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address1, bits=self._alu.operand_bits
             )
@@ -95,11 +95,11 @@ class ControlUnitV(ControlUnit):
         else:
             super()._execute()
 
-    WB_R1 = ARITHMETIC_OPCODES | {Opcode.move}
+    _WB_R1: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.move}
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode in self.WB_R1:
+        if self._opcode in self._WB_R1:
             self._ram.put(
                 address=self._address1, value=self._registers[RegisterName.R1]
             )

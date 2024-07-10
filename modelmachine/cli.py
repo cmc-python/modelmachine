@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import argparse
 import inspect
+import sys
 from dataclasses import dataclass
 from typing import Callable
 
 import pyparsing as pp
-from pyparsing import CaselessLiteral as L
-from pyparsing import Group as G
-from pyparsing import Word as W
+from pyparsing import CaselessLiteral as Li
+from pyparsing import Group as Gr
+from pyparsing import Word as Wd
 
 from modelmachine.__about__ import __version__
+from modelmachine.cpu.source import source
 
 
 @dataclass
@@ -25,14 +27,19 @@ def ignore() -> list[pp.ParseResults]:
 
 
 pp.ParserElement.set_default_whitespace_chars(" \t")
+SKIP_SHORT = 2
 param = (
-    W(pp.alphas, pp.alphanums + "_")
-    + (L(", ").set_parse_action(ignore) + G("-" + pp.Char(pp.alphas)))[0, 1]
-    + L("--").set_parse_action(ignore)
-    + W(pp.alphanums, pp.printables + " \t")
+    Wd(pp.alphas, pp.alphanums + "_")
+    + (Li(", ").set_parse_action(ignore) + Gr("-" + pp.Char(pp.alphas)))[0, 1]
+    + Li("--").set_parse_action(ignore)
+    + Wd(pp.alphanums, pp.printables + " \t")
 ).set_parse_action(
     lambda t: [
-        Param(name=t[0], short="".join(t[1]) if len(t) > 2 else None, help=t[-1])
+        Param(
+            name=t[0],
+            short="".join(t[1]) if len(t) > SKIP_SHORT else None,
+            help=t[-1],
+        )
     ]
 )
 
@@ -47,14 +54,14 @@ class Cli:
 
     def __call__(self, f: Callable[..., int]) -> Callable[..., int]:
         docstring = str(inspect.getdoc(f))
+        sig = inspect.signature(f)
+
         cmd = self._subparsers.add_parser(f.__name__, help=docstring.split(".")[0])
-        cmd.set_defaults(func=f)
 
         params: dict[str, Param] = {
             p[0].name: p[0] for p in param.search_string(docstring)
         }
 
-        sig = inspect.signature(f)
         for key, arg in sig.parameters.items():
             p = params.get(key)
             if p is None:
@@ -76,16 +83,29 @@ class Cli:
                 if arg.annotation == "bool":
                     if arg.default is False:
                         cmd.add_argument(
-                            *short, f"--{p.name}", action="store_true", help=p.help
+                            *short,
+                            f"--{p.name}",
+                            action="store_true",
+                            help=p.help,
                         )
                     else:
                         assert arg.default is True
                         cmd.add_argument(
-                            *short, f"--no-{p.name}", action="store_false", help=p.help
+                            *short,
+                            f"--no-{p.name}",
+                            action="store_false",
+                            help=p.help,
                         )
                 else:
                     raise NotImplementedError
 
+        def g(args: argparse.Namespace) -> int:
+            argv = {}
+            for key in sig.parameters:
+                argv[key] = getattr(args, key)
+            return f(**argv)
+
+        cmd.set_defaults(func=g)
         return f
 
     def main(self) -> int:
@@ -95,7 +115,6 @@ class Cli:
             self._parser.print_help()
             return 1
 
-        print(args)
         return int(args.func(args))
 
 
@@ -106,9 +125,18 @@ cli = Cli(f"Modelmachine {__version__}")
 def run(*, filename: str, protect_memory: bool = False) -> int:
     """Run program.
 
-    filename -- file containing machine code
+    filename -- file containing machine code, '-' for stdin
     protect_memory, -m -- halt, if program tries to read dirty memory
     """
+    if filename == "-":
+        cpu = source(sys.stdin.read())
+    else:
+        with open(filename) as fin:
+            cpu = source(fin.read())
+
+    cpu.control_unit.run()
+    cpu.print_result(sys.stdout)
+
     return 0
 
 
@@ -119,14 +147,19 @@ def debug(*, filename: str, protect_memory: bool = False) -> int:
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
     """
+    with open(filename) as fin:
+        cpu = source(fin.read())
+
+    debug(cpu)
+
     return 0
 
 
-@cli
-def asm(*, input_file: str, output_file: str) -> int:
-    """Assemble program.
-
-    input_file -- asm source, '-' for stdin
-    output_file -- machine code file, '-' for stdout
-    """
-    return 0
+# @cli
+# def asm(*, input_file: str, output_file: str) -> int:
+#     """Assemble program.
+#
+#     input_file -- asm source, '-' for stdin
+#     output_file -- machine code file, '-' for stdout
+#     """
+#     return 0

@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import sys
 from traceback import print_exc
-from typing import TYPE_CHECKING, Final
-
-from prompt_toolkit import print_formatted_text as print
-from prompt_toolkit import prompt
+from typing import TYPE_CHECKING, Optional
 
 from modelmachine.cell import Cell
+from modelmachine.prompt import printf, prompt
 
 if TYPE_CHECKING:
+    from typing import Final
     from modelmachine.memory.ram import RandomAccessMemory
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
@@ -40,7 +39,7 @@ class InputOutputUnit:
             raise ValueError(msg)
         return word
 
-    def input(self, address: int, help: str | None, value: int | None) -> None:
+    def input(self, address: int, message: Optional[str], value: Optional[int]) -> None:
         """Data loader (decimal numbers)."""
         if not 0 <= address < self.ram.memory_size:
             msg = (
@@ -52,19 +51,18 @@ class InputOutputUnit:
         addr = Cell(address, bits=self.ram.address_bits)
 
         while value is None:
-            if not sys.stdin.isatty():
-                value = int(input(), 0)
-                break
+            if message is None:
+                message = f"Input integer for address {addr}"
 
-            if help is None:
-                help = f"Input integer for address {addr}"
-
-            value_str = prompt(f"{help}: ")
+            value_str = prompt(f"{message}: ")
             try:
                 value = self._check_word(int(value_str, 0))
             except ValueError:
                 print_exc()
-                print(f"Cannot parse integer '{value_str}', please repeat")
+                printf(f"Cannot parse integer '{value_str}', please repeat")
+
+            if not sys.stdin.isatty():
+                break
 
         self._check_word(value)
 

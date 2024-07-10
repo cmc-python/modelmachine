@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Flag
-from typing import TYPE_CHECKING, Callable, Final
+from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell, div_to_zero
 from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
+    from typing import Callable, Final
+
     from modelmachine.memory.register import RegisterMemory
 
 
@@ -96,9 +98,7 @@ class ArithmeticLogicUnit:
         if value.unsigned != unsigned:
             flags |= Flags.CF
 
-        self._registers[RegisterName.FLAGS] = Cell(
-            flags.value, bits=self.operand_bits
-        )
+        self._registers[RegisterName.FLAGS] = Cell(flags.value, bits=self.operand_bits)
 
     @property
     def _operands(self) -> tuple[Cell, Cell]:
@@ -126,15 +126,14 @@ class ArithmeticLogicUnit:
         unsigned = int_op(op1.unsigned, op2.unsigned)
         signed = int_op(op1.signed, op2.signed)
 
-        match op_type:
-            case self.OperationType.BOTH:
-                self._set_flags(signed=signed, unsigned=unsigned)
-            case self.OperationType.SIGNED:
-                self._set_flags(signed=signed, unsigned=s.unsigned)
-            case self.OperationType.UNSIGNED:
-                self._set_flags(signed=s.signed, unsigned=unsigned)
-            case _:
-                raise NotImplementedError
+        if op_type is self.OperationType.BOTH:
+            self._set_flags(signed=signed, unsigned=unsigned)
+        elif op_type is self.OperationType.SIGNED:
+            self._set_flags(signed=signed, unsigned=s.unsigned)
+        elif op_type is self.OperationType.UNSIGNED:
+            self._set_flags(signed=s.signed, unsigned=unsigned)
+        else:
+            raise NotImplementedError
 
     def add(self) -> None:
         """S := R1 + R2."""

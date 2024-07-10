@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import warnings
 from array import array
-from typing import Final
+from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell, Endianess
+
+if TYPE_CHECKING:
+    from typing import Final
 
 MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
@@ -100,9 +103,7 @@ class RandomAccessMemory:
         self._missing(address, from_cpu=from_cpu)
         return Cell(0, bits=self.word_bits)
 
-    def fetch(
-        self, address: Cell, *, bits: int, from_cpu: bool = True
-    ) -> Cell:
+    def fetch(self, address: Cell, *, bits: int, from_cpu: bool = True) -> Cell:
         """Load bits by address.
 
         Size must be divisible by self.word_bits.
@@ -130,9 +131,7 @@ class RandomAccessMemory:
             endianess=self.endianess,
         )
 
-    def put(
-        self, *, address: Cell, value: Cell, from_cpu: bool = True
-    ) -> None:
+    def put(self, *, address: Cell, value: Cell, from_cpu: bool = True) -> None:
         """Put size bits by address.
 
         Size must be divisible by self.word_bits.

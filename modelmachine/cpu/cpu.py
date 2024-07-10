@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Final, TextIO
+from typing import TYPE_CHECKING
 
 from modelmachine.alu import ArithmeticLogicUnit
 from modelmachine.cu.control_unit_1 import ControlUnit1
@@ -29,6 +29,7 @@ from modelmachine.memory.register import RegisterMemory
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Final, TextIO
 
     from modelmachine.cu.control_unit import ControlUnit
 

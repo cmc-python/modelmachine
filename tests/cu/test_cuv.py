@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from typing import Union
 
 import pytest
 
@@ -37,19 +38,16 @@ class TestControlUnitV:
             registers=self.registers, ram=self.ram, alu=self.alu
         )
 
-    def run_opcode(
-        self, *, opcode: Opcode | int, o: int, a: int, b: int
-    ) -> None:
+    def run_opcode(self, *, opcode: Union[Opcode, int], o: int, a: int, b: int) -> None:
         self.setup_method()
-        match o:
-            case 1:
-                v = int(opcode)
-            case 3:
-                v = (int(opcode) << AB) | 0x0020
-            case 5:
-                v = (int(opcode) << 2 * AB) | 0x00200030
-            case _:
-                raise NotImplementedError
+        if o == 1:
+            v = int(opcode)
+        elif o == 3:
+            v = (int(opcode) << AB) | 0x0020
+        elif o == 5:
+            v = (int(opcode) << 2 * AB) | 0x00200030
+        else:
+            raise NotImplementedError
 
         self.ram.put(
             address=Cell(0x10, bits=AB),
@@ -77,20 +75,19 @@ class TestControlUnitV:
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
             for o in (1, 3, 5):
-                if (opcode in Opcode) and (
-                    Opcode(opcode) in self.control_unit.KNOWN_OPCODES
+                if (
+                    opcode in Opcode.__members__.values()
+                    and Opcode(opcode) in self.control_unit.KNOWN_OPCODES
                 ):
                     continue
                 self.run_opcode(opcode=opcode, o=o, a=0x41, b=0x10)
                 assert self.registers[RegisterName.PC] == 0x10
                 assert self.registers[RegisterName.FLAGS] == Flags.HALT
                 assert (
-                    self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS)
-                    == 0x41
+                    self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == 0x41
                 )
                 assert (
-                    self.ram.fetch(Cell(0x25, bits=AB), bits=self.OPERAND_BITS)
-                    == 0x88
+                    self.ram.fetch(Cell(0x25, bits=AB), bits=self.OPERAND_BITS) == 0x88
                 )
                 assert self.control_unit.status is Status.HALTED
 
@@ -181,9 +178,7 @@ class TestControlUnitV:
         assert self.registers[RegisterName.PC] == pc
         assert self.registers[RegisterName.FLAGS] == flags
         assert self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == s
-        assert (
-            self.ram.fetch(Cell(0x25, bits=AB), bits=self.OPERAND_BITS) == res
-        )
+        assert self.ram.fetch(Cell(0x25, bits=AB), bits=self.OPERAND_BITS) == res
         assert self.control_unit.status is (
             Status.HALTED if flags is Flags.HALT else Status.RUNNING
         )
@@ -226,14 +221,8 @@ class TestControlUnitV:
             )
             self.control_unit.step()
             assert self.registers[RegisterName.PC] == (0x40 if j else 0x18)
-            assert (
-                self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
-                == 0x77
-            )
-            assert (
-                self.ram.fetch(Cell(0x45, bits=AB), bits=self.OPERAND_BITS)
-                == 0x88
-            )
+            assert self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS) == 0x77
+            assert self.ram.fetch(Cell(0x45, bits=AB), bits=self.OPERAND_BITS) == 0x88
             assert self.control_unit.status is Status.RUNNING
 
         cond(Opcode.jeq, a=a, b=b, j=eq)
@@ -321,9 +310,7 @@ class TestControlUnitV:
             value=Cell(10, bits=self.OPERAND_BITS),
         )
         self.control_unit.run()
-        assert (
-            self.ram.fetch(Cell(0x100, bits=AB), bits=self.OPERAND_BITS) == 22
-        )
+        assert self.ram.fetch(Cell(0x100, bits=AB), bits=self.OPERAND_BITS) == 22
         assert self.registers[RegisterName.PC] == 0x56
         assert self.control_unit.status is Status.HALTED
         assert self.control_unit.cycle == 4

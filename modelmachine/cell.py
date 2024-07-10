@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from enum import Flag, IntEnum
-from typing import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Final, Self
 
 
 class Endianess(IntEnum):
@@ -14,7 +15,7 @@ class Endianess(IntEnum):
     LITTLE = 1
 
 
-def div_to_zero(a: int, b: int):
+def div_to_zero(a: int, b: int) -> int:
     """Simplified version of div"""
     res = abs(a) // abs(b)
     if a * b < 0:
@@ -22,7 +23,7 @@ def div_to_zero(a: int, b: int):
     return res
 
 
-def mod_to_zero(a: int, b: int):
+def mod_to_zero(a: int, b: int) -> int:
     """Simplified version of div"""
     return a - b * div_to_zero(a, b)
 
@@ -193,6 +194,4 @@ class Cell:
             return self.encode(bits=bits, endianess=Endianess.LITTLE)[::-1]
 
         assert self.bits % bits == 0
-        return [
-            self[shift : shift + bits] for shift in range(0, self.bits, bits)
-        ]
+        return [self[shift : shift + bits] for shift in range(0, self.bits, bits)]

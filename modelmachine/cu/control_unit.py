@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from traceback import print_exception
+from traceback import print_exc
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -58,20 +58,14 @@ class ControlUnit:
 
         raise NotImplementedError
 
-    def _wrong_opcode(
-        self, opcode: int | Opcode, e: Exception | None = None
-    ) -> None:
-        msg = f"Invalid opcode 0x{opcode:0>2x} for {self.NAME}"
+    def _wrong_opcode(self, opcode: int | Opcode, e: Exception | None = None) -> None:
+        msg = f"Invalid opcode 0x{int(opcode):0>2x} for {self.NAME}"
         raise WrongOpcodeError(msg) from e
 
-    def _expect_zero(
-        self, start_bit: int | None = None, end_bit: int | None = None, /
-    ) -> None:
+    def _expect_zero(self, start: int | None = None, end: int | None = None) -> None:
         ir_operands = self._ir[:-OPCODE_BITS]
 
-        start_bit, end_bit, _ = slice(start_bit, end_bit).indices(
-            ir_operands.bits
-        )
+        start_bit, end_bit, _ = slice(start, end).indices(ir_operands.bits)
 
         part = ir_operands[start_bit:end_bit]
         if part != 0:
@@ -103,12 +97,8 @@ class ControlUnit:
 
         self._cycle = 0
 
-        self._registers.add_register(
-            RegisterName.PC, bits=self._ram.address_bits
-        )
-        self._registers.add_register(
-            RegisterName.ADDR, bits=self._ram.address_bits
-        )
+        self._registers.add_register(RegisterName.PC, bits=self._ram.address_bits)
+        self._registers.add_register(RegisterName.ADDR, bits=self._ram.address_bits)
         self._registers.add_register(RegisterName.IR, bits=self.IR_BITS)
 
     def step(self) -> None:
@@ -121,8 +111,8 @@ class ControlUnit:
             self._load()
             self._execute()
             self._write_back()
-        except (WrongOpcodeError, RamAccessError, AluZeroDivisionError) as exc:
-            print_exception(exc)
+        except (WrongOpcodeError, RamAccessError, AluZeroDivisionError):
+            print_exc()
             warn("Because of previous exception cpu halted", stacklevel=1)
             self._alu.halt()
 
@@ -169,49 +159,52 @@ class ControlUnit:
         """Load data from memory to operation registers."""
         raise NotImplementedError
 
+    _CU_ABS_EXEC_NOP: Final[frozenset[Opcode]] = frozenset(
+        {Opcode.move, Opcode.load, Opcode.store, Opcode.addr}
+    )
+
     def _execute(self) -> None:
         """Run arithmetic instructions."""
-        match self._opcode:
-            case Opcode.move | Opcode.load | Opcode.store | Opcode.addr:
-                pass
-            case Opcode.halt:
-                self._alu.halt()
-            case Opcode.add:
-                self._alu.add()
-            case Opcode.sub:
-                self._alu.sub()
-            case Opcode.smul:
-                self._alu.smul()
-            case Opcode.umul:
-                self._alu.umul()
-            case Opcode.sdiv:
-                self._alu.sdivmod()
-            case Opcode.udiv:
-                self._alu.udivmod()
-            case Opcode.jump:
-                self._alu.jump()
-            case Opcode.jeq:
-                self._alu.cond_jump(signed=False, comp=EQUAL, equal=True)
-            case Opcode.jneq:
-                self._alu.cond_jump(signed=False, comp=EQUAL, equal=False)
-            case Opcode.sjl:
-                self._alu.cond_jump(signed=True, comp=LESS, equal=False)
-            case Opcode.sjgeq:
-                self._alu.cond_jump(signed=True, comp=GREATER, equal=True)
-            case Opcode.sjleq:
-                self._alu.cond_jump(signed=True, comp=LESS, equal=True)
-            case Opcode.sjg:
-                self._alu.cond_jump(signed=True, comp=GREATER, equal=False)
-            case Opcode.ujl:
-                self._alu.cond_jump(signed=False, comp=LESS, equal=False)
-            case Opcode.ujgeq:
-                self._alu.cond_jump(signed=False, comp=GREATER, equal=True)
-            case Opcode.ujleq:
-                self._alu.cond_jump(signed=False, comp=LESS, equal=True)
-            case Opcode.ujg:
-                self._alu.cond_jump(signed=False, comp=GREATER, equal=False)
-            case _:
-                self._wrong_opcode(self._opcode)
+        if self._opcode in self._CU_ABS_EXEC_NOP:
+            pass
+        elif self._opcode is Opcode.halt:
+            self._alu.halt()
+        elif self._opcode is Opcode.add:
+            self._alu.add()
+        elif self._opcode is Opcode.sub:
+            self._alu.sub()
+        elif self._opcode is Opcode.smul:
+            self._alu.smul()
+        elif self._opcode is Opcode.umul:
+            self._alu.umul()
+        elif self._opcode is Opcode.sdiv:
+            self._alu.sdivmod()
+        elif self._opcode is Opcode.udiv:
+            self._alu.udivmod()
+        elif self._opcode is Opcode.jump:
+            self._alu.jump()
+        elif self._opcode is Opcode.jeq:
+            self._alu.cond_jump(signed=False, comp=EQUAL, equal=True)
+        elif self._opcode is Opcode.jneq:
+            self._alu.cond_jump(signed=False, comp=EQUAL, equal=False)
+        elif self._opcode is Opcode.sjl:
+            self._alu.cond_jump(signed=True, comp=LESS, equal=False)
+        elif self._opcode is Opcode.sjgeq:
+            self._alu.cond_jump(signed=True, comp=GREATER, equal=True)
+        elif self._opcode is Opcode.sjleq:
+            self._alu.cond_jump(signed=True, comp=LESS, equal=True)
+        elif self._opcode is Opcode.sjg:
+            self._alu.cond_jump(signed=True, comp=GREATER, equal=False)
+        elif self._opcode is Opcode.ujl:
+            self._alu.cond_jump(signed=False, comp=LESS, equal=False)
+        elif self._opcode is Opcode.ujgeq:
+            self._alu.cond_jump(signed=False, comp=GREATER, equal=True)
+        elif self._opcode is Opcode.ujleq:
+            self._alu.cond_jump(signed=False, comp=LESS, equal=True)
+        elif self._opcode is Opcode.ujg:
+            self._alu.cond_jump(signed=False, comp=GREATER, equal=False)
+        else:
+            self._wrong_opcode(self._opcode)
 
     def _write_back(self) -> None:
         """Save result of calculation to memory."""

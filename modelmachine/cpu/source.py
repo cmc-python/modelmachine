@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import pyparsing as pp
-from pyparsing import CaselessKeyword as KW
-from pyparsing import Group as G
-from pyparsing import Word as W
+from pyparsing import CaselessKeyword as Kw
+from pyparsing import Group as Gr
+from pyparsing import Word as Wd
 
 from modelmachine.cpu.cpu import CPU_MAP, Cpu, IOReq
 
@@ -28,37 +28,39 @@ class OutputReq(IOReq):
 pp.ParserElement.set_default_whitespace_chars(" \t")
 
 
-string = W(pp.printables + " \t")
+string = Wd(pp.printables + " \t")
 hexnums = pp.nums + "abcdefABCDEF"
-newline = pp.Char("\n").set_parse_action(ignore)
+nl = pp.Char("\n").set_parse_action(ignore)
 
-decinteger = W(pp.nums, "_" + pp.nums)
-hexinteger = "0x" + W(hexnums, "_" + hexnums)
+decinteger = Wd(pp.nums, "_" + pp.nums)
+hexinteger = "0x" + Wd(hexnums, "_" + hexnums)
 posinteger = (decinteger ^ hexinteger).set_parse_action(lambda t: [int("".join(t), 0)])
 
 integer = (pp.Opt("-") + decinteger ^ hexinteger).set_parse_action(
     lambda t: int("".join(t), 0)
 )
 
-cpu = G(
-    KW("cpu").set_parse_action(ignore) + pp.MatchFirst(KW(name) for name in CPU_MAP)
+cpu = Gr(
+    Kw("cpu").set_parse_action(ignore) + pp.MatchFirst(Kw(name) for name in CPU_MAP)
 )
-input = (KW("input") + posinteger + string[0, 1]).set_parse_action(
-    lambda t: [InputReq(address=t[1], help=t[2] if len(t) > 2 else None)]
+HELP_NO = 2
+input_d = (Kw("input") + posinteger + string[0, 1]).set_parse_action(
+    lambda t: [InputReq(address=t[1], help=t[HELP_NO] if len(t) > HELP_NO else None)]
 )
-output = (KW("output") + posinteger + string[0, 1]).set_parse_action(
-    lambda t: [OutputReq(address=t[1], help=t[2] if len(t) > 2 else None)]
+output = (Kw("output") + posinteger + string[0, 1]).set_parse_action(
+    lambda t: [OutputReq(address=t[1], help=t[HELP_NO] if len(t) > HELP_NO else None)]
 )
-stdin = G(KW("stdin").set_parse_action(ignore) + integer[1, ...])("stdin")
+stdin = Gr(Kw("stdin").set_parse_action(ignore) + integer[1, ...])("stdin")
 
-code = G(
-    KW("code").set_parse_action(ignore)
-    + newline
-    + (W(hexnums) | newline)[1, ...].set_parse_action(lambda t: ["".join(t)])
+code = Gr(
+    Kw("code").set_parse_action(ignore)
+    + nl
+    + (Wd(hexnums) | nl)[1, ...].set_parse_action(lambda t: ["".join(t)])
 )("code")
 
-directive = input | output | stdin
-language = cpu + newline + pp.DelimitedList(directive, "\n") + newline + code
+directive = input_d | output | stdin
+directive_list = (pp.DelimitedList(directive, "\n") + nl) | ""
+language = cpu + nl + directive_list + code
 
 
 def source(inp: str) -> Cpu:
