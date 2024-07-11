@@ -4,7 +4,7 @@ import argparse
 import inspect
 import sys
 from dataclasses import dataclass
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import pyparsing as pp
 from pyparsing import CaselessLiteral as Li
@@ -14,6 +14,11 @@ from pyparsing import Word as Wd
 from modelmachine.__about__ import __version__
 from modelmachine.cpu.source import source
 from modelmachine.ide.debug import debug as ide_debug
+
+if TYPE_CHECKING:
+    from typing import Callable
+
+    from modelmachine.cpu.cpu import Cpu
 
 
 @dataclass
@@ -137,6 +142,26 @@ class Cli:
 cli = Cli(f"Modelmachine {__version__}")
 
 
+def load_cpu(
+    filename: str, *, protect_memory: bool, enter: str | None = None
+) -> Cpu:
+    if filename == "-":
+        source_code = sys.stdin.read()
+    else:
+        with open(filename) as fin:
+            source_code = fin.read()
+
+    if enter is None:
+        return source(source_code, protect_memory=protect_memory)
+    if enter == "-":
+        return source(
+            source_code, protect_memory=protect_memory, enter=sys.stdin
+        )
+
+    with open(enter) as fin:
+        return source(source_code, protect_memory=protect_memory, enter=fin)
+
+
 @cli
 def run(
     *,
@@ -151,31 +176,10 @@ def run(
     enter, -e -- file with input data, disables .enter, '-' for stdin
     """
     if enter == filename == "-":
-        msg = "Cannot set both enter and filename to stdin"
+        msg = "Run cannot set both enter and filename to stdin"
         raise ValueError(msg)
 
-    if filename == "-":
-        source_code = sys.stdin.read()
-    else:
-        with open(filename) as fin:
-            source_code = fin.read()
-
-    if enter is None:
-        cpu = source(source_code, protect_memory=protect_memory)
-    elif enter == "-":
-        cpu = source(
-            source_code,
-            protect_memory=protect_memory,
-            enter=sys.stdin,
-        )
-    else:
-        with open(enter) as fin:
-            cpu = source(
-                source_code,
-                protect_memory=protect_memory,
-                enter=fin,
-            )
-
+    cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
     cpu.control_unit.run()
     if cpu.control_unit.failed:
         return 1
@@ -198,18 +202,11 @@ def debug(
     protect_memory, -m -- halt, if program tries to read dirty memory
     enter, -e -- file with input data, disables .enter, '-' for stdin
     """
-    with open(filename) as fin:
-        source_code = fin.read()
+    if filename == "-":
+        msg = "Debug don't support loading source from stdin"
+        raise NotImplementedError(msg)
 
-    if enter is None:
-        cpu = source(source_code, protect_memory=protect_memory)
-    elif enter == "-":
-        cpu = source(
-            source_code, protect_memory=protect_memory, enter=sys.stdin
-        )
-    else:
-        with open(enter) as fin:
-            cpu = source(source_code, protect_memory=protect_memory, enter=fin)
+    cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
 
     return ide_debug(cpu)
 

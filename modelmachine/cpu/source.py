@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+from io import StringIO
 from typing import TextIO
 
 import pyparsing as pp
@@ -44,7 +44,7 @@ cpu = (kw(".cpu") + cpu_name + nl)("cpu")
 
 inputd = Gr(kw(".input") + posinteger + string[0, 1] + nl)("input")
 output = Gr(kw(".output") + posinteger + string[0, 1] + nl)("output")
-enter = Gr(kw(".enter") + integer[1, ...] + nl)("enter")
+enter = Gr(kw(".enter") + string + nl)("enter")
 
 code = Gr(kw(".code") + nl + (pp.Word(hexnums) | nl)[1, ...])("code")
 
@@ -65,7 +65,7 @@ def source(
 
     input_req: list[IOReq] = []
     output_req: list[IOReq] = []
-    enter_seq: list[int] = []
+    enter_text = ""
     source_code = ""
 
     for directive in result[1:]:
@@ -84,7 +84,7 @@ def source(
                 )
             )
         elif directive.get_name() == "enter":
-            enter_seq.extend(directive)
+            enter_text += f" {directive[0]}"
         elif directive.get_name() == "code":
             if source_code != "":
                 msg = "Double .code directive; should be only one"
@@ -97,19 +97,19 @@ def source(
         msg = "Missed required .code directive"
         raise pp.ParseException(msg)
 
-    if len(enter_seq) > len(input_req):
-        msg = f"Too many values for enter: {input_req}, expected {len(input_req)}"
-        raise pp.ParseException(msg)
-
-    if enter is not None:
-        enter_seq = []
+    close_enter = False
+    if enter is None:
+        close_enter = True
+        enter = StringIO(enter_text)
 
     cpu.load_program(
         code=source_code,
         input_req=input_req,
         output_req=output_req,
-        enter=enter_seq,
-        file=enter or sys.stdin,
+        file=enter,
     )
+
+    if close_enter:
+        enter.close()
 
     return cpu

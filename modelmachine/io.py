@@ -46,7 +46,6 @@ class InputOutputUnit:
         self,
         *,
         address: int,
-        value: int | None = None,
         message: str | None = None,
         file: TextIO = sys.stdin,
     ) -> None:
@@ -62,6 +61,7 @@ class InputOutputUnit:
         if message is None:
             message = f"Ram[{addr}]"
 
+        value: int | None = None
         while value is None:
             try:
                 value_str = prompt(f"{message} = ", file=file)

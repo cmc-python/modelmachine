@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from itertools import zip_longest
 from typing import TYPE_CHECKING
 
 from modelmachine.alu import ArithmeticLogicUnit
@@ -86,18 +85,14 @@ class Cpu:
         code: str,
         input_req: Sequence[IOReq],
         output_req: Sequence[IOReq],
-        enter: Sequence[int],
         file: TextIO = sys.stdin,
     ) -> None:
         self._io_unit.load_source(code)
         self._output_req = output_req
 
-        for req, value in zip_longest(input_req, enter):
+        for req in input_req:
             self._io_unit.input(
-                address=req.address,
-                message=req.message,
-                value=value,
-                file=file,
+                address=req.address, message=req.message, file=file
             )
 
     def print_result(self, file: TextIO = sys.stdout) -> None:

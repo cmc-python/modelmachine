@@ -33,16 +33,21 @@ class TestIODevice:
 
     def test_input(self) -> None:
         """Test load data by addresses."""
-        self.io_unit.input(address=10, message="Slot 10", value=-123)
+        with io.StringIO("-123") as fin:
+            self.io_unit.input(address=10, message="Slot 10", file=fin)
         self.ram.put.assert_called_once_with(
             address=Cell(10, bits=AB), value=Cell(-123, bits=WB)
         )
 
-        with pytest.raises(ValueError, match="Unexpected address for input"):
-            self.io_unit.input(address=0xFF)
+        with io.StringIO("-123") as fin, pytest.raises(
+            ValueError, match="Unexpected address for input"
+        ):
+            self.io_unit.input(address=0xFF, file=fin)
 
-        with pytest.raises(ValueError, match="Input value is too long"):
-            self.io_unit.input(address=0x1, value=0xFFFFFFFFFF)
+        with io.StringIO("0xFFFFFFFFFF") as fin, pytest.raises(
+            ValueError, match="Cannot parse integer"
+        ):
+            self.io_unit.input(address=10, file=fin)
 
     def test_load_source(self) -> None:
         """Test loading from string."""
