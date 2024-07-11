@@ -203,7 +203,7 @@ def debug(
     enter, -e -- file with input data, disables .enter, '-' for stdin
     """
     if filename == "-":
-        msg = "Debug don't support loading source from stdin"
+        msg = "Debug doesn't support loading source from stdin"
         raise NotImplementedError(msg)
 
     cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
