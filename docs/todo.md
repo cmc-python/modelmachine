@@ -1,6 +1,7 @@
 # TODO
 
 ## IDE
+- Several .code directives
 - Add graphics with prompt_toolkit
 - Reverse step
 - Show memory
@@ -9,7 +10,3 @@
 - Edit memory inside ide
 - Disasm
 - Breakpoints
-
-## Codebase
-- typing
-- mypy
