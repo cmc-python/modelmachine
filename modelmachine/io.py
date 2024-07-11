@@ -63,18 +63,18 @@ class InputOutputUnit:
             message = f"Ram[{addr}]"
 
         while value is None:
-            value_str = prompt(f"{message} = ", file=file)
             try:
+                value_str = prompt(f"{message} = ", file=file)
                 value = self._check_word(int(value_str, 0))
-            except ValueError:
+
+            except ValueError as e:
                 print_exc()
-                printf(f"Cannot parse integer '{value_str}', please repeat")
+                msg = f"Cannot parse integer '{value_str}', please repeat"
+                if file.isatty():
+                    printf(msg, file=sys.stderr)
+                else:
+                    raise ValueError(msg) from e
 
-            if not sys.stdin.isatty():
-                break
-
-        if value is None:
-            sys.exit(1)
         self._check_word(value)
 
         self.ram.put(

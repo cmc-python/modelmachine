@@ -106,8 +106,14 @@ class Cli:
                         )
                     else:
                         raise NotImplementedError
+                elif arg.annotation == "str | None":
+                    assert arg.default is None
+                    cmd.add_argument(
+                        *short, f"--{cli_key}", help=p.help, dest=key
+                    )
                 else:
-                    raise NotImplementedError
+                    msg = f"{arg.annotation} is not implemented"
+                    raise NotImplementedError(msg)
 
         def g(args: argparse.Namespace) -> int:
             argv = {}
@@ -136,26 +142,38 @@ def run(
     *,
     filename: str,
     protect_memory: bool = False,
-    enter_is_stdin: bool = False,
+    enter: str | None = None,
 ) -> int:
     """Run program.
 
     filename -- file containing machine code, '-' for stdin
     protect_memory, -m -- halt, if program tries to read dirty memory
-    enter_is_stdin, -e -- disables .enter directive
+    enter, -e -- file with input data, disables .enter, '-' for stdin
     """
-    if enter_is_stdin and filename == "-":
-        msg = "Cannot set both enter_is_stdin and filename is stdin"
+    if enter == filename == "-":
+        msg = "Cannot set both enter and filename to stdin"
         raise ValueError(msg)
 
     if filename == "-":
-        cpu = source(sys.stdin.read())
+        source_code = sys.stdin.read()
     else:
         with open(filename) as fin:
+            source_code = fin.read()
+
+    if enter is None:
+        cpu = source(source_code, protect_memory=protect_memory)
+    elif enter == "-":
+        cpu = source(
+            source_code,
+            protect_memory=protect_memory,
+            enter=sys.stdin,
+        )
+    else:
+        with open(enter) as fin:
             cpu = source(
-                fin.read(),
+                source_code,
                 protect_memory=protect_memory,
-                enter_is_stdin=enter_is_stdin,
+                enter=fin,
             )
 
     cpu.control_unit.run()
@@ -172,20 +190,26 @@ def debug(
     *,
     filename: str,
     protect_memory: bool = False,
-    enter_is_stdin: bool = False,
+    enter: str | None = None,
 ) -> int:
     """Debug the program.
 
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
-    enter_is_stdin, -e -- disables .enter directive
+    enter, -e -- file with input data, disables .enter, '-' for stdin
     """
     with open(filename) as fin:
+        source_code = fin.read()
+
+    if enter is None:
+        cpu = source(source_code, protect_memory=protect_memory)
+    elif enter == "-":
         cpu = source(
-            fin.read(),
-            protect_memory=protect_memory,
-            enter_is_stdin=enter_is_stdin,
+            source_code, protect_memory=protect_memory, enter=sys.stdin
         )
+    else:
+        with open(enter) as fin:
+            cpu = source(source_code, protect_memory=protect_memory, enter=fin)
 
     return ide_debug(cpu)
 

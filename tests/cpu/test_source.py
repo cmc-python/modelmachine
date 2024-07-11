@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pytest
 from pyparsing import ParseException
 
@@ -41,6 +43,30 @@ def test_source() -> None:
     assert cpu.ram.fetch(address=Cell(8, bits=AB), bits=WB) == 0x990000
     assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == -123
     assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 64
+
+
+def test_enter() -> None:
+    with StringIO("  10 20") as fin:
+        cpu = source(example, enter=fin)
+
+    assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == 10
+    assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 20
+
+
+def test_repeat_enter() -> None:
+    with StringIO("hello\n10\n20") as fin:
+        fin.isatty = lambda: True  # type: ignore[method-assign]
+        cpu = source(example, enter=fin)
+
+    assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == 10
+    assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 20
+
+
+def test_wrong_enter() -> None:
+    with StringIO("hello\n12100") as fin, pytest.raises(
+        ValueError, match="Cannot parse integer"
+    ):
+        source(example, enter=fin)
 
 
 def test_missed_cpu() -> None:

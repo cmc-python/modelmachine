@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 from enum import IntEnum
 from traceback import print_exc
@@ -187,6 +188,14 @@ class Ide:
         return CommandResult.NEED_HELP
 
     def run(self) -> int:
+        if not (
+            sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()
+        ):
+            msg = (
+                "Debug should be run from console; found io stream redirection"
+            )
+            raise ValueError(msg)
+
         printf("Welcome to interactive debug mode.")
 
         session: PromptSession[str] = PromptSession()
@@ -200,6 +209,7 @@ class Ide:
                 command = session.prompt("> ").split()
             except EOFError:
                 printf("quit")
+                command = ["q"]
 
             try:
                 with warnings.catch_warnings(record=True) as warns:

@@ -159,6 +159,29 @@ class TestControlUnitM:
             Status.HALTED if flags is Flags.HALT else Status.RUNNING
         )
 
+    def test_write_to_r0(
+        self,
+    ) -> None:
+        self.ram.put(
+            address=Cell(0x00, bits=AB),
+            value=Cell(
+                (int(Opcode.addr) << 2 * RB + AB) | 0x00020, bits=2 * AB
+            ),
+        )
+
+        self.control_unit.step()
+        assert self.registers[RegisterName.R0] == 0
+
+        self.ram.put(
+            address=Cell(0x02, bits=AB),
+            value=Cell((int(Opcode.rsdiv) << 2 * RB) | 0xF1, bits=AB),
+        )
+        self.registers[RegisterName.RF] = Cell(123, bits=self.OPERAND_BITS)
+        self.registers[RegisterName.R1] = Cell(10, bits=self.OPERAND_BITS)
+        self.control_unit.step()
+        assert self.registers[RegisterName.RF] == 12
+        assert self.registers[RegisterName.R0] == 0
+
     @pytest.mark.parametrize(
         ("opcode", "a", "b", "s", "res", "flags"),
         [

@@ -48,17 +48,16 @@ enter = Gr(kw(".enter") + integer[1, ...] + nl)("enter")
 
 code = Gr(kw(".code") + nl + (pp.Word(hexnums) | nl)[1, ...])("code")
 
-directive = inputd | output | enter | code
+directive = inputd | output | enter
 directive_list = directive[0, ...]
-language = cpu + directive_list
+language = cpu + directive_list + code + directive_list
 
 
 def source(
     inp: str,
     *,
     protect_memory: bool = True,
-    enter_is_stdin: bool = False,
-    file: TextIO = sys.stdin,
+    enter: TextIO | None = None,
 ) -> Cpu:
     inp = remove_comment_and_empty_lines(inp)
     result = language.parse_string(inp, parse_all=True)
@@ -66,7 +65,7 @@ def source(
 
     input_req: list[IOReq] = []
     output_req: list[IOReq] = []
-    enter: list[int] = []
+    enter_seq: list[int] = []
     source_code = ""
 
     for directive in result[1:]:
@@ -85,7 +84,7 @@ def source(
                 )
             )
         elif directive.get_name() == "enter":
-            enter.extend(directive)
+            enter_seq.extend(directive)
         elif directive.get_name() == "code":
             if source_code != "":
                 msg = "Double .code directive; should be only one"
@@ -98,19 +97,19 @@ def source(
         msg = "Missed required .code directive"
         raise pp.ParseException(msg)
 
-    if len(enter) > len(input_req):
+    if len(enter_seq) > len(input_req):
         msg = f"Too many values for enter: {input_req}, expected {len(input_req)}"
         raise pp.ParseException(msg)
 
-    if enter_is_stdin:
-        enter = []
+    if enter is not None:
+        enter_seq = []
 
     cpu.load_program(
         code=source_code,
         input_req=input_req,
         output_req=output_req,
-        enter=enter,
-        file=file,
+        enter=enter_seq,
+        file=enter or sys.stdin,
     )
 
     return cpu

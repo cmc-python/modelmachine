@@ -25,8 +25,23 @@ def printf(out: str, *, file: TextIO = sys.stdout) -> None:
         print(out, file=file)
 
 
+def read_word(file: TextIO) -> str:
+    res = ""
+    while c := file.read(1):
+        if not c.isspace():
+            res += c
+            break
+
+    while c := file.read(1):
+        if c.isspace():
+            break
+        res += c
+
+    return res
+
+
 def prompt(inp: str, *, file: TextIO = sys.stdin) -> str:
     if file.isatty() and file is sys.stdin:
         return pprompt(ANSI(inp))
 
-    return file.readline()
+    return read_word(file)

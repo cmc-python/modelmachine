@@ -1,341 +1,156 @@
 """Test case for complex CPU."""
 
-# from unittest.mock import create_autospec
-#
-# import pytest
-#
-# from modelmachine.alu import ArithmeticLogicUnit
-# from modelmachine.cpu import (
-#     CPUMM1,
-#     CPUMM2,
-#     CPUMM3,
-#     CPUMMM,
-#     CPUMMV,
-#     AbstractCPU,
-# )
-# from modelmachine.cu import AbstractControlUnit
-# from modelmachine.io import InputOutputUnit
-# from modelmachine.memory import RandomAccessMemory, RegisterMemory
-#
-#
-# class TestAbstractCPU:
-#     """Test case for Abstract CPU."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state and mock."""
-#         self.cpu = AbstractCPU()
-#         self.cpu.memory = create_autospec(RandomAccessMemory, True, True)
-#         self.cpu.registers = create_autospec(RegisterMemory, True, True)
-#         self.cpu.alu = create_autospec(ArithmeticLogicUnit, True, True)
-#         self.cpu.control_unit = create_autospec(
-#             AbstractControlUnit, True, True
-#         )
-#         self.cpu.io_unit = create_autospec(InputOutputUnit, True, True)
-#         self.cpu.io_unit.get_int.return_value = 789
-#         self.source = [
-#             "[config]",  # 0
-#             "arch = mm1",  # 1
-#             "input  =0o100, 0x101, 102   \n",  # 2
-#             "output=   102\n\n",  # 3
-#             "key=value",  # 4
-#             "[code]",  # 5
-#             "00 00; comment",  # 6
-#             "99 00",  # 7
-#             "[input]",  # 8
-#             "0o123 0x456",  # 9
-#             "789",
-#         ]  # 10
-#
-#     def test_load_program(self):
-#         """Test load all program."""
-#         self.cpu.load_program(self.source)
-#         assert self.cpu.config == {
-#             "arch": "mm1",
-#             "input": "0o100, 0x101, 102",
-#             "output": "102",
-#             "key": "value",
-#         }
-#         self.cpu.io_unit.load_source.assert_called_once_with(
-#             ["00 00", "99 00"]
-#         )
-#         self.cpu.io_unit.load_data.assert_called_once_with(
-#             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
-#         )
-#
-#         source = list(self.source)
-#         source[0] = "wrong_format"
-#         with pytest.raises(
-#             ValueError, match="Cannot find section \\[config\\]"
-#         ):
-#             self.cpu.load_program(source)
-#
-#         source = list(self.source)
-#         source[0] = "[input]"
-#         source[8] = "[config]"
-#         with pytest.raises(
-#             ValueError,
-#             match="Wrong section order, should be: config, code, input",
-#         ):
-#             self.cpu.load_program(source)
-#
-#         source = list(self.source)
-#         source[1] = "wrong_format"
-#         with pytest.raises(
-#             ValueError, match="Wrong config format: `wrong_format`"
-#         ):
-#             self.cpu.load_program(source)
-#
-#         def input_function():
-#             """Mock on input"""
-#             return "0o123 0x456 789"
-#
-#         self.cpu.io_unit.reset_mock()
-#         source = self.source[:9]
-#         self.cpu.load_program(source, input_function=input_function)
-#         assert self.cpu.config == {
-#             "arch": "mm1",
-#             "input": "0o100, 0x101, 102",
-#             "output": "102",
-#             "key": "value",
-#         }
-#         self.cpu.io_unit.load_source.assert_called_once_with(
-#             ["00 00", "99 00"]
-#         )
-#         self.cpu.io_unit.load_data.assert_called_once_with(
-#             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
-#         )
-#
-#         self.cpu.io_unit.reset_mock()
-#         source = self.source[:8]
-#         self.cpu.load_program(source, input_function=input_function)
-#         assert self.cpu.config == {
-#             "arch": "mm1",
-#             "input": "0o100, 0x101, 102",
-#             "output": "102",
-#             "key": "value",
-#         }
-#         self.cpu.io_unit.load_source.assert_called_once_with(
-#             ["00 00", "99 00"]
-#         )
-#         self.cpu.io_unit.load_data.assert_called_once_with(
-#             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
-#         )
-#
-#     def test_print_result(self, tmpdir):
-#         """CPU should print to file."""
-#         self.cpu.load_program(self.source)
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.print_result(output=output)
-#         self.cpu.io_unit.get_int.assert_called_once_with(102)
-#         assert out.read() == "789\n"
-#
-#     def test_run(self, tmpdir):
-#         """Send run message to control unit."""
-#         self.cpu.load_program(self.source)
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert self.cpu.config == {
-#             "arch": "mm1",
-#             "input": "0o100, 0x101, 102",
-#             "output": "102",
-#             "key": "value",
-#         }
-#         self.cpu.io_unit.load_source.assert_called_once_with(
-#             ["00 00", "99 00"]
-#         )
-#         self.cpu.io_unit.load_data.assert_called_once_with(
-#             [0o100, 0x101, 102], ["0o123", "0x456", "789"]
-#         )
-#         self.cpu.control_unit.run.assert_called_with()
-#         self.cpu.io_unit.get_int.assert_called_once_with(102)
-#         assert out.read() == "789\n"
-#
-#
-# class TestCPUMM3:
-#     """Smoke test for mm-3."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state."""
-#         self.cpu = CPUMM3(protect_memory=False)
-#         self.source = """
-#             [config]
-#             input=0x101,0x102
-#             output=0x103
-#
-#             [code]
-#             01 0101 0102 0103
-#             80 0000 0000 0003
-#             02 0103 0103 0103; never be used
-#             02 0103 0005 0103
-#             99 0000 0000 0000
-#             00000000000002
-#
-#             [input]
-#             100 200
-#         """
-#
-#     def test_smoke(self, tmpdir):
-#         """Smoke test."""
-#         self.cpu.load_program(self.source.split("\n"))
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert out.read() == "298\n"
-#
-#
-# class TestCPUMM2:
-#     """Smoke test for mm-2."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state."""
-#         self.cpu = CPUMM2(protect_memory=False)
-#         self.source = """
-#             [config]
-#             input=0x101,0x102
-#             output=0x103
-#             [code]
-#             01 0101 0102
-#             00 0103 0101
-#             05 0101 0102
-#             86 0000 0005
-#             02 0103 0103; never be used
-#             02 0103 0007
-#             99 0000 0000
-#             0000000002
-#             [input]
-#             100 200
-#         """
-#
-#     def test_smoke(self, tmpdir):
-#         """Smoke test."""
-#         self.cpu.load_program(self.source.split("\n"))
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert out.read() == "298\n"
-#
-#
-# class TestCPUMMV:
-#     """Smoke test for mm-v."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state."""
-#         self.cpu = CPUMMV(protect_memory=False)
-#         self.source = """
-#             [config]
-#             input=0x100,0x105
-#             output=0x10a
-#             [code]
-#             01 0100 0105
-#             00 010a 0100
-#             05 0100 0105
-#             86 0017
-#             02 0103 0103; never be used
-#             02 010a 001d
-#             99
-#             0000000002
-#             [input]
-#             100 200
-#         """
-#
-#     def test_smoke(self, tmpdir):
-#         """Smoke test."""
-#         self.cpu.load_program(self.source.split("\n"))
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert out.read() == "298\n"
-#
-#
-# class TestCPUMM1:
-#     """Smoke test for mm-1."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state."""
-#         self.cpu = CPUMM1(protect_memory=False)
-#         self.source = """
-#             [config]
-#             input=0x101,0x102
-#             output=0x103
-#             [code]
-#             00 0101
-#             01 0102
-#             05 0102
-#             86 0006
-#             02 0103; never be used
-#             10 0103
-#             02 0009
-#             10 0103
-#             99 0000
-#             000002
-#             [input]
-#             100 200
-#         """
-#
-#     def test_smoke(self, tmpdir):
-#         """Smoke test."""
-#         self.cpu.load_program(self.source.split("\n"))
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert out.read() == "298\n"
-#
-#
-# class TestCPUMMM:
-#     """Smoke test for mm-m."""
-#
-#     cpu = None
-#     source = None
-#
-#     def setup_method(self):
-#         """Init state."""
-#         self.cpu = CPUMMM(protect_memory=False)
-#         self.source = """
-#             [config]
-#             input=0x100,0x102
-#             output=0x104
-#             [code]
-#             00 0 0 0100
-#             03 0 0 000C
-#             04 0 0 000E
-#             02 1 0 0102
-#             23 1 1; coment never be used
-#             10 1 0 0104
-#             99 0 0
-#             ; -----------
-#             ffffffeb
-#             00000032
-#             [input]
-#             100 200
-#         """
-#
-#     def test_smoke(self, tmpdir):
-#         """Smoke test."""
-#         self.cpu.load_program(self.source.split("\n"))
-#         out = tmpdir.join("output.txt")
-#         with open(str(out), "w") as output:
-#             self.cpu.run(output=output)
-#
-#         assert out.read() == "40000\n"
+from io import StringIO
+
+import pytest
+
+from modelmachine.cpu.source import source
+from modelmachine.cu.status import Status
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        """
+        .cpu mm-3
+
+        .input 0x100 a
+        .input 0x101 b
+        .output 0x103 x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        03 0100 0005 0103 ; x := a * -21
+        04 0103 0006 0102 ; [0102] := x / 50, x := x % 50
+        02 0103 0101 0103 ; x := x - b
+        03 0103 0103 0103 ; x := x * x
+        99 0000 0000 0000 ; halt
+        ; ---------------------
+        FFFFFFFFFFFFEB ; -21
+        00000000000032 ; 50
+
+        .enter -123 456
+        """,
+        """
+        .cpu mm-2
+
+        .input 0x100 a
+        .input 0x101 b
+        .enter -123 456
+        .output 0x103 x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        00 0102 0100 ; [102] := a
+        03 0102 0006 ; [102] := a * -21
+        04 0102 0007 ; [102] := [102] / 50, [103] := [102] % 50
+        02 0103 0101 ; [103] := [103] - b
+        03 0103 0103 ; [103] := [103] * [103]
+        99 0000 0000 ; halt
+        ; ---------------------
+        FFFFFFFFEB ; -21
+        0000000032 ; 50
+        """,
+        """
+        .cpu mm-1
+
+        .input 0x100 a
+        .input 0x101 b
+        .output 0x102 x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        00 0100 ; S := a
+        03 0009 ; S := S * -21
+        04 000a ; S := S / 50, S1 := S % 50
+        20 0000 ; S := S1, S1 := S
+        02 0101 ; S := S - b
+        10 0102 ; x := S
+        03 0102 ; S := S * x
+        10 0102 ; x := S
+        99 0000 ; halt
+        ; ---------------------
+        FFFFEB ; -21
+        000032 ; 50
+
+        .enter -123 456
+        """,
+        """
+        .cpu mm-v
+
+        .input 0x100 a
+        .input 0x105 b
+        .output 0x10f x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        00 010a 0100 ; [10a] := a
+        03 010a 001a ; [10a] := a * -21
+        04 010a 001f ; [10a] := [10a] / 50, x := [10a] % 50
+        02 010f 0105 ; x := x - b
+        03 010f 010f ; x := x * x
+        99 ; halt
+        ; ---------------------
+        FFFFFFFFEB ; -21
+        0000000032 ; 50
+
+        .enter -123 456
+        """,
+        """
+        .cpu mm-r
+
+        .input 0x100 a
+        .input 0x102 b
+        .output 0x104 x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        00 1 0 0100 ; R1 := a
+        03 1 0 000C ; R1 := a * -21
+        04 1 0 000E ; R1 := (a * -21) / 50, R1 := x = (a * -21) % 50
+        02 2 0 0102 ; R2 := x - b
+        23 2 2 ; R2 := R2 * R2
+        10 2 0 0104 ; [0104] := R2
+        99 0 0 ; halt
+        ; ---------------------
+        FFFFFFEB ; -21
+        00000032 ; 50
+
+        .enter -123 456""",
+        """
+        .cpu mm-m
+
+        .input 0x100 a
+        .input 0x102 b
+        .output 0x104 x
+
+        .code
+        ; x = ((a * -21) % 50 - b) ** 2 == 178929
+        00 1 0 0100 ; R1 := a
+        03 1 0 000C ; R1 := a * -21
+        04 1 0 000E ; R1 := (a * -21) / 50, R1 := x = (a * -21) % 50
+        02 2 0 0102 ; R2 := x - b
+        23 2 2 ; R2 := R2 * R2
+        10 2 0 0104 ; [0104] := R2
+        99 0 0 ; halt
+        ; ---------------------
+        FFFFFFEB ; -21
+        00000032 ; 50
+
+        .enter -123 456
+        """,
+    ],
+)
+def test_smoke(code: str) -> None:
+    cpu = source(code)
+
+    cpu.control_unit.run()
+    assert cpu.control_unit.status is Status.HALTED
+    with StringIO() as fout:
+        cpu.print_result(file=fout)
+        assert fout.getvalue() == "178929\n"
+
+    with StringIO() as fout:
+        fout.isatty = lambda: True  # type: ignore[method-assign]
+        cpu.print_result(file=fout)
+        assert "x = 178929" in fout.getvalue()
