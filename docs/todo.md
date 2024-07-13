@@ -2,6 +2,7 @@
 
 ## IDE
 - Several .code directives
+- More using of ADDR register
 - Add graphics with prompt_toolkit
 - Reverse step
 - Show memory
