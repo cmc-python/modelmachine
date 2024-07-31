@@ -15,7 +15,10 @@ class ControlUnitM(ControlUnitR):
     @property
     def _address(self) -> Cell:
         address = self._ir[: self._ram.address_bits]
-        modifier = self._registers[self._ry][: self._ram.address_bits]
+        if self._ry == RegisterName.R0:
+            modifier = Cell(0, bits=self._ram.address_bits)
+        else:
+            modifier = self._registers[self._ry][: self._ram.address_bits]
         return address + modifier
 
     def _decode(self) -> None:

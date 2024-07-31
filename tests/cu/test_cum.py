@@ -159,29 +159,6 @@ class TestControlUnitM:
             Status.HALTED if flags is Flags.HALT else Status.RUNNING
         )
 
-    def test_write_to_r0(
-        self,
-    ) -> None:
-        self.ram.put(
-            address=Cell(0x00, bits=AB),
-            value=Cell(
-                (int(Opcode.addr) << 2 * RB + AB) | 0x00020, bits=2 * AB
-            ),
-        )
-
-        self.control_unit.step()
-        assert self.registers[RegisterName.R0] == 0
-
-        self.ram.put(
-            address=Cell(0x02, bits=AB),
-            value=Cell((int(Opcode.rsdiv) << 2 * RB) | 0xF1, bits=AB),
-        )
-        self.registers[RegisterName.RF] = Cell(123, bits=self.OPERAND_BITS)
-        self.registers[RegisterName.R1] = Cell(10, bits=self.OPERAND_BITS)
-        self.control_unit.step()
-        assert self.registers[RegisterName.RF] == 12
-        assert self.registers[RegisterName.R0] == 0
-
     @pytest.mark.parametrize(
         ("opcode", "a", "b", "s", "res", "flags"),
         [
@@ -383,6 +360,26 @@ class TestControlUnitM:
         assert self.registers[RegisterName.PC] == 0
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
         assert self.control_unit.status is Status.HALTED
+
+    def test_zero_register(self) -> None:
+        self.ram.put(
+            address=Cell(0x0, bits=AB),
+            value=Cell(0x00000010, bits=2 * AB),  # load R0, [0x10]
+        )
+        self.ram.put(
+            address=Cell(0x10, bits=AB),
+            value=Cell(0x00000020, bits=2 * AB),
+        )
+
+        self.control_unit.step()
+        assert self.registers[RegisterName.R0] == 0x20
+
+        self.ram.put(
+            address=Cell(0x2, bits=AB),
+            value=Cell(0x01000010, bits=2 * AB),  # add R0, [0x10]
+        )
+        self.control_unit.step()
+        assert self.registers[RegisterName.R0] == 0x40
 
     def test_smoke(self) -> None:
         """Simple program."""

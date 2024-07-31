@@ -362,6 +362,26 @@ class TestControlUnitR:
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
         assert self.control_unit.status is Status.HALTED
 
+    def test_zero_register(self) -> None:
+        self.ram.put(
+            address=Cell(0x0, bits=AB),
+            value=Cell(0x00000010, bits=2 * AB),  # load R0, [0x10]
+        )
+        self.ram.put(
+            address=Cell(0x10, bits=AB),
+            value=Cell(0x00000020, bits=2 * AB),
+        )
+
+        self.control_unit.step()
+        assert self.registers[RegisterName.R0] == 0x20
+
+        self.ram.put(
+            address=Cell(0x2, bits=AB),
+            value=Cell(0x01000010, bits=2 * AB),  # add R0, [0x10]
+        )
+        self.control_unit.step()
+        assert self.registers[RegisterName.R0] == 0x40
+
     def test_smoke(self) -> None:
         """Simple program."""
         self.ram.put(

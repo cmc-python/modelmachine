@@ -203,10 +203,10 @@ class ControlUnitR(ControlUnit):
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode in self.WB_R1 and self._rx != RegisterName.R0:
+        if self._opcode in self.WB_R1:
             self._registers[self._rx] = self._registers[RegisterName.S]
 
-        if self._opcode in self._WB_R_NEXT and self._r_next != RegisterName.R0:
+        if self._opcode in self._WB_R_NEXT:
             self._registers[self._r_next] = self._registers[RegisterName.S1]
 
         if self._opcode is Opcode.store:
