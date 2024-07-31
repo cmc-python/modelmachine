@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Final, Self
+    from typing import Final
+
+    from typing_extensions import Self
 
 
 class Endianess(IntEnum):
