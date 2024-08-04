@@ -46,11 +46,13 @@ inputd = Gr(kw(".input") + posinteger + string[0, 1] + nl)("input")
 output = Gr(kw(".output") + posinteger + string[0, 1] + nl)("output")
 enter = Gr(kw(".enter") + string + nl)("enter")
 
-code = Gr(kw(".code") + nl + (pp.Word(hexnums) | nl)[1, ...])("code")
+code = Gr(
+    kw(".code") + Gr(posinteger[0, 1]) + nl + (pp.Word(hexnums) | nl)[1, ...]
+)("code")
 
-directive = inputd | output | enter
+directive = inputd | output | enter | code
 directive_list = directive[0, ...]
-language = cpu + directive_list + code + directive_list
+language = cpu + directive_list
 
 
 def source(
@@ -66,7 +68,7 @@ def source(
     input_req: list[IOReq] = []
     output_req: list[IOReq] = []
     enter_text = ""
-    source_code = ""
+    source_code: list[tuple[int, str]] = []
 
     for directive in result[1:]:
         if directive.get_name() == "input":
@@ -86,14 +88,13 @@ def source(
         elif directive.get_name() == "enter":
             enter_text += f" {directive[0]}"
         elif directive.get_name() == "code":
-            if source_code != "":
-                msg = "Double .code directive; should be only one"
-                raise pp.ParseException(msg)
-            source_code = "".join(directive)
+            address_group = directive[0]
+            address = address_group[0] if address_group else 0
+            source_code.append((address, "".join(directive[1:])))
         else:
             raise NotImplementedError
 
-    if source_code == "":
+    if not source_code:
         msg = "Missed required .code directive"
         raise pp.ParseException(msg)
 

@@ -125,33 +125,42 @@ class InputOutputUnit:
             for i in range(start, end)
         )
 
-    def load_source(self, source: str) -> None:
+    def load_source(self, source_list: list[tuple[int, str]]) -> None:
         """Source code loader."""
 
-        for c in source:
-            if c not in ACCEPTED_CHARS:
-                msg = f"Unexpected source: {source}, expected hex code"
+        for load_address, source in source_list:
+            for c in source:
+                if c not in ACCEPTED_CHARS:
+                    msg = f"Unexpected source: {source}, expected hex code"
+                    raise ValueError(msg)
+
+            word_hex = self.ram.word_bits // 4
+
+            if len(source) % word_hex != 0:
+                msg = (
+                    f"Unexpected length of source code: {len(source)}"
+                    f" hex should be divided by ram word size={word_hex}"
+                )
                 raise ValueError(msg)
 
-        word_hex = self.ram.word_bits // 4
+            if len(source) // word_hex > self.ram.memory_size:
+                msg = (
+                    f"Too long source code: {len(source)}"
+                    f" hex should be less than ram words={self.ram.memory_size}"
+                )
+                raise ValueError(msg)
 
-        if len(source) % word_hex != 0:
-            msg = (
-                f"Unexpected length of source code: {len(source)}"
-                f" hex should be divided by ram word size={word_hex}"
-            )
-            raise ValueError(msg)
+            for i in range(0, len(source), word_hex):
+                address = Cell(
+                    load_address + i // word_hex, bits=self.ram.address_bits
+                )
 
-        if len(source) // word_hex > self.ram.memory_size:
-            msg = (
-                f"Too long source code: {len(source)}"
-                f" hex should be less than ram words={self.ram.memory_size}"
-            )
-            raise ValueError(msg)
+                if self.ram.is_fill(address):
+                    msg = f".code directives overlaps at address {address}"
+                    raise ValueError(msg)
 
-        for i in range(0, len(source), word_hex):
-            self.ram.put(
-                address=Cell(i // word_hex, bits=self.ram.address_bits),
-                value=Cell.from_hex(source[i : i + word_hex]),
-                from_cpu=False,
-            )
+                self.ram.put(
+                    address=address,
+                    value=Cell.from_hex(source[i : i + word_hex]),
+                    from_cpu=False,
+                )

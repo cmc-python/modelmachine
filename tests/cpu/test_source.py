@@ -87,3 +87,9 @@ def test_double_code() -> None:
 def test_enter_too_long() -> None:
     with pytest.raises(ParseException):
         source(".cpu mm-1\n.input 0x100\n.enter 10 20\n.code 99 0000")
+
+
+def test_several_code() -> None:
+    cpu = source(".cpu mm-1\n.code\n01 1234\n.code 0x100\n02 1234")
+    assert cpu.ram.fetch(Cell(0, bits=AB), bits=WB) == 0x011234
+    assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x021234

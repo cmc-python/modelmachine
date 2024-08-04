@@ -82,7 +82,7 @@ class Cpu:
     def load_program(
         self,
         *,
-        code: str,
+        code: list[tuple[int, str]],
         input_req: Sequence[IOReq],
         output_req: Sequence[IOReq],
         file: TextIO = sys.stdin,

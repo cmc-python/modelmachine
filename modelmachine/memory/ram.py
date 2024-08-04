@@ -133,6 +133,9 @@ class RandomAccessMemory:
             endianess=self.endianess,
         )
 
+    def is_fill(self, address: Cell) -> bool:
+        return bool(self._fill[address.unsigned])
+
     def put(
         self, *, address: Cell, value: Cell, from_cpu: bool = True
     ) -> None:
