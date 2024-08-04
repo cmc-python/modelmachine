@@ -175,7 +175,15 @@ class ControlUnit:
         raise NotImplementedError
 
     _CU_ABS_EXEC_NOP: Final[frozenset[Opcode]] = frozenset(
-        {Opcode.move, Opcode.load, Opcode.store, Opcode.addr}
+        {
+            Opcode.move,
+            Opcode.load,
+            Opcode.store,
+            Opcode.addr,
+            Opcode.push,
+            Opcode.pop,
+            Opcode.dup,
+        }
     )
 
     def _execute(self) -> None:

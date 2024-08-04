@@ -236,7 +236,7 @@ class ArithmeticLogicUnit:
         )
 
     def swap(self) -> None:
-        """S := R1."""
+        """S, RES := RES, S."""
         s = self._registers[self.alu_registers.S]
         res = self._registers[self.alu_registers.RES]
 

@@ -48,10 +48,10 @@ class ControlUnitV(ControlUnit):
     def _fetch(self, *, instruction_bits: int | None = None) -> None:
         """Fetch 2 addresses."""
         assert instruction_bits is None
-        instruction_pointer = self._registers[RegisterName.PC]
+        program_counter = self._registers[RegisterName.PC]
         word = self._ram.fetch(
-            address=instruction_pointer, bits=self._ram.word_bits
-        )[-OPCODE_BITS:].unsigned
+            address=program_counter, bits=self._ram.word_bits
+        ).unsigned
 
         try:
             opcode = Opcode(word)

@@ -22,11 +22,10 @@ class Opcode(IntEnum):
     rcomp = 0x25
     rumul = 0x33
     rudiv = 0x34
-    # Reserved
-    # stpush = 0x5A
-    # stpop = 0x5B
-    # stdup = 0x5C
-    # stswap = 0x5D
+    push = 0x5A
+    pop = 0x5B
+    dup = 0x5C
+    sswap = 0x5D
     jump = 0x80
     jeq = 0x81
     jneq = 0x82

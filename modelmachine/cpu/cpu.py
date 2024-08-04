@@ -21,6 +21,7 @@ from modelmachine.cu.control_unit_2 import ControlUnit2
 from modelmachine.cu.control_unit_3 import ControlUnit3
 from modelmachine.cu.control_unit_m import ControlUnitM
 from modelmachine.cu.control_unit_r import ControlUnitR
+from modelmachine.cu.control_unit_s import ControlUnitS
 from modelmachine.cu.control_unit_v import ControlUnitV
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory.ram import RandomAccessMemory
@@ -111,6 +112,7 @@ CPU_MAP = {
         ControlUnit2,
         ControlUnit3,
         ControlUnitV,
+        ControlUnitS,
         ControlUnitR,
         ControlUnitM,
     )

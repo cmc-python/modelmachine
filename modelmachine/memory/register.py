@@ -19,6 +19,7 @@ class RegisterName(IntEnum):
     PC = 0
     IR = auto()
     ADDR = auto()
+    SP = auto()
     S = auto()
     S1 = auto()
     R = auto()

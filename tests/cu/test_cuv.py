@@ -95,14 +95,14 @@ class TestControlUnitV:
                 assert self.control_unit.status is Status.HALTED
 
     @pytest.mark.parametrize(
-        ("opcode", "o", "a", "b", "s", "res", "pc", "flags"),
+        ("opcode", "o", "a", "b", "s", "res", "flags"),
         [
-            (Opcode.move, 5, 0x41, 0x10, 0x10, 0x88, 0x15, 0),
-            (Opcode.add, 5, 0x41, 0x10, 0x51, 0x88, 0x15, 0),
-            (Opcode.add, 5, 0x10, 0x41, 0x51, 0x88, 0x15, 0),
-            (Opcode.add, 5, 0x41, -0x10, 0x31, 0x88, 0x15, Flags.CF),
-            (Opcode.add, 5, 0x10, -0x41, -0x31, 0x88, 0x15, Flags.SF),
-            (Opcode.add, 5, -1, -1, -2, 0x88, 0x15, Flags.SF | Flags.CF),
+            (Opcode.move, 5, 0x41, 0x10, 0x10, 0x88, 0),
+            (Opcode.add, 5, 0x41, 0x10, 0x51, 0x88, 0),
+            (Opcode.add, 5, 0x10, 0x41, 0x51, 0x88, 0),
+            (Opcode.add, 5, 0x41, -0x10, 0x31, 0x88, Flags.CF),
+            (Opcode.add, 5, 0x10, -0x41, -0x31, 0x88, Flags.SF),
+            (Opcode.add, 5, -1, -1, -2, 0x88, Flags.SF | Flags.CF),
             (
                 Opcode.add,
                 5,
@@ -110,10 +110,9 @@ class TestControlUnitV:
                 0x7FFFFFFFFF,
                 -2,
                 0x88,
-                0x15,
                 Flags.SF | Flags.OF,
             ),
-            (Opcode.sub, 5, 0x41, 0x10, 0x31, 0x88, 0x15, 0),
+            (Opcode.sub, 5, 0x41, 0x10, 0x31, 0x88, 0),
             (
                 Opcode.sub,
                 5,
@@ -121,12 +120,11 @@ class TestControlUnitV:
                 0x41,
                 -0x31,
                 0x88,
-                0x15,
                 Flags.SF | Flags.CF,
             ),
-            (Opcode.sub, 5, 0x41, -0x10, 0x51, 0x88, 0x15, Flags.CF),
-            (Opcode.sub, 5, 0x10, -0x41, 0x51, 0x88, 0x15, Flags.CF),
-            (Opcode.sub, 5, -1, -1, 0, 0x88, 0x15, Flags.ZF),
+            (Opcode.sub, 5, 0x41, -0x10, 0x51, 0x88, Flags.CF),
+            (Opcode.sub, 5, 0x10, -0x41, 0x51, 0x88, Flags.CF),
+            (Opcode.sub, 5, -1, -1, 0, 0x88, Flags.ZF),
             (
                 Opcode.sub,
                 5,
@@ -134,35 +132,33 @@ class TestControlUnitV:
                 0x7FFFFFFFFF,
                 0,
                 0x88,
-                0x15,
                 Flags.ZF,
             ),
-            (Opcode.umul, 5, 0x41, 0x10, 0x410, 0x88, 0x15, 0),
-            (Opcode.umul, 5, 0x10, 0x41, 0x410, 0x88, 0x15, 0),
-            (Opcode.umul, 5, 0x41, 0x0, 0x0, 0x88, 0x15, Flags.ZF),
-            (Opcode.smul, 5, 0x41, 0x10, 0x410, 0x88, 0x15, 0),
-            (Opcode.smul, 5, 0x10, 0x41, 0x410, 0x88, 0x15, 0),
-            (Opcode.smul, 5, 0x41, 0x0, 0x0, 0x88, 0x15, Flags.ZF),
-            (Opcode.smul, 5, -0x41, 0x0, 0x0, 0x88, 0x15, Flags.ZF),
-            (Opcode.smul, 5, -0x41, -0x10, 0x410, 0x88, 0x15, 0),
-            (Opcode.smul, 5, -0x10, -0x41, 0x410, 0x88, 0x15, 0),
-            (Opcode.smul, 5, 0x41, -0x10, -0x410, 0x88, 0x15, Flags.SF),
-            (Opcode.smul, 5, 0x10, -0x41, -0x410, 0x88, 0x15, Flags.SF),
-            (Opcode.smul, 5, -0x41, 0x10, -0x410, 0x88, 0x15, Flags.SF),
-            (Opcode.smul, 5, -0x10, 0x41, -0x410, 0x88, 0x15, Flags.SF),
-            (Opcode.udiv, 5, 0x41, 0x10, 0x4, 0x1, 0x15, 0),
-            (Opcode.udiv, 5, 0x41, 0x0, 0x41, 0x88, 0x15, Flags.HALT),
-            (Opcode.udiv, 5, 0x10, 0x41, 0x0, 0x10, 0x15, Flags.ZF),
-            (Opcode.sdiv, 5, 0x41, 0x10, 0x4, 0x1, 0x15, 0),
-            (Opcode.sdiv, 5, -0x41, 0x10, -0x4, -0x1, 0x15, Flags.SF),
-            (Opcode.sdiv, 5, 0x41, -0x10, -0x4, 0x1, 0x15, Flags.SF),
-            (Opcode.sdiv, 5, -0x41, -0x10, 0x4, -0x1, 0x15, 0),
-            (Opcode.sdiv, 5, 0x10, 0x41, 0x0, 0x10, 0x15, Flags.ZF),
-            (Opcode.sdiv, 5, -0x10, 0x41, 0x0, -0x10, 0x15, Flags.ZF),
-            (Opcode.sdiv, 5, 0x10, -0x41, 0x0, 0x10, 0x15, Flags.ZF),
-            (Opcode.sdiv, 5, -0x10, -0x41, 0x0, -0x10, 0x15, Flags.ZF),
-            (Opcode.jump, 3, 0x41, 0x10, 0x41, 0x88, 0x20, 0),
-            (Opcode.halt, 1, 0x41, 0x10, 0x41, 0x88, 0x11, Flags.HALT),
+            (Opcode.umul, 5, 0x41, 0x10, 0x410, 0x88, 0),
+            (Opcode.umul, 5, 0x10, 0x41, 0x410, 0x88, 0),
+            (Opcode.umul, 5, 0x41, 0x0, 0x0, 0x88, Flags.ZF),
+            (Opcode.smul, 5, 0x41, 0x10, 0x410, 0x88, 0),
+            (Opcode.smul, 5, 0x10, 0x41, 0x410, 0x88, 0),
+            (Opcode.smul, 5, 0x41, 0x0, 0x0, 0x88, Flags.ZF),
+            (Opcode.smul, 5, -0x41, 0x0, 0x0, 0x88, Flags.ZF),
+            (Opcode.smul, 5, -0x41, -0x10, 0x410, 0x88, 0),
+            (Opcode.smul, 5, -0x10, -0x41, 0x410, 0x88, 0),
+            (Opcode.smul, 5, 0x41, -0x10, -0x410, 0x88, Flags.SF),
+            (Opcode.smul, 5, 0x10, -0x41, -0x410, 0x88, Flags.SF),
+            (Opcode.smul, 5, -0x41, 0x10, -0x410, 0x88, Flags.SF),
+            (Opcode.smul, 5, -0x10, 0x41, -0x410, 0x88, Flags.SF),
+            (Opcode.udiv, 5, 0x41, 0x10, 0x4, 0x1, 0),
+            (Opcode.udiv, 5, 0x41, 0x0, 0x41, 0x88, Flags.HALT),
+            (Opcode.udiv, 5, 0x10, 0x41, 0x0, 0x10, Flags.ZF),
+            (Opcode.sdiv, 5, 0x41, 0x10, 0x4, 0x1, 0),
+            (Opcode.sdiv, 5, -0x41, 0x10, -0x4, -0x1, Flags.SF),
+            (Opcode.sdiv, 5, 0x41, -0x10, -0x4, 0x1, Flags.SF),
+            (Opcode.sdiv, 5, -0x41, -0x10, 0x4, -0x1, 0),
+            (Opcode.sdiv, 5, 0x10, 0x41, 0x0, 0x10, Flags.ZF),
+            (Opcode.sdiv, 5, -0x10, 0x41, 0x0, -0x10, Flags.ZF),
+            (Opcode.sdiv, 5, 0x10, -0x41, 0x0, 0x10, Flags.ZF),
+            (Opcode.sdiv, 5, -0x10, -0x41, 0x0, -0x10, Flags.ZF),
+            (Opcode.halt, 1, 0x41, 0x10, 0x41, 0x88, Flags.HALT),
         ],
     )
     def test_step(
@@ -174,11 +170,10 @@ class TestControlUnitV:
         b: int,
         s: int,
         res: int,
-        pc: int,
         flags: int | Flags,
     ) -> None:
         self.run_opcode(opcode=opcode, o=o, a=a, b=b)
-        assert self.registers[RegisterName.PC] == pc
+        assert self.registers[RegisterName.PC] == 0x10 + o
         assert self.registers[RegisterName.FLAGS] == flags
         assert self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == s
         assert (
@@ -187,6 +182,20 @@ class TestControlUnitV:
         assert self.control_unit.status is (
             Status.HALTED if flags is Flags.HALT else Status.RUNNING
         )
+
+    def test_jump(
+        self,
+    ) -> None:
+        self.run_opcode(opcode=Opcode.jump, o=3, a=0x41, b=0x10)
+        assert self.registers[RegisterName.PC] == 0x20
+        assert self.registers[RegisterName.FLAGS] == 0
+        assert (
+            self.ram.fetch(Cell(0x20, bits=AB), bits=self.OPERAND_BITS) == 0x41
+        )
+        assert (
+            self.ram.fetch(Cell(0x25, bits=AB), bits=self.OPERAND_BITS) == 0x88
+        )
+        assert self.control_unit.status is Status.RUNNING
 
     @pytest.mark.parametrize(
         ("a", "b", "eq", "sl", "ul"),

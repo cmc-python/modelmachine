@@ -105,9 +105,9 @@ class ControlUnitR(ControlUnit):
     def _fetch(self, *, instruction_bits: int | None = None) -> None:
         """Fetch operands."""
         assert instruction_bits is None
-        instruction_pointer = self._registers[RegisterName.PC]
+        program_counter = self._registers[RegisterName.PC]
         word = self._ram.fetch(
-            address=instruction_pointer, bits=self._ram.word_bits
+            address=program_counter, bits=self._ram.word_bits
         )[-OPCODE_BITS:].unsigned  # higher bits if word
 
         try:
