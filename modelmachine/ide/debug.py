@@ -30,48 +30,8 @@ INSTRUCTION = (
 )
 
 
-REGISTER_PRIORITY = {
-    "PC": 10,
-    "IR": 20,
-    "FLAGS": 30,
-    "ADDR": 40,
-    "S": 50,
-    "S1": 60,
-    "R": 70,
-    "default": 100,
-}
-
 COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
-
-
-# class CommandLexer(Lexer):
-#     def lex_document(self, document: Document):
-#         def parse_line(lineno: int):
-#             line = document.lines[lineno]
-#             result = []
-#
-#             for i, word in enumerate(split_to_word_and_spaces(line)):
-#                 if word.isspace():
-#                     result.append(("", word))
-#                     continue
-#
-#                 if i <= 1:
-#                     if word in COMMAND_SET:
-#                         result.append(("ansiblue", word))
-#                     else:
-#                         result.append(("ansired", word))
-#                     continue
-#
-#                 try:
-#                     int(word, 0)
-#                     result.append(("ansicyan", word))
-#                 except ValueError:
-#                     result.append(("ansired", word))
-#
-#             return result
-#
-#         return parse_line
 
 
 class CommandResult(IntEnum):

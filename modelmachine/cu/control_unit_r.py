@@ -98,9 +98,7 @@ class ControlUnitR(ControlUnit):
                 RegisterName(reg_no), bits=self._alu.operand_bits
             )
 
-    _ONE_WORD_OPCODES: Final[frozenset[Opcode]] = REGISTER_OPCODES | {
-        Opcode.halt
-    }
+    _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
     def _fetch(self, *, instruction_bits: int | None = None) -> None:
         """Fetch operands."""
@@ -124,7 +122,7 @@ class ControlUnitR(ControlUnit):
 
         super()._fetch(instruction_bits=instruction_bits)
 
-    _EXPECT_ZERO_RY: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {
+    _EXPECT_ZERO_RY: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
         Opcode.load,
         Opcode.store,
@@ -140,11 +138,11 @@ class ControlUnitR(ControlUnit):
         if self._opcode is Opcode.halt:
             self._expect_zero()
 
-    _LOAD_FROM_MEMORY: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {
+    _LOAD_FROM_MEMORY: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
         Opcode.load,
     }
-    _LOAD_S: Final[frozenset[Opcode]] = (
+    _LOAD_S: Final = (
         ARITHMETIC_OPCODES
         | REGISTER_ARITH_OPCODES
         | {Opcode.comp, Opcode.store}
@@ -166,12 +164,10 @@ class ControlUnitR(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._registers[RegisterName.ADDR] = self._address
 
-    _EXEC_SUB: Final[frozenset[Opcode]] = frozenset(
+    _EXEC_SUB: Final = frozenset(
         {Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub}
     )
-    _EXEC_MOV: Final[frozenset[Opcode]] = frozenset(
-        {Opcode.load, Opcode.rmove}
-    )
+    _EXEC_MOV: Final = frozenset({Opcode.load, Opcode.rmove})
 
     def _execute(self) -> None:
         """Execute the command."""
@@ -192,12 +188,12 @@ class ControlUnitR(ControlUnit):
         else:
             super()._execute()
 
-    WB_R1: ClassVar[frozenset[Opcode]] = (
+    WB_R1: ClassVar = (
         ARITHMETIC_OPCODES
         | REGISTER_ARITH_OPCODES
         | {Opcode.load, Opcode.rmove}
     )
-    _WB_R_NEXT: Final[frozenset[Opcode]] = frozenset(
+    _WB_R_NEXT: Final = frozenset(
         {Opcode.udiv, Opcode.sdiv, Opcode.rudiv, Opcode.rsdiv}
     )
 

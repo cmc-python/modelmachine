@@ -52,7 +52,7 @@ class ControlUnit2(ControlUnit):
         if self._opcode is Opcode.halt:
             self._expect_zero()
 
-    _LOAD_R1R2: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.comp}
+    _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
@@ -80,7 +80,7 @@ class ControlUnit2(ControlUnit):
         else:
             super()._execute()
 
-    _WB_R1: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.move}
+    _WB_R1: Final = ARITHMETIC_OPCODES | {Opcode.move}
 
     def _write_back(self) -> None:
         """Write result back."""

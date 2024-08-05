@@ -174,7 +174,7 @@ class ControlUnit:
         """Load data from memory to operation registers."""
         raise NotImplementedError
 
-    _CU_ABS_EXEC_NOP: Final[frozenset[Opcode]] = frozenset(
+    _CU_ABS_EXEC_NOP: Final = frozenset(
         {
             Opcode.move,
             Opcode.load,

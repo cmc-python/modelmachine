@@ -80,7 +80,7 @@ class ControlUnitS(ControlUnit):
             (1 << self._ram.address_bits) - 1, bits=self._ram.address_bits
         )
 
-    _OPCODES_WITH_ADDRESS: Final[frozenset[Opcode]] = JUMP_OPCODES | {
+    _OPCODES_WITH_ADDRESS: Final = JUMP_OPCODES | {
         Opcode.push,
         Opcode.pop,
     }
@@ -107,8 +107,8 @@ class ControlUnitS(ControlUnit):
 
         super()._fetch(instruction_bits=instruction_bits)
 
-    _LOAD_R1R2 = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.sswap}
-    _LOAD_R1 = frozenset({Opcode.pop, Opcode.dup})
+    _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.sswap}
+    _LOAD_R1: Final = frozenset({Opcode.pop, Opcode.dup})
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
@@ -136,10 +136,10 @@ class ControlUnitS(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._registers[RegisterName.ADDR] = self._address
 
-    _SP_PLUS = frozenset(
+    _SP_PLUS: Final = frozenset(
         {Opcode.add, Opcode.sub, Opcode.smul, Opcode.umul, Opcode.pop}
     )
-    _SP_MINUS = frozenset({Opcode.push, Opcode.dup})
+    _SP_MINUS: Final = frozenset({Opcode.push, Opcode.dup})
 
     def _execute(self) -> None:
         """Add specific commands."""
@@ -157,7 +157,7 @@ class ControlUnitS(ControlUnit):
         elif self._opcode in self._SP_MINUS:
             self._stack_pointer -= Cell(3, bits=self._ram.address_bits)
 
-    _WB_R1 = frozenset(
+    _WB_R1: Final = frozenset(
         {
             Opcode.add,
             Opcode.sub,
@@ -168,7 +168,7 @@ class ControlUnitS(ControlUnit):
         }
     )
 
-    _WB_DWORD = frozenset(
+    _WB_DWORD: Final = frozenset(
         {
             Opcode.sdiv,
             Opcode.udiv,

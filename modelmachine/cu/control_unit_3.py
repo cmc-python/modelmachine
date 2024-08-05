@@ -62,9 +62,7 @@ class ControlUnit3(ControlUnit):
                 self._ram.address_bits, 2 * self._ram.address_bits
             )
 
-    _LOAD_R1R2: Final[frozenset[Opcode]] = (
-        ARITHMETIC_OPCODES | CONDJUMP_OPCODES
-    )
+    _LOAD_R1R2: Final = ARITHMETIC_OPCODES | CONDJUMP_OPCODES
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
@@ -92,7 +90,7 @@ class ControlUnit3(ControlUnit):
 
         super()._execute()
 
-    _WB_OPCODES: Final[frozenset[Opcode]] = ARITHMETIC_OPCODES | {Opcode.move}
+    _WB_OPCODES: Final = ARITHMETIC_OPCODES | {Opcode.move}
 
     def _write_back(self) -> None:
         """Write result back."""
