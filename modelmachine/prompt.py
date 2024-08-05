@@ -27,13 +27,18 @@ def printf(out: str, *, file: TextIO = sys.stdout) -> None:
 
 def read_word(file: TextIO) -> str:
     res = ""
-    while c := file.read(1):
+    while True:
+        c = file.read(1)
+        if not c:
+            break
+
         if not c.isspace():
             res += c
             break
 
-    while c := file.read(1):
-        if c.isspace():
+    while True:
+        c = file.read(1)
+        if not c or c.isspace():
             break
         res += c
 
