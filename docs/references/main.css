@@ -1,0 +1,364 @@
+/* Fonts */
+
+@font-face {
+  font-family: 'PT Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('PT Sans'), local('PTSans-Regular'), url(PTSans-Regular.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'PT Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('PT Sans Bold'), local('PTSans-Bold'), url(PTSans-Bold.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'PT Sans';
+  font-style: italic;
+  font-weight: 400;
+  src: local('PT Sans Italic'), local('PTSans-Italic'), url(PTSans-Italic.woff2) format('woff');
+}
+@font-face {
+  font-family: 'PT Sans';
+  font-style: italic;
+  font-weight: 700;
+  src: local('PT Sans Bold Italic'), local('PTSans-BoldItalic'), url(PTSans-BoldItalic.woff2) format('woff');
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 400;
+  src: local('PT Serif'), local('PTSerif-Regular'), url(PTSerif-Regular.woff) format('woff');
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 700;
+  src: local('PT Serif Bold'), local('PTSerif-Bold'), url(PTSerif-Bold.woff) format('woff');
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 400;
+  src: local('PT Serif Italic'), local('PTSerif-Italic'), url(PTSerif-Italic.woff) format('woff');
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 700;
+  src: local('PT Serif Bold Italic'), local('PTSerif-BoldItalic'), url(PTSerif-BoldItalic.woff) format('woff');
+}
+
+@font-face {
+  font-family: 'PT Mono';
+  font-style: normal;
+  font-weight: 400;
+  src: local('PT Mono'), local('PTMono-Regular'), url(https://cmcmsu.info/design/fonts/PTMono-Regular.ttf) format('ttf');
+}
+@font-face {
+  font-family: 'PT Mono';
+  font-style: normal;
+  font-weight: 700;
+  src: local('PT Mono'), local('PTMono-Bold'), url(https://cmcmsu.info/design/fonts/PTMono-Bold.ttf) format('ttf');
+}
+
+/* CSS */
+
+body
+{
+  height            : 100%;
+  margin          	: 0px 0px 0px 0px;
+  padding         	: 0px 0px 0px 0px;
+  font-size       	: 12pt;
+  font-family     	: "PT Sans", sans-serif;
+  color           	:#404040;
+  background-color	:#aba;
+}
+
+.body
+{
+  max-width         : 1200px;
+  height            : 100%;
+  margin-left       : auto;
+  margin-right      : auto;
+  background-color	: white;  
+}
+
+.header
+{
+  margin            : 0em 0em 0px 0em;
+  font-size         : 12pt;
+  padding           : 0.7em 20px 1em 24px;
+  background        : url(banner.canvas.jpg) top left no-repeat;
+  background-color  :#e0f0e0;
+}
+
+#logo_icon
+{
+  width             : 24px;
+  height            : 24px;
+  opacity           : 80%;
+  position          : absolute;
+}
+
+.header > .spacer
+{
+  display           : inline;
+  margin-right      : 32px;
+}
+
+.header .currentSection
+{
+  color             :#004400;
+  font-weight       : bold;
+  display           : inline;
+}
+
+.header a
+{
+  white-space       : nowrap;
+}
+
+.page
+{
+  margin          	: 0em 24px 0px 24px;
+}
+
+.footer
+{
+  max-width         : 1176px;
+  margin            : 0em auto 0px auto;
+  padding         	: 0.6em 24px 12px 24px;
+  font-size       	: 8pt;
+  background-color	:#e0f0e0;
+  left            	: 0;
+  right           	: 0;
+  bottom          	: 0;
+  top             	: auto
+}
+
+td
+{
+  padding         	: 0px 0px 0px 0px;
+  font-size       	: 12pt;
+  font-family     	: "PT Sans", sans-serif;
+}
+th
+{
+  padding           : 2px 4px 2px 4px;
+  vertical-align    : bottom;
+  background-color  :#f0f8f0;
+  text-align        : left;
+  font-size         : 12pt;
+  font-weight       : bold;
+  font-family       : "PT Sans", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6
+{
+  margin            : 1em 0px 5px 0px;
+  font-family       : "PT Sans", sans-serif;
+  font-weight       : normal;
+  color             :#404040;
+}
+h1
+{
+  font-size         : 24pt;
+}
+h2
+{
+  font-size         : 18pt;
+}
+h3
+{
+  font-size         : 14pt;
+}
+h4
+{
+  font-size         : 12pt;
+  font-weight       : bold;
+}
+h1:first-letter, h2:first-letter, h3:first-letter
+{
+  font-weight       : bold;
+  color             : #448844;
+}
+
+h4.section
+{
+  padding           : 5px;
+  padding-left      : 10px;
+  margin-left       :-5px;
+  margin-top        : 40px;
+  border-radius     : 20px;
+  background-color  :#e0f0e0;
+  font-size         : 80%;
+  width             : 65px;
+}
+ 
+.notice
+{
+  padding           : 20px 20px 20px 20px;
+  font-family       : "PT Sans", sans-serif;
+  font-size         : 11px;
+}
+.imgnote
+{
+  color             :#408040;
+}
+
+p
+{
+  text-align        : justify;
+}
+p.r
+{
+  text-align        : right;
+}
+
+span.linelist
+{
+  display           : block;
+  text-indent       :-1.22em;
+  margin-left       : 1.22em;
+  padding-left      : 2em;
+  text-align        : left;
+}
+span.laquolist
+{
+  display           : block;
+  text-indent       :-0.7em;
+  margin-left       : 0.7em;
+  text-align        : left;
+  padding-bottom    : 0.7em;
+}
+
+pre
+{
+  font-family       : lucida console, courier;
+  text-indent       : 0em;
+}
+.codepad, .pascal, .cpp, .asm
+{
+  padding           : 1em 1em 1em 2em;
+  background-color  :#f0f8f0;
+  overflow          : auto;
+  font-size         : 90%;  
+  border-radius     : 8px;
+}
+
+a, a:visited, a:active
+{
+  text-decoration   : underline;
+  color             :#303030;
+}
+a:hover
+{
+  color             :#008800;
+}
+
+span sub
+{
+  vertical-align    :-30%;
+  font-size         : 70%;  
+}
+
+.pad10
+{
+  padding           : 10px 10px 10px 10px;
+}
+.pad1030
+{
+  padding           : 0px 0px 10px 30px;
+}
+.pad010
+{
+  padding           : 0px 10px 0px 0px;
+}
+.small
+{
+  font-size         : 8pt;
+}
+.banner
+{
+  padding           : 5px 5px 5px 5px;
+  background-color  :#ecf2fe;
+}
+.input
+{
+  font-size         : 8pt;
+  font-family       : "PT Sans", sans-serif;
+  color             : gray;
+}
+.Serif
+{
+  font-family       : "times new roman", serif;
+  font-size         : 110%
+}
+
+table.center
+{
+  margin-left       : auto;
+  margin-right      : auto;
+}
+
+table.goodies
+{
+  width             : 300px;
+  background        : url(banner.canvas.jpg) top left no-repeat;
+  background-color  :#f0f8f0;
+  float             : right;
+  margin            : 0.5em 0em 0.5em 1em;
+-moz-box-shadow     : 0px 0px 10px #6a6;
+-webkit-box-shadow  : 0px 0px 10px #6a6;
+  box-shadow        : 0px 0px 10px #6a6;
+-moz-border-radius  : 5px;
+  border-radius     : 5px;
+}
+table.goodies tr > td
+{
+  font-weight       : bold;
+}
+table.goodies tr + tr td
+{
+  font-weight       : normal;
+  border-bottom     : none;
+}
+table.goodies td
+{
+  padding           : 0.5em 0.5em 0.5em 0.5em
+}
+
+ul.formatted
+{
+  list-style-type   : none;
+}
+
+ul.formatted li
+{
+  text-indent       :-45px;
+}
+
+ul.formatted li:before
+{
+  content           : attr(before);
+  width             : 40px;
+  display           : inline-block;
+  text-align        : right;
+  padding-right     : 5px;
+}
+
+div.center
+{
+  display           : block;
+  margin-left       : auto;
+  margin-right      : auto;
+  text-align        : center;  
+}
+
+div.br
+{
+  margin-top        : 8px;
+  margin-bottom     : 8px;
+}
