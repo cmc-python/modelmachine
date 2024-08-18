@@ -8,9 +8,12 @@ from enum import IntEnum
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
+import pyparsing as pp
 from prompt_toolkit import PromptSession
+from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell
+from modelmachine.cpu.source import kw, posinteger
 from modelmachine.cu.status import Status
 from modelmachine.memory.register import RegisterName
 from modelmachine.prompt import BLU, DEF, GRE, RED, YEL, printf
@@ -34,6 +37,14 @@ COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
 
 
+stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
+continuec = Gr(kw("continue") | kw("c"))("continue")
+printc = Gr(kw("print") | kw("p"))("print")
+memoryc = Gr((kw("memory") | kw("m")) + posinteger[2])("memory")
+quitc = Gr(kw("quit") | kw("q"))("quit")
+debug_cmd = stepc | continuec | printc | memoryc | quitc
+
+
 class CommandResult(IntEnum):
     OK = 0
     NEED_HELP = 1
@@ -52,20 +63,11 @@ class Ide:
             max(cpu.registers[reg].bits for reg in cpu.registers) // 4 + 2
         )
 
-    def step(self, command: list[str]) -> CommandResult:
+    def step(self, count: int = 1) -> CommandResult:
         """Exec debug step command."""
         if self.cpu.control_unit.status == Status.HALTED:
             printf(f"{RED}cannot execute command: machine halted{DEF}")
             return CommandResult.OK
-
-        try:
-            if len(command) > 2:  # noqa: PLR2004
-                msg = "Unexpected cmd arguments"
-                raise ValueError(msg)  # noqa: TRY301
-            count = 1 if len(command) == 1 else int(command[1], 0)
-
-        except ValueError:
-            return CommandResult.NEED_HELP
 
         for _i in range(count):
             self.last_register_state = self.cpu.registers.state
@@ -105,18 +107,8 @@ class Ide:
 
         return CommandResult.OK
 
-    def memory(self, command: list[str]) -> CommandResult:
+    def memory(self, begin: int, end: int) -> CommandResult:
         """Print contents of RAM."""
-
-        try:
-            if len(command) != 3:  # noqa: PLR2004
-                msg = "Unexpected cmd arguments"
-                raise ValueError(msg)  # noqa: TRY301
-
-            begin = int(command[1], 0)
-            end = int(command[2], 0)
-        except ValueError:
-            return CommandResult.NEED_HELP
 
         printf(
             " ".join(
@@ -131,18 +123,25 @@ class Ide:
 
         return CommandResult.OK
 
-    def cmd(self, command: list[str]) -> CommandResult:
+    def cmd(self, command: str) -> CommandResult:
         """Exec one command."""
 
-        if command[0] == "s":
-            return self.step(command)
-        if command[0] == "c":
+        try:
+            parsed_cmd = debug_cmd.parse_string(command, parse_all=True)
+        except pp.ParseException:
+            return CommandResult.NEED_HELP
+
+        cmd_name = parsed_cmd.get_name()  # type: ignore[no-untyped-call]
+
+        if cmd_name == "step":
+            return self.step(*command[0])
+        if cmd_name == "continue":
             return self.continue_()
-        if command[0] == "p":
+        if cmd_name == "print":
             return self.print()
-        if command[0] == "m":
-            return self.memory(command)
-        if command[0] == "q":
+        if cmd_name == "memory":
+            return self.memory(*command[0])
+        if cmd_name == "quit":
             return CommandResult.QUIT
 
         return CommandResult.NEED_HELP
@@ -166,10 +165,10 @@ class Ide:
                 printf(INSTRUCTION)
 
             try:
-                command = session.prompt("> ").split()
+                command = session.prompt("> ")
             except EOFError:
                 printf("quit")
-                command = ["q"]
+                command = "q"
 
             try:
                 with warnings.catch_warnings(record=True) as warns:
