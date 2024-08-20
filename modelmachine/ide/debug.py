@@ -134,13 +134,13 @@ class Ide:
         cmd_name = parsed_cmd.get_name()  # type: ignore[no-untyped-call]
 
         if cmd_name == "step":
-            return self.step(*command[0])
+            return self.step(*parsed_cmd[0])
         if cmd_name == "continue":
             return self.continue_()
         if cmd_name == "print":
             return self.print()
         if cmd_name == "memory":
-            return self.memory(*command[0])
+            return self.memory(*parsed_cmd[0])
         if cmd_name == "quit":
             return CommandResult.QUIT
 
