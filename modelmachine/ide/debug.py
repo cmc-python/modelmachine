@@ -225,6 +225,7 @@ class Ide:
         self.print()
 
         session: PromptSession[str] = PromptSession()
+        command = ""
 
         st = CommandResult.OK
         while st != CommandResult.QUIT:
@@ -232,7 +233,7 @@ class Ide:
                 printf(INSTRUCTION)
 
             try:
-                command = session.prompt("> ")
+                command = session.prompt("> ") or command
             except EOFError:
                 printf("quit")
                 command = "q"
