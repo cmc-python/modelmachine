@@ -88,6 +88,46 @@ class TestControlUnitM:
                 assert self.control_unit.status is Status.HALTED
 
     @pytest.mark.parametrize(
+        ("opcode", "ir_words"),
+        [
+            (Opcode.load, 2),
+            (Opcode.store, 2),
+            (Opcode.add, 2),
+            (Opcode.sub, 2),
+            (Opcode.smul, 2),
+            (Opcode.sdiv, 2),
+            (Opcode.umul, 2),
+            (Opcode.udiv, 2),
+            (Opcode.comp, 2),
+            (Opcode.rmove, 1),
+            (Opcode.radd, 1),
+            (Opcode.rsub, 1),
+            (Opcode.rsmul, 1),
+            (Opcode.rsdiv, 1),
+            (Opcode.rumul, 1),
+            (Opcode.rudiv, 1),
+            (Opcode.rcomp, 1),
+            (Opcode.jump, 2),
+            (Opcode.jeq, 2),
+            (Opcode.jneq, 2),
+            (Opcode.sjl, 2),
+            (Opcode.sjgeq, 2),
+            (Opcode.sjleq, 2),
+            (Opcode.sjg, 2),
+            (Opcode.ujl, 2),
+            (Opcode.ujgeq, 2),
+            (Opcode.ujleq, 2),
+            (Opcode.ujg, 2),
+            (Opcode.halt, 1),
+        ],
+    )
+    def test_instruction_bits(self, opcode: Opcode, ir_words: int) -> None:
+        assert (
+            self.control_unit.instruction_bits(opcode)
+            == ir_words * self.ram.word_bits
+        )
+
+    @pytest.mark.parametrize(
         ("opcode", "a", "b", "s", "res", "pc", "flags"),
         [
             (Opcode.load, 0x41, 0x10, 0x10, 0x88, 0x12, 0),

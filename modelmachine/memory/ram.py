@@ -159,7 +159,7 @@ class RandomAccessMemory:
             raise RamAccessError(msg)
 
         if from_cpu:
-            self._access_count += 1
+            self._access_count += words
 
         return Cell.decode(
             [

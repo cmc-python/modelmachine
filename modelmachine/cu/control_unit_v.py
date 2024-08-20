@@ -45,29 +45,16 @@ class ControlUnitV(ControlUnit):
     def _address2(self) -> Cell:
         return self._ir[: self._ram.address_bits]
 
-    def _fetch(self, *, instruction_bits: int | None = None) -> None:
-        """Fetch 2 addresses."""
-        assert instruction_bits is None
-        program_counter = self._registers[RegisterName.PC]
-        word = self._ram.fetch(
-            address=program_counter, bits=self._ram.word_bits
-        ).unsigned
-
-        try:
-            opcode = Opcode(word)
-        except ValueError as e:
-            self._wrong_opcode(word, e)
-        if opcode not in self.KNOWN_OPCODES:
-            self._wrong_opcode(word)
+    def instruction_bits(self, opcode: Opcode) -> int:
+        assert opcode in self.KNOWN_OPCODES
 
         if opcode is Opcode.halt:
-            instruction_bits = OPCODE_BITS
-        elif opcode in JUMP_OPCODES:
-            instruction_bits = OPCODE_BITS + self._ram.address_bits
-        else:
-            instruction_bits = OPCODE_BITS + 2 * self._ram.address_bits
+            return OPCODE_BITS
 
-        super()._fetch(instruction_bits=instruction_bits)
+        if opcode in JUMP_OPCODES:
+            return OPCODE_BITS + self._ram.address_bits
+
+        return OPCODE_BITS + 2 * self._ram.address_bits
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 

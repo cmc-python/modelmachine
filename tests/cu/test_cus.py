@@ -162,6 +162,40 @@ class TestControlUnitS:
         assert self.control_unit.status is Status.RUNNING
 
     @pytest.mark.parametrize(
+        ("opcode", "ir_words"),
+        [
+            (Opcode.add, 1),
+            (Opcode.sub, 1),
+            (Opcode.smul, 1),
+            (Opcode.sdiv, 1),
+            (Opcode.umul, 1),
+            (Opcode.udiv, 1),
+            (Opcode.comp, 1),
+            (Opcode.push, 3),
+            (Opcode.pop, 3),
+            (Opcode.dup, 1),
+            (Opcode.sswap, 1),
+            (Opcode.jump, 3),
+            (Opcode.jeq, 3),
+            (Opcode.jneq, 3),
+            (Opcode.sjl, 3),
+            (Opcode.sjgeq, 3),
+            (Opcode.sjleq, 3),
+            (Opcode.sjg, 3),
+            (Opcode.ujl, 3),
+            (Opcode.ujgeq, 3),
+            (Opcode.ujleq, 3),
+            (Opcode.ujg, 3),
+            (Opcode.halt, 1),
+        ],
+    )
+    def test_instruction_bits(self, opcode: Opcode, ir_words: int) -> None:
+        assert (
+            self.control_unit.instruction_bits(opcode)
+            == ir_words * self.ram.word_bits
+        )
+
+    @pytest.mark.parametrize(
         ("opcode", "a", "b", "new_a", "new_b", "sp", "flags"),
         [
             (Opcode.dup, 0x41, 0x10, 0x10, 0x10, 0xFFF0, 0),

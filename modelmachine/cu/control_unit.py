@@ -144,23 +144,46 @@ class ControlUnit:
         while self.status == Status.RUNNING:
             self.step()
 
-    def _fetch(self, *, instruction_bits: int | None = None) -> None:
-        """Read instruction and fetch opcode."""
-        if instruction_bits is None:
-            instruction_bits = self.IR_BITS
-        assert instruction_bits <= self.IR_BITS
+    def instruction_bits(self, opcode: Opcode) -> int:
+        assert opcode in self.KNOWN_OPCODES
+        return self.IR_BITS
 
+    def _fetch(self) -> None:
+        """Read instruction and fetch opcode."""
         instruction_address = self._registers[RegisterName.PC]
-        instruction = self._ram.fetch(
-            address=instruction_address, bits=instruction_bits
+        opcode_word = self._ram.fetch(
+            address=instruction_address, bits=self._ram.word_bits
         )
+        opcode_data = opcode_word[-OPCODE_BITS:].unsigned
+
+        try:
+            opcode = Opcode(opcode_data)
+        except ValueError as e:
+            self._wrong_opcode(opcode_data, e)
+        if opcode not in self.KNOWN_OPCODES:
+            self._wrong_opcode(opcode)
+
+        instruction_bits = self.instruction_bits(opcode)
+
+        additional_bits = instruction_bits - opcode_word.bits
+        assert additional_bits >= 0
+        if additional_bits == 0:
+            instruction = opcode_word
+        else:
+            operands = self._ram.fetch(
+                address=instruction_address
+                + Cell(1, bits=self._ram.address_bits),
+                bits=additional_bits,
+            )
+            instruction = Cell(
+                (opcode_word.unsigned << additional_bits) | operands.unsigned,
+                bits=instruction_bits,
+            )
+
         self._registers[RegisterName.IR] = Cell(
             instruction.unsigned << (self.IR_BITS - instruction_bits),
             bits=self.IR_BITS,
         )
-        if self._opcode not in self.KNOWN_OPCODES:
-            self._wrong_opcode(self._opcode)
-
         instruction_address += Cell(
             instruction_bits // self._ram.word_bits,
             bits=self._ram.address_bits,

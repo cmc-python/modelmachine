@@ -100,27 +100,13 @@ class ControlUnitR(ControlUnit):
 
     _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
-    def _fetch(self, *, instruction_bits: int | None = None) -> None:
-        """Fetch operands."""
-        assert instruction_bits is None
-        program_counter = self._registers[RegisterName.PC]
-        word = self._ram.fetch(
-            address=program_counter, bits=self._ram.word_bits
-        )[-OPCODE_BITS:].unsigned  # higher bits if word
-
-        try:
-            opcode = Opcode(word)
-        except ValueError as e:
-            self._wrong_opcode(word, e)
-        if opcode not in self.KNOWN_OPCODES:
-            self._wrong_opcode(word)
+    def instruction_bits(self, opcode: Opcode) -> int:
+        assert opcode in self.KNOWN_OPCODES
 
         if opcode in self._ONE_WORD_OPCODES:
-            instruction_bits = self._ram.word_bits
-        else:
-            instruction_bits = 2 * self._ram.word_bits
+            return self._ram.word_bits
 
-        super()._fetch(instruction_bits=instruction_bits)
+        return 2 * self._ram.word_bits
 
     _EXPECT_ZERO_RY: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
