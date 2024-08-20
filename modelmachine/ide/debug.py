@@ -33,7 +33,7 @@ INSTRUCTION = (
 )
 
 
-STR_WIDTH = 0x10
+PAGE_WIDTH = 0x10
 COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
 
@@ -41,7 +41,7 @@ COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
 continuec = Gr(kw("continue") | kw("c"))("continue")
 printc = Gr(kw("print") | kw("p"))("print")
-memoryc = Gr((kw("memory") | kw("m")) + posinteger[2])("memory")
+memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
 debug_cmd = stepc | continuec | printc | memoryc | quitc
 
@@ -74,6 +74,7 @@ class Ide:
             self.last_register_state = self.cpu.registers.state
             self.cpu.control_unit.step()
             printf(f"cycle {self.cpu.control_unit.cycle:>4}")
+            self.print_full_memory()
             self.print()
             if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
@@ -108,30 +109,51 @@ class Ide:
 
         return CommandResult.OK
 
-    def memory(self, begin: int, end: int) -> CommandResult:
+    def format_page(self, page: int) -> str:
+        page_addr = Cell(page * PAGE_WIDTH, bits=self.cpu.ram.address_bits)
+        line = f"{page_addr.hex()}:"
+        for col in range(PAGE_WIDTH):
+            cell_addr = page_addr + Cell(col, bits=self.cpu.ram.address_bits)
+            cell = self.cpu.ram.fetch(
+                address=cell_addr,
+                bits=self.cpu.ram.word_bits,
+                from_cpu=False,
+            )
+
+            if cell_addr == self.cpu.registers[RegisterName.PC]:
+                line += f" {YEL}{cell.hex()}{DEF}"
+            else:
+                line += f" {cell.hex()}"
+
+        return line
+
+    def print_full_memory(self) -> CommandResult:
+        page_set: set[int] = set()
+        for interval in self.cpu.ram.filled_intervals:
+            for i in range(
+                interval.begin // PAGE_WIDTH, interval.end // PAGE_WIDTH + 1
+            ):
+                page_set.add(i)
+
+        page_list = sorted(page_set)
+        for i, page in enumerate(page_list):
+            if i > 0 and page_list[i - 1] != page - 1:
+                printf("... unset memory ...")
+            printf(self.format_page(page))
+
+        return CommandResult.OK
+
+    def memory(self, begin: int = -1, end: int = -1) -> CommandResult:
         """Print contents of RAM."""
 
-        assert self.cpu.ram.memory_size % STR_WIDTH == 0
+        assert self.cpu.ram.memory_size % PAGE_WIDTH == 0
 
-        for row in range(begin // STR_WIDTH, end // STR_WIDTH + 1):
-            row_addr = Cell(row * STR_WIDTH, bits=self.cpu.ram.address_bits)
-            row_str = f"{row_addr.hex()}:"
-            for col in range(STR_WIDTH):
-                cell_addr = row_addr + Cell(
-                    col, bits=self.cpu.ram.address_bits
-                )
-                cell = self.cpu.ram.fetch(
-                    address=cell_addr,
-                    bits=self.cpu.ram.word_bits,
-                    from_cpu=False,
-                )
+        if begin == -1:
+            assert end == -1
+            return self.print_full_memory()
 
-                if cell_addr == self.cpu.registers[RegisterName.PC]:
-                    row_str += f" {YEL}{cell.hex()}{DEF}"
-                else:
-                    row_str += f" {cell.hex()}"
-
-            printf(row_str)
+        for page in range(begin // PAGE_WIDTH, end // PAGE_WIDTH + 1):
+            printf(self.format_page(page))
 
         return CommandResult.OK
 
