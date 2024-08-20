@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from modelmachine.cpu.cpu import Cpu
 
 
-@dataclass
+@dataclass(frozen=True)
 class Param:
     name: str
     short: str | None

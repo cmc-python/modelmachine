@@ -3,7 +3,11 @@ import warnings
 import pytest
 
 from modelmachine.cell import Cell, Endianess
-from modelmachine.memory.ram import RamAccessError, RandomAccessMemory
+from modelmachine.memory.ram import (
+    MemoryInterval,
+    RamAccessError,
+    RandomAccessMemory,
+)
 
 WB = 16
 AB = 8
@@ -136,3 +140,13 @@ class TestRandomAccessMemory:
         )
         for i, v in enumerate(value_list):
             assert ram._get(Cell(5 + i, bits=AB)) == v
+
+    def test_filled_intervals(self) -> None:
+        """Address should be checked."""
+        for b, e in ((1, 3), (4, 5), (3, 4), (8, 10)):
+            for i in range(b, e):
+                self._set(i, i + 1)
+        assert self.ram.filled_intervals == [
+            MemoryInterval(1, 5),
+            MemoryInterval(8, 10),
+        ]

@@ -2,15 +2,24 @@ from __future__ import annotations
 
 import warnings
 from array import array
+from bisect import insort
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell, Endianess
 
 if TYPE_CHECKING:
+    from collections.abc import Collection
     from typing import Final
 
 MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
+
+
+@dataclass(eq=True, order=True)
+class MemoryInterval:
+    begin: int
+    end: int
 
 
 class RamAccessError(Exception):
@@ -32,11 +41,16 @@ class RandomAccessMemory:
     is_protected: Final[bool]
     _table: array[int]
     _fill: array[int]
+    _filled_intervals: list[MemoryInterval]
     _access_count: int
 
     @property
     def access_count(self) -> int:
         return self._access_count
+
+    @property
+    def filled_intervals(self) -> Collection[MemoryInterval]:
+        return self._filled_intervals
 
     def __init__(
         self,
@@ -65,17 +79,42 @@ class RandomAccessMemory:
             self._table = array("Q", shape)
         self._fill = array("B", shape)
         self._access_count = 0
+        self._filled_intervals = []
 
     def __len__(self) -> int:
         """Return size of memory in unified form."""
         return self.memory_size
+
+    def _fill_cell(self, address: int) -> None:
+        if self._fill[address]:
+            return
+        self._fill[address] = 1
+
+        for i, e in enumerate(self._filled_intervals):
+            if address == e.begin - 1:
+                e.begin -= 1
+                break
+
+            if address == e.end:
+                e.end += 1
+                if i + 1 < len(self._filled_intervals):
+                    next_interval = self._filled_intervals[i + 1]
+                    if e.end == next_interval.begin:
+                        e.end = next_interval.end
+                        del self._filled_intervals[i + 1]
+                break
+        else:
+            insort(
+                self._filled_intervals,
+                MemoryInterval(begin=address, end=address + 1),
+            )
 
     def __setitem__(self, address: Cell, word: Cell) -> None:
         """Raise an error, if word has wrong format."""
         assert address.bits == self.address_bits
         assert word.bits == self.word_bits
         self._table[address.unsigned] = word.unsigned
-        self._fill[address.unsigned] = 1
+        self._fill_cell(address.unsigned)
 
     def _missing(self, address: Cell, *, from_cpu: bool = True) -> None:
         """If addressed memory not defined."""
