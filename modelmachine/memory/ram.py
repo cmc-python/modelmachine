@@ -21,6 +21,9 @@ class MemoryInterval:
     begin: int
     end: int
 
+    def __contains__(self, address: Cell) -> bool:
+        return self.begin <= address.unsigned < self.end
+
 
 class RamAccessError(Exception):
     pass

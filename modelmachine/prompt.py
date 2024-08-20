@@ -16,6 +16,8 @@ YEL = "\x1b[33m" if sys.stdout.isatty() else ""
 BLU = "\x1b[34m" if sys.stdout.isatty() else ""
 MAG = "\x1b[35m" if sys.stdout.isatty() else ""
 CYA = "\x1b[36m" if sys.stdout.isatty() else ""
+UND = "\x1b[4m" if sys.stdout.isatty() else ""
+NUND = "\x1b[24m" if sys.stdout.isatty() else ""
 
 
 def printf(out: str, *, file: TextIO = sys.stdout) -> None:

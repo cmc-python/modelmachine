@@ -14,9 +14,11 @@ from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell
 from modelmachine.cpu.source import kw, posinteger
+from modelmachine.cu.opcode import OPCODE_BITS, Opcode
 from modelmachine.cu.status import Status
+from modelmachine.memory.ram import MemoryInterval
 from modelmachine.memory.register import RegisterName
-from modelmachine.prompt import BLU, DEF, GRE, RED, YEL, printf
+from modelmachine.prompt import BLU, DEF, GRE, NUND, RED, UND, YEL, printf
 
 if TYPE_CHECKING:
     from typing import Final
@@ -27,23 +29,18 @@ INSTRUCTION = (
     "Enter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
     f"  {BLU}c{DEF}ontinue             continue the program until the end\n"
-    f"  {BLU}p{DEF}rint                registers state\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
     f"  {BLU}q{DEF}uit\n"
 )
 
 
 PAGE_WIDTH = 0x10
-COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
-COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
-
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
 continuec = Gr(kw("continue") | kw("c"))("continue")
-printc = Gr(kw("print") | kw("p"))("print")
 memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
-debug_cmd = stepc | continuec | printc | memoryc | quitc
+debug_cmd = stepc | continuec | memoryc | quitc
 
 
 class CommandResult(IntEnum):
@@ -56,6 +53,8 @@ class Ide:
     cpu: Cpu
     last_register_state: dict[RegisterName, Cell]
     max_register_hex: Final[int]
+    _last_cmd: MemoryInterval
+    _last_pc: Cell
 
     def __init__(self, cpu: Cpu):
         self.cpu = cpu
@@ -63,6 +62,8 @@ class Ide:
         self.max_register_hex = (
             max(cpu.registers[reg].bits for reg in cpu.registers) // 4 + 2
         )
+        self._last_pc = Cell(1, bits=self.cpu.ram.address_bits)
+        self._last_cmd = MemoryInterval(1, 2)
 
     def step(self, count: int = 1) -> CommandResult:
         """Exec debug step command."""
@@ -74,7 +75,6 @@ class Ide:
             self.last_register_state = self.cpu.registers.state
             self.cpu.control_unit.step()
             printf(f"cycle {self.cpu.control_unit.cycle:>4}")
-            self.print_full_memory()
             self.print()
             if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
@@ -97,7 +97,9 @@ class Ide:
         """Print contents of registers."""
 
         printf(f"RAM access count: {self.cpu.ram.access_count}")
-        printf("Registers state:")
+        printf("RAM:")
+        self.print_full_memory()
+        printf("\nRegisters:")
         for reg, value in self.cpu.registers.state.items():
             color = ""
             if reg in {RegisterName.PC, RegisterName.IR}:
@@ -108,6 +110,37 @@ class Ide:
             printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
 
         return CommandResult.OK
+
+    @property
+    def current_cmd(self) -> MemoryInterval:
+        pc = self.cpu.registers[RegisterName.PC]
+        if pc == self._last_pc:
+            return self._last_cmd
+        self._last_pc = pc
+
+        opcode_data = self.cpu.ram.fetch(
+            address=pc,
+            bits=self.cpu.ram.word_bits,
+            from_cpu=False,
+        )[-OPCODE_BITS:].unsigned
+
+        try:
+            opcode = Opcode(opcode_data)
+        except ValueError:
+            self._last_cmd = MemoryInterval(pc.unsigned, pc.unsigned + 1)
+            return self._last_cmd
+
+        if opcode not in self.cpu.control_unit.KNOWN_OPCODES:
+            self._last_cmd = MemoryInterval(pc.unsigned, pc.unsigned + 1)
+            return self._last_cmd
+
+        self._last_cmd = MemoryInterval(
+            pc.unsigned,
+            pc.unsigned
+            + self.cpu.control_unit.instruction_bits(opcode)
+            // self.cpu.ram.word_bits,
+        )
+        return self._last_cmd
 
     def format_page(self, page: int) -> str:
         page_addr = Cell(page * PAGE_WIDTH, bits=self.cpu.ram.address_bits)
@@ -120,10 +153,10 @@ class Ide:
                 from_cpu=False,
             )
 
-            if cell_addr == self.cpu.registers[RegisterName.PC]:
-                line += f" {YEL}{cell.hex()}{DEF}"
+            if cell_addr in self.current_cmd:
+                line += f" {UND}{cell.hex()}"
             else:
-                line += f" {cell.hex()}"
+                line += f"{NUND} {cell.hex()}"
 
         return line
 
@@ -171,8 +204,6 @@ class Ide:
             return self.step(*parsed_cmd[0])
         if cmd_name == "continue":
             return self.continue_()
-        if cmd_name == "print":
-            return self.print()
         if cmd_name == "memory":
             return self.memory(*parsed_cmd[0])
         if cmd_name == "quit":
@@ -189,11 +220,13 @@ class Ide:
             )
             raise ValueError(msg)
 
-        printf("Welcome to interactive debug mode.")
+        printf("Welcome to interactive debug mode")
+        printf(INSTRUCTION)
+        self.print()
 
         session: PromptSession[str] = PromptSession()
 
-        st = CommandResult.NEED_HELP
+        st = CommandResult.OK
         while st != CommandResult.QUIT:
             if st == CommandResult.NEED_HELP:
                 printf(INSTRUCTION)
