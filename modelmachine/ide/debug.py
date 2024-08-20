@@ -33,6 +33,7 @@ INSTRUCTION = (
 )
 
 
+STR_WIDTH = 0x10
 COMMAND_LIST = ("help", "step", "continue", "print", "memory", "quit")
 COMMAND_SET = set(COMMAND_LIST) | {"h", "s", "c", "p", "m", "q"}
 
@@ -110,16 +111,27 @@ class Ide:
     def memory(self, begin: int, end: int) -> CommandResult:
         """Print contents of RAM."""
 
-        printf(
-            " ".join(
-                self.cpu.ram.fetch(
-                    address=Cell(i, bits=self.cpu.ram.address_bits),
+        assert self.cpu.ram.memory_size % STR_WIDTH == 0
+
+        for row in range(begin // STR_WIDTH, end // STR_WIDTH + 1):
+            row_addr = Cell(row * STR_WIDTH, bits=self.cpu.ram.address_bits)
+            row_str = f"{row_addr.hex()}:"
+            for col in range(STR_WIDTH):
+                cell_addr = row_addr + Cell(
+                    col, bits=self.cpu.ram.address_bits
+                )
+                cell = self.cpu.ram.fetch(
+                    address=cell_addr,
                     bits=self.cpu.ram.word_bits,
                     from_cpu=False,
-                ).hex()
-                for i in range(begin, end)
-            )
-        )
+                )
+
+                if cell_addr == self.cpu.registers[RegisterName.PC]:
+                    row_str += f" {YEL}{cell.hex()}{DEF}"
+                else:
+                    row_str += f" {cell.hex()}"
+
+            printf(row_str)
 
         return CommandResult.OK
 
