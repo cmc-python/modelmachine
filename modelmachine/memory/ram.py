@@ -195,7 +195,7 @@ class RandomAccessMemory:
             raise RamAccessError(msg)
 
         if from_cpu:
-            self._access_count += 1
+            self._access_count += words
 
         enc_value = value.encode(bits=self.word_bits, endianess=self.endianess)
         for i, v in enumerate(enc_value):
