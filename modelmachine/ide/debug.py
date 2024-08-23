@@ -36,8 +36,9 @@ if TYPE_CHECKING:
     from modelmachine.cpu.cpu import Cpu
 
 INSTRUCTION = (
-    "Enter\n"
+    "\nEnter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
+    f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
     f"  {BLU}c{DEF}ontinue             continue the program until the end\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
     f"  {BLU}q{DEF}uit\n"
@@ -47,16 +48,20 @@ INSTRUCTION = (
 PAGE_WIDTH = 0x10
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
+reverse_stepc = Gr(
+    (kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1]
+)("reverse_step")
 continuec = Gr(kw("continue") | kw("c"))("continue")
 memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
-debug_cmd = stepc | continuec | memoryc | quitc
+debug_cmd = stepc | reverse_stepc | continuec | memoryc | quitc
 
 
 class Ide:
     cpu: Cpu
     max_register_hex: Final[int]
-    cycle: int
+    _cycle: int
+    _ram_access_count: list[int]
     _quit: bool
     _run: bool
 
@@ -67,15 +72,19 @@ class Ide:
         self.max_register_hex = (
             max(cpu.registers[reg].bits for reg in cpu.registers) // 4 + 2
         )
-        self.cycle = 0
+        self._cycle = 0
+        self._ram_access_count = [0]
         self._quit = False
         self._run = False
 
     def exec_step(self) -> Status:
-        self.cycle += 1
+        self._cycle += 1
+        assert self.cpu.registers.write_log is not None
         self.cpu.registers.write_log.append({})
+        assert self.cpu.ram.write_log is not None
         self.cpu.ram.write_log.append({})
         self.cpu.control_unit.step()
+        self._ram_access_count.append(self.cpu.ram.access_count)
         return self.cpu.control_unit.status
 
     def step(self, count: int = 1) -> None:
@@ -86,10 +95,35 @@ class Ide:
 
         for _i in range(count):
             self.exec_step()
-            self.dump_state()
             if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
                 break
+
+        self.dump_state()
+
+    def reverse_step(self, count: int = 1) -> None:
+        if self._cycle == 0:
+            printf(f"{RED}cannot execute command: cycle=0{DEF}")
+            return
+
+        for _i in range(count):
+            if self._cycle == 0:
+                break
+
+            self._cycle -= 1
+            self._ram_access_count.pop()
+
+            assert self.cpu.registers.write_log is not None
+            for reg, (old, _) in self.cpu.registers.write_log.pop().items():
+                self.cpu.registers._table[reg] = old  # noqa: SLF001
+
+            assert self.cpu.ram.write_log is not None
+            for addr, (oldr, _) in self.cpu.ram.write_log.pop().items():
+                self.cpu.ram._table[addr] = oldr  # noqa: SLF001
+
+            self.cpu.ram.access_count = self._ram_access_count[-1]
+
+        self.dump_state()
 
     def continue_(self) -> None:
         """Exec debug continue command."""
@@ -112,13 +146,15 @@ class Ide:
     def dump_state(self) -> None:
         """Print contents of registers."""
 
-        printf(f"cycle {self.cycle:>4}")
-        printf(f"RAM access count: {self.cpu.ram.access_count} words")
-        printf("RAM:")
+        printf(
+            f"Cycle: {self._cycle:>4}    "
+            f"RAM access count: {self.cpu.ram.access_count:>4} words\n"
+        )
         self.dump_full_memory()
-        printf("\nRegisters:")
+        printf("")
         for reg, value in self.cpu.registers.state.items():
             color = ""
+            assert self.cpu.registers.write_log is not None
             if reg in {RegisterName.PC, RegisterName.IR}:
                 color = YEL
             elif reg in self.cpu.registers.write_log[-1]:
@@ -162,6 +198,7 @@ class Ide:
             )
 
             color = ""
+            assert self.cpu.ram.write_log is not None
             if cell_addr in self.cpu.ram.write_log[-1]:
                 color = GRE
 
@@ -213,6 +250,9 @@ class Ide:
         if cmd_name == "step":
             self.step(*parsed_cmd[0])
             return True
+        if cmd_name == "reverse_step":
+            self.reverse_step(*parsed_cmd[0])
+            return True
         if cmd_name == "continue":
             self.continue_()
             return True
@@ -246,8 +286,7 @@ class Ide:
             )
             raise ValueError(msg)
 
-        printf("Welcome to interactive debug mode")
-        printf(INSTRUCTION)
+        printf("Welcome to interactive debug mode\n")
         self.dump_state()
 
         session: PromptSession[str] = PromptSession()

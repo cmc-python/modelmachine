@@ -80,6 +80,7 @@ class InputOutputUnit:
         self.ram.put(
             address=addr,
             value=Cell(value, bits=self._io_bits),
+            from_cpu=False,
         )
 
     def output(

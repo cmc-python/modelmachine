@@ -46,7 +46,7 @@ class RegisterMemory:
     """Registers."""
 
     _table: list[Cell | None]
-    write_log: list[dict[RegisterName, tuple(Cell, Cell)]] | None
+    write_log: list[dict[RegisterName, tuple[Cell, Cell]]] | None
 
     def __init__(self) -> None:
         self._table = [None] * len(RegisterName)
@@ -86,7 +86,7 @@ class RegisterMemory:
         current = self[name]
         assert current.bits == word.bits
         if self.write_log is not None:
-            self.write_log[-1][name] = (self._table[name], word)
+            self.write_log[-1][name] = (current, word)
         self._table[name] = word
 
     def __contains__(self, name: RegisterName) -> bool:

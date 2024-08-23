@@ -36,7 +36,7 @@ class RandomAccessMemory:
     _fill: array[int]
     _filled_intervals: list[range]
     access_count: int
-    write_log: list[dict[Cell, tuple[Cell, Cell]]] | None
+    write_log: list[dict[int, tuple[int, int]]] | None
 
     @property
     def filled_intervals(self) -> Collection[range]:
@@ -109,7 +109,10 @@ class RandomAccessMemory:
         assert address.bits == self.address_bits
         assert word.bits == self.word_bits
         if self.write_log is not None:
-            self.write_log[-1][address] = (self._table[address.unsigned], word)
+            self.write_log[-1][address.unsigned] = (
+                self._table[address.unsigned],
+                word.unsigned,
+            )
         self._table[address.unsigned] = word.unsigned
         self._fill_cell(address.unsigned)
 
