@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import warnings
 from array import array
-from bisect import insort
 from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell, Endianess
+from modelmachine.memory.insort import insort
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -101,7 +101,6 @@ class RandomAccessMemory:
             insort(
                 self._filled_intervals,
                 range(address, address + 1),
-                key=lambda a: (a.start, a.stop),
             )
 
     def __setitem__(self, address: Cell, word: Cell) -> None:
