@@ -35,6 +35,7 @@ class ControlUnit3(ControlUnit):
         R1=RegisterName.R1,
         R2=RegisterName.R2,
     )
+    PAGE_SIZE = 4
 
     @property
     def _address1(self) -> Cell:

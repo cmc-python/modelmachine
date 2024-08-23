@@ -32,6 +32,7 @@ class ControlUnit:
     IR_BITS: ClassVar[int]
     WORD_BITS: ClassVar[int]
     ALU_REGISTERS: ClassVar[AluRegisters]
+    PAGE_SIZE: ClassVar[int] = 16
 
     _registers: Final[RegisterMemory]
     _ram: Final[RandomAccessMemory]

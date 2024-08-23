@@ -44,9 +44,6 @@ INSTRUCTION = (
     f"  {BLU}q{DEF}uit\n"
 )
 
-
-PAGE_WIDTH = 0x10
-
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
 reverse_stepc = Gr(
     (kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1]
@@ -147,7 +144,7 @@ class Ide:
         """Print contents of registers."""
 
         printf(
-            f"Cycle: {self._cycle:>4}    "
+            f"Cycle: {self._cycle:>4}      "
             f"RAM access count: {self.cpu.ram.access_count:>4} words\n"
         )
         self.dump_full_memory()
@@ -187,9 +184,12 @@ class Ide:
         )
 
     def format_page(self, page: int, current_cmd: range) -> str:
-        page_addr = Cell(page * PAGE_WIDTH, bits=self.cpu.ram.address_bits)
+        page_addr = Cell(
+            page * self.cpu.control_unit.PAGE_SIZE,
+            bits=self.cpu.ram.address_bits,
+        )
         line = f"{page_addr}:"
-        for col in range(PAGE_WIDTH):
+        for col in range(self.cpu.control_unit.PAGE_SIZE):
             cell_addr = page_addr + Cell(col, bits=self.cpu.ram.address_bits)
             cell = self.cpu.ram.fetch(
                 address=cell_addr,
@@ -213,7 +213,8 @@ class Ide:
         page_set: set[int] = set()
         for interval in self.cpu.ram.filled_intervals:
             for i in range(
-                interval.start // PAGE_WIDTH, interval.stop // PAGE_WIDTH + 1
+                interval.start // self.cpu.control_unit.PAGE_SIZE,
+                interval.stop // self.cpu.control_unit.PAGE_SIZE + 1,
             ):
                 page_set.add(i)
 
@@ -227,14 +228,17 @@ class Ide:
     def memory(self, begin: int = -1, end: int = -1) -> None:
         """Print contents of RAM."""
 
-        assert self.cpu.ram.memory_size % PAGE_WIDTH == 0
+        assert self.cpu.ram.memory_size % self.cpu.control_unit.PAGE_SIZE == 0
 
         if begin == -1:
             assert end == -1
             self.dump_full_memory()
 
         current_cmd = self.current_cmd
-        for page in range(begin // PAGE_WIDTH, end // PAGE_WIDTH + 1):
+        for page in range(
+            begin // self.cpu.control_unit.PAGE_SIZE,
+            end // self.cpu.control_unit.PAGE_SIZE + 1,
+        ):
             printf(self.format_page(page, current_cmd))
 
     def cmd(self, command: str) -> bool:
