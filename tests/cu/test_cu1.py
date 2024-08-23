@@ -61,7 +61,6 @@ class TestControlUnit1:
         with warnings.catch_warnings(record=False):
             warnings.simplefilter("ignore")
             self.control_unit.step()
-        assert self.control_unit.cycle == 1
         assert (
             self.ram.fetch(Cell(0x21, bits=AB), bits=self.OPERAND_BITS) == 0x99
         )
@@ -325,4 +324,3 @@ class TestControlUnit1:
         )
         assert self.registers[RegisterName.PC] == 7
         assert self.control_unit.status is Status.HALTED
-        assert self.control_unit.cycle == 6

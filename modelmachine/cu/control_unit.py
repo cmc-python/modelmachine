@@ -38,12 +38,7 @@ class ControlUnit:
     _alu: Final[ArithmeticLogicUnit]
     _operand_words: Final[Cell]
 
-    _cycle: int
     _failed: bool
-
-    @property
-    def cycle(self) -> int:
-        return self._cycle
 
     @property
     def failed(self) -> bool:
@@ -104,7 +99,6 @@ class ControlUnit:
         assert alu.operand_bits == self.IR_BITS
         assert alu.alu_registers is self.ALU_REGISTERS
 
-        self._cycle = 0
         self._failed = False
 
         self._registers.add_register(
@@ -117,8 +111,6 @@ class ControlUnit:
 
     def step(self) -> None:
         """Execution of one instruction."""
-        self._cycle += 1
-
         try:
             self._fetch()
             self._decode()

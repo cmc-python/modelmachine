@@ -67,7 +67,6 @@ class TestControlUnit3:
         with warnings.catch_warnings(record=False):
             warnings.simplefilter("ignore")
             self.control_unit.step()
-        assert self.control_unit.cycle == 1
 
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
@@ -293,4 +292,3 @@ class TestControlUnit3:
         )
         assert self.registers[RegisterName.PC] == 6
         assert self.control_unit.status is Status.HALTED
-        assert self.control_unit.cycle == 3

@@ -35,11 +35,8 @@ class RandomAccessMemory:
     _table: array[int]
     _fill: array[int]
     _filled_intervals: list[range]
-    _access_count: int
-
-    @property
-    def access_count(self) -> int:
-        return self._access_count
+    access_count: int
+    write_log: list[dict[Cell, tuple[Cell, Cell]]] | None
 
     @property
     def filled_intervals(self) -> Collection[range]:
@@ -71,8 +68,9 @@ class RandomAccessMemory:
         else:
             self._table = array("Q", shape)
         self._fill = array("B", shape)
-        self._access_count = 0
+        self.access_count = 0
         self._filled_intervals = []
+        self.write_log = None
 
     def __len__(self) -> int:
         """Return size of memory in unified form."""
@@ -110,6 +108,8 @@ class RandomAccessMemory:
         """Raise an error, if word has wrong format."""
         assert address.bits == self.address_bits
         assert word.bits == self.word_bits
+        if self.write_log is not None:
+            self.write_log[-1][address] = (self._table[address.unsigned], word)
         self._table[address.unsigned] = word.unsigned
         self._fill_cell(address.unsigned)
 
@@ -156,7 +156,7 @@ class RandomAccessMemory:
             raise RamAccessError(msg)
 
         if from_cpu:
-            self._access_count += words
+            self.access_count += words
 
         return Cell.decode(
             [
@@ -189,7 +189,7 @@ class RandomAccessMemory:
             raise RamAccessError(msg)
 
         if from_cpu:
-            self._access_count += words
+            self.access_count += words
 
         enc_value = value.encode(bits=self.word_bits, endianess=self.endianess)
         for i, v in enumerate(enc_value):

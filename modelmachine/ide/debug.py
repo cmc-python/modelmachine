@@ -55,19 +55,28 @@ debug_cmd = stepc | continuec | memoryc | quitc
 
 class Ide:
     cpu: Cpu
-    last_register_state: dict[RegisterName, Cell]
     max_register_hex: Final[int]
+    cycle: int
     _quit: bool
     _run: bool
 
     def __init__(self, cpu: Cpu):
         self.cpu = cpu
-        self.last_register_state = cpu.registers.state
+        self.cpu.registers.write_log = [{}]
+        self.cpu.ram.write_log = [{}]
         self.max_register_hex = (
             max(cpu.registers[reg].bits for reg in cpu.registers) // 4 + 2
         )
+        self.cycle = 0
         self._quit = False
         self._run = False
+
+    def exec_step(self) -> Status:
+        self.cycle += 1
+        self.cpu.registers.write_log.append({})
+        self.cpu.ram.write_log.append({})
+        self.cpu.control_unit.step()
+        return self.cpu.control_unit.status
 
     def step(self, count: int = 1) -> None:
         """Exec debug step command."""
@@ -76,8 +85,7 @@ class Ide:
             return
 
         for _i in range(count):
-            self.last_register_state = self.cpu.registers.state
-            self.cpu.control_unit.step()
+            self.exec_step()
             self.dump_state()
             if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
@@ -91,8 +99,9 @@ class Ide:
             return
 
         self._run = True
-        while self._run and self.cpu.control_unit.status == Status.RUNNING:
-            self.cpu.control_unit.step()
+        while self._run:
+            if self.exec_step() != Status.RUNNING:
+                break
         self._run = False
 
         if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
@@ -103,7 +112,7 @@ class Ide:
     def dump_state(self) -> None:
         """Print contents of registers."""
 
-        printf(f"cycle {self.cpu.control_unit.cycle:>4}")
+        printf(f"cycle {self.cycle:>4}")
         printf(f"RAM access count: {self.cpu.ram.access_count} words")
         printf("RAM:")
         self.dump_full_memory()
@@ -112,7 +121,7 @@ class Ide:
             color = ""
             if reg in {RegisterName.PC, RegisterName.IR}:
                 color = YEL
-            elif self.last_register_state[reg] != value:
+            elif reg in self.cpu.registers.write_log[-1]:
                 color = GRE
             hex_data = str(value).rjust(self.max_register_hex, " ")
             printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
@@ -152,10 +161,14 @@ class Ide:
                 from_cpu=False,
             )
 
+            color = ""
+            if cell_addr in self.cpu.ram.write_log[-1]:
+                color = GRE
+
             if cell_addr in current_cmd:
-                line += f" {UND}{cell.hex()}"
+                line += f" {UND}{color}{cell.hex()}{DEF}"
             else:
-                line += f"{NUND} {cell.hex()}"
+                line += f"{NUND} {color}{cell.hex()}{DEF}"
 
         return line
 

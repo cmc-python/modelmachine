@@ -46,9 +46,11 @@ class RegisterMemory:
     """Registers."""
 
     _table: list[Cell | None]
+    write_log: list[dict[RegisterName, tuple(Cell, Cell)]] | None
 
     def __init__(self) -> None:
         self._table = [None] * len(RegisterName)
+        self.write_log = None
 
     def add_register(self, name: RegisterName, *, bits: int) -> None:
         """Add register with specific size.
@@ -83,6 +85,8 @@ class RegisterMemory:
         """Raise an error, if word has wrong format."""
         current = self[name]
         assert current.bits == word.bits
+        if self.write_log is not None:
+            self.write_log[-1][name] = (self._table[name], word)
         self._table[name] = word
 
     def __contains__(self, name: RegisterName) -> bool:

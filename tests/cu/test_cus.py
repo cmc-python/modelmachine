@@ -59,7 +59,6 @@ class TestControlUnitS:
             == 0x123456
         )
         assert self.control_unit.status is Status.RUNNING
-        assert self.control_unit.cycle == 1
 
     def test_pop(self) -> None:
         self.ram.put(
@@ -79,7 +78,6 @@ class TestControlUnitS:
             == 0x123456
         )
         assert self.control_unit.status is Status.RUNNING
-        assert self.control_unit.cycle == 1
 
     def run_opcode(
         self, *, opcode: Opcode | int, o: int, a: int, b: int
@@ -117,7 +115,6 @@ class TestControlUnitS:
         with warnings.catch_warnings(record=False):
             warnings.simplefilter("ignore")
             self.control_unit.step()
-        assert self.control_unit.cycle == 1
 
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
@@ -461,4 +458,3 @@ class TestControlUnitS:
         )
         assert self.registers[RegisterName.PC] == 0x56
         assert self.control_unit.status is Status.HALTED
-        assert self.control_unit.cycle == 9
