@@ -5,7 +5,6 @@ from __future__ import annotations
 import signal
 import sys
 import warnings
-from functools import lru_cache
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
@@ -17,7 +16,6 @@ from modelmachine.cell import Cell
 from modelmachine.cpu.source import kw, posinteger
 from modelmachine.cu.opcode import OPCODE_BITS, Opcode
 from modelmachine.cu.status import Status
-from modelmachine.memory.ram import MemoryInterval
 from modelmachine.memory.register import RegisterName
 from modelmachine.prompt import (
     BLU,
@@ -55,30 +53,6 @@ quitc = Gr(kw("quit") | kw("q"))("quit")
 debug_cmd = stepc | continuec | memoryc | quitc
 
 
-@lru_cache(maxsize=1)
-def current_cmd(ide: Ide, pc: Cell, _cycle: int) -> MemoryInterval:
-    opcode_data = ide.cpu.ram.fetch(
-        address=pc,
-        bits=ide.cpu.ram.word_bits,
-        from_cpu=False,
-    )[-OPCODE_BITS:].unsigned
-
-    try:
-        opcode = Opcode(opcode_data)
-    except ValueError:
-        return MemoryInterval(pc.unsigned, pc.unsigned + 1)
-
-    if opcode not in ide.cpu.control_unit.KNOWN_OPCODES:
-        return MemoryInterval(pc.unsigned, pc.unsigned + 1)
-
-    return MemoryInterval(
-        pc.unsigned,
-        pc.unsigned
-        + ide.cpu.control_unit.instruction_bits(opcode)
-        // ide.cpu.ram.word_bits,
-    )
-
-
 class Ide:
     cpu: Cpu
     last_register_state: dict[RegisterName, Cell]
@@ -104,7 +78,7 @@ class Ide:
         for _i in range(count):
             self.last_register_state = self.cpu.registers.state
             self.cpu.control_unit.step()
-            self.print()
+            self.dump_state()
             if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
                 printf(f"{YEL}machine halted{DEF}")
                 break
@@ -124,15 +98,15 @@ class Ide:
         if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
             printf(f"{YEL}machine halted{DEF}")
 
-        self.print()
+        self.dump_state()
 
-    def print(self) -> None:
+    def dump_state(self) -> None:
         """Print contents of registers."""
 
         printf(f"cycle {self.cpu.control_unit.cycle:>4}")
         printf(f"RAM access count: {self.cpu.ram.access_count} words")
         printf("RAM:")
-        self.print_full_memory()
+        self.dump_full_memory()
         printf("\nRegisters:")
         for reg, value in self.cpu.registers.state.items():
             color = ""
@@ -144,14 +118,30 @@ class Ide:
             printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
 
     @property
-    def current_cmd(self) -> MemoryInterval:
-        return current_cmd(
-            self,
-            self.cpu.registers[RegisterName.PC],
-            self.cpu.control_unit.cycle,
+    def current_cmd(self) -> range:
+        pc = self.cpu.registers[RegisterName.PC]
+        opcode_data = self.cpu.ram.fetch(
+            address=pc,
+            bits=self.cpu.ram.word_bits,
+            from_cpu=False,
+        )[-OPCODE_BITS:].unsigned
+
+        try:
+            opcode = Opcode(opcode_data)
+        except ValueError:
+            return range(pc.unsigned, pc.unsigned + 1)
+
+        if opcode not in self.cpu.control_unit.KNOWN_OPCODES:
+            return range(pc.unsigned, pc.unsigned + 1)
+
+        return range(
+            pc.unsigned,
+            pc.unsigned
+            + self.cpu.control_unit.instruction_bits(opcode)
+            // self.cpu.ram.word_bits,
         )
 
-    def format_page(self, page: int) -> str:
+    def format_page(self, page: int, current_cmd: range) -> str:
         page_addr = Cell(page * PAGE_WIDTH, bits=self.cpu.ram.address_bits)
         line = f"{page_addr}:"
         for col in range(PAGE_WIDTH):
@@ -162,26 +152,27 @@ class Ide:
                 from_cpu=False,
             )
 
-            if cell_addr in self.current_cmd:
+            if cell_addr in current_cmd:
                 line += f" {UND}{cell.hex()}"
             else:
                 line += f"{NUND} {cell.hex()}"
 
         return line
 
-    def print_full_memory(self) -> None:
+    def dump_full_memory(self) -> None:
         page_set: set[int] = set()
         for interval in self.cpu.ram.filled_intervals:
             for i in range(
-                interval.begin // PAGE_WIDTH, interval.end // PAGE_WIDTH + 1
+                interval.start // PAGE_WIDTH, interval.stop // PAGE_WIDTH + 1
             ):
                 page_set.add(i)
 
         page_list = sorted(page_set)
+        current_cmd = self.current_cmd
         for i, page in enumerate(page_list):
             if i > 0 and page_list[i - 1] != page - 1:
                 printf("... unset memory ...")
-            printf(self.format_page(page))
+            printf(self.format_page(page, current_cmd))
 
     def memory(self, begin: int = -1, end: int = -1) -> None:
         """Print contents of RAM."""
@@ -190,10 +181,11 @@ class Ide:
 
         if begin == -1:
             assert end == -1
-            self.print_full_memory()
+            self.dump_full_memory()
 
+        current_cmd = self.current_cmd
         for page in range(begin // PAGE_WIDTH, end // PAGE_WIDTH + 1):
-            printf(self.format_page(page))
+            printf(self.format_page(page, current_cmd))
 
     def cmd(self, command: str) -> bool:
         """Exec one command."""
@@ -243,7 +235,7 @@ class Ide:
 
         printf("Welcome to interactive debug mode")
         printf(INSTRUCTION)
-        self.print()
+        self.dump_state()
 
         session: PromptSession[str] = PromptSession()
         command = ""

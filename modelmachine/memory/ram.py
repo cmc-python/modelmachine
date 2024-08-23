@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from array import array
 from bisect import insort
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from modelmachine.cell import Cell, Endianess
@@ -14,15 +13,6 @@ if TYPE_CHECKING:
 
 MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
-
-
-@dataclass(eq=True, order=True)
-class MemoryInterval:
-    begin: int
-    end: int
-
-    def __contains__(self, address: Cell) -> bool:
-        return self.begin <= address.unsigned < self.end
 
 
 class RamAccessError(Exception):
@@ -44,7 +34,7 @@ class RandomAccessMemory:
     is_protected: Final[bool]
     _table: array[int]
     _fill: array[int]
-    _filled_intervals: list[MemoryInterval]
+    _filled_intervals: list[range]
     _access_count: int
 
     @property
@@ -52,7 +42,7 @@ class RandomAccessMemory:
         return self._access_count
 
     @property
-    def filled_intervals(self) -> Collection[MemoryInterval]:
+    def filled_intervals(self) -> Collection[range]:
         return self._filled_intervals
 
     def __init__(
@@ -93,23 +83,27 @@ class RandomAccessMemory:
             return
         self._fill[address] = 1
 
-        for i, e in enumerate(self._filled_intervals):
-            if address == e.begin - 1:
-                e.begin -= 1
+        for i, ee in enumerate(self._filled_intervals):
+            e = ee
+            if address == e.start - 1:
+                self._filled_intervals[i] = e = range(address, e.stop)
                 break
 
-            if address == e.end:
-                e.end += 1
+            if address == e.stop:
+                self._filled_intervals[i] = e = range(e.start, e.stop + 1)
                 if i + 1 < len(self._filled_intervals):
                     next_interval = self._filled_intervals[i + 1]
-                    if e.end == next_interval.begin:
-                        e.end = next_interval.end
+                    if e.stop == next_interval.start:
+                        self._filled_intervals[i] = range(
+                            e.start, next_interval.stop
+                        )
                         del self._filled_intervals[i + 1]
                 break
         else:
             insort(
                 self._filled_intervals,
-                MemoryInterval(begin=address, end=address + 1),
+                range(address, address + 1),
+                key=lambda a: (a.start, a.stop),
             )
 
     def __setitem__(self, address: Cell, word: Cell) -> None:

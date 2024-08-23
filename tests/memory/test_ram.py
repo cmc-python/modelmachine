@@ -4,7 +4,6 @@ import pytest
 
 from modelmachine.cell import Cell, Endianess
 from modelmachine.memory.ram import (
-    MemoryInterval,
     RamAccessError,
     RandomAccessMemory,
 )
@@ -147,6 +146,6 @@ class TestRandomAccessMemory:
             for i in range(b, e):
                 self._set(i, i + 1)
         assert self.ram.filled_intervals == [
-            MemoryInterval(1, 5),
-            MemoryInterval(8, 10),
+            range(1, 5),
+            range(8, 10),
         ]
