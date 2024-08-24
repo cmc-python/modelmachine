@@ -18,7 +18,9 @@ from modelmachine.cu.opcode import OPCODE_BITS, Opcode
 from modelmachine.cu.status import Status
 from modelmachine.memory.register import RegisterName
 from modelmachine.prompt import (
+    BDEF,
     BLU,
+    BSEL,
     DEF,
     GRE,
     NUND,
@@ -39,7 +41,8 @@ INSTRUCTION = (
     "\nEnter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
     f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
-    f"  {BLU}c{DEF}ontinue             continue the program until the end\n"
+    f"  {BLU}c{DEF}ontinue             continue until breakpoint or halt\n"
+    f"  {BLU}b{DEF}reakpoint [addr]    set breakpoint (pc and data) at addr\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
     f"  {BLU}q{DEF}uit\n"
 )
@@ -49,9 +52,12 @@ reverse_stepc = Gr(
     (kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1]
 )("reverse_step")
 continuec = Gr(kw("continue") | kw("c"))("continue")
+breakc = Gr((kw("breakpoint") | kw("break") | kw("b")) + posinteger[0, 1])(
+    "breakpoint"
+)
 memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
-debug_cmd = stepc | reverse_stepc | continuec | memoryc | quitc
+debug_cmd = stepc | reverse_stepc | continuec | memoryc | quitc | breakc
 
 
 class Ide:
@@ -61,6 +67,7 @@ class Ide:
     _ram_access_count: list[int]
     _quit: bool
     _run: bool
+    _breakpoints: set[Cell]
 
     def __init__(self, cpu: Cpu):
         self.cpu = cpu
@@ -73,8 +80,10 @@ class Ide:
         self._ram_access_count = [0]
         self._quit = False
         self._run = False
+        self._breakpoints = set()
 
-    def exec_step(self) -> Status:
+    def exec_step(self, *, breakp: bool) -> bool:
+        """Returns if we should continue execution."""
         self._cycle += 1
         assert self.cpu.registers.write_log is not None
         self.cpu.registers.write_log.append({})
@@ -82,7 +91,19 @@ class Ide:
         self.cpu.ram.write_log.append({})
         self.cpu.control_unit.step()
         self._ram_access_count.append(self.cpu.ram.access_count)
-        return self.cpu.control_unit.status
+
+        if breakp:
+            current_cmd = self.current_cmd
+            for br in self._breakpoints:
+                if br.unsigned in current_cmd:
+                    printf(f"{YEL}pause at breakpoint {br}{DEF}")
+                    return False
+                for addr in self.cpu.ram.write_log[-1]:
+                    if br.unsigned == addr:
+                        printf(f"{YEL}pause at data breakpoint {br}{DEF}")
+                        return False
+
+        return self.cpu.control_unit.status == Status.RUNNING
 
     def step(self, count: int = 1) -> None:
         """Exec debug step command."""
@@ -90,10 +111,8 @@ class Ide:
             printf(f"{RED}cannot execute command: machine halted{DEF}")
             return
 
-        for _i in range(count):
-            self.exec_step()
-            if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
-                printf(f"{YEL}machine halted{DEF}")
+        for i in range(count):
+            if not self.exec_step(breakp=i < count - 1):
                 break
 
         self.dump_state()
@@ -131,17 +150,17 @@ class Ide:
 
         self._run = True
         while self._run:
-            if self.exec_step() != Status.RUNNING:
+            if not self.exec_step(breakp=True):
                 break
         self._run = False
-
-        if self.cpu.control_unit.status == Status.HALTED:  # type: ignore[comparison-overlap]
-            printf(f"{YEL}machine halted{DEF}")
 
         self.dump_state()
 
     def dump_state(self) -> None:
         """Print contents of registers."""
+
+        if self.cpu.control_unit.status == Status.HALTED:
+            printf(f"{YEL}machine halted{DEF}")
 
         printf(
             f"Cycle: {self._cycle:>4}      "
@@ -197,15 +216,21 @@ class Ide:
                 from_cpu=False,
             )
 
-            color = ""
+            cell_value = cell.hex()
+
             assert self.cpu.ram.write_log is not None
-            if cell_addr in self.cpu.ram.write_log[-1]:
-                color = GRE
+            if cell_addr.unsigned in self.cpu.ram.write_log[-1]:
+                cell_value = f"{GRE}{cell_value}{DEF}"
+
+            if cell_addr in self._breakpoints:
+                cell_value = f"{BSEL}{cell_value}{BDEF}"
 
             if cell_addr in current_cmd:
-                line += f" {UND}{color}{cell.hex()}{DEF}"
+                cell_value = f" {UND}{cell_value}"
             else:
-                line += f"{NUND} {color}{cell.hex()}{DEF}"
+                cell_value = f"{NUND} {cell_value}"
+
+            line += cell_value
 
         return line
 
@@ -241,6 +266,23 @@ class Ide:
         ):
             printf(self.format_page(page, current_cmd))
 
+    def breakpoint(self, addr: int = -1) -> None:
+        if addr == -1:
+            if self._breakpoints:
+                breakpoints = ", ".join(str(x) for x in self._breakpoints)
+                printf(f"{YEL}Breakpoints: {breakpoints}{DEF}")
+            else:
+                printf(f"{YEL}No breakpoints set{DEF}")
+            return
+
+        ram_addr = Cell(addr, bits=self.cpu.ram.address_bits)
+        if addr in self._breakpoints:
+            self._breakpoints.remove(ram_addr)
+            printf(f"{YEL}Unset breakpoint at {ram_addr}{DEF}")
+        else:
+            self._breakpoints.add(ram_addr)
+            printf(f"{YEL}Set breakpoint at {ram_addr}{DEF}")
+
     def cmd(self, command: str) -> bool:
         """Exec one command."""
 
@@ -265,6 +307,9 @@ class Ide:
             return True
         if cmd_name == "quit":
             self._quit = True
+            return True
+        if cmd_name == "breakpoint":
+            self.breakpoint(*parsed_cmd[0])
             return True
 
         return False
