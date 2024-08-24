@@ -5,6 +5,7 @@ from __future__ import annotations
 import signal
 import sys
 import warnings
+from contextlib import contextmanager
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
@@ -33,7 +34,7 @@ from modelmachine.prompt import (
 
 if TYPE_CHECKING:
     from types import FrameType
-    from typing import Final
+    from typing import Final, Iterator
 
     from modelmachine.cpu.cpu import Cpu
 
@@ -42,22 +43,26 @@ INSTRUCTION = (
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
     f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
     f"  {BLU}c{DEF}ontinue             continue until breakpoint or halt\n"
+    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or halt in reverse direction\n"
     f"  {BLU}b{DEF}reakpoint [addr]    set breakpoint (pc and data) at addr\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
     f"  {BLU}q{DEF}uit\n"
 )
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
-reverse_stepc = Gr(
-    (kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1]
-)("reverse_step")
+rstepc = Gr((kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1])(
+    "reverse_step"
+)
 continuec = Gr(kw("continue") | kw("c"))("continue")
+rcontinuec = Gr(kw("reverse-continue") | kw("rcontinue") | kw("rc"))(
+    "reverse_continue"
+)
 breakc = Gr((kw("breakpoint") | kw("break") | kw("b")) + posinteger[0, 1])(
     "breakpoint"
 )
 memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
-debug_cmd = stepc | reverse_stepc | continuec | memoryc | quitc | breakc
+debug_cmd = stepc | rstepc | continuec | rcontinuec | memoryc | quitc | breakc
 
 
 class Ide:
@@ -66,7 +71,7 @@ class Ide:
     _cycle: int
     _ram_access_count: list[int]
     _quit: bool
-    _run: bool
+    _running: bool
     _breakpoints: set[Cell]
 
     def __init__(self, cpu: Cpu):
@@ -79,8 +84,32 @@ class Ide:
         self._cycle = 0
         self._ram_access_count = [0]
         self._quit = False
-        self._run = False
+        self._running = False
         self._breakpoints = set()
+
+    @contextmanager
+    def running(self) -> Iterator[None]:
+        self._running = True
+        try:
+            yield
+        finally:
+            self._running = False
+
+    @property
+    def is_breakpoint(self) -> bool:
+        current_cmd = self.current_cmd
+        assert self.cpu.ram.write_log is not None
+        for br in self._breakpoints:
+            if br.unsigned in current_cmd:
+                printf(f"{YEL}pause at breakpoint: operation at {br}{DEF}")
+                return True
+            for addr in self.cpu.ram.write_log[-1]:
+                if br.unsigned == addr:
+                    printf(
+                        f"{YEL}pause at data breakpoint: write to {br}{DEF}"
+                    )
+                    return True
+        return False
 
     def exec_step(self, *, breakp: bool) -> bool:
         """Returns if we should continue execution."""
@@ -92,16 +121,8 @@ class Ide:
         self.cpu.control_unit.step()
         self._ram_access_count.append(self.cpu.ram.access_count)
 
-        if breakp:
-            current_cmd = self.current_cmd
-            for br in self._breakpoints:
-                if br.unsigned in current_cmd:
-                    printf(f"{YEL}pause at breakpoint {br}{DEF}")
-                    return False
-                for addr in self.cpu.ram.write_log[-1]:
-                    if br.unsigned == addr:
-                        printf(f"{YEL}pause at data breakpoint {br}{DEF}")
-                        return False
+        if breakp and self.is_breakpoint:
+            return False
 
         return self.cpu.control_unit.status == Status.RUNNING
 
@@ -111,33 +132,61 @@ class Ide:
             printf(f"{RED}cannot execute command: machine halted{DEF}")
             return
 
-        for i in range(count):
-            if not self.exec_step(breakp=i < count - 1):
-                break
+        with self.running():
+            for i in range(count):
+                if not self._running:
+                    break
+
+                is_last = i == count - 1
+                if not self.exec_step(breakp=not is_last):
+                    break
 
         self.dump_state()
+
+    def exec_reverse_step(self, *, breakp: bool) -> bool:
+        if self._cycle == 0:
+            return False
+
+        self._cycle -= 1
+        self._ram_access_count.pop()
+
+        assert self.cpu.registers.write_log is not None
+        for reg, (old, _) in self.cpu.registers.write_log.pop().items():
+            self.cpu.registers._table[reg] = old  # noqa: SLF001
+
+        assert self.cpu.ram.write_log is not None
+        for addr, (oldr, _) in self.cpu.ram.write_log.pop().items():
+            self.cpu.ram._table[addr] = oldr  # noqa: SLF001
+
+        self.cpu.ram.access_count = self._ram_access_count[-1]
+
+        return not (breakp and self.is_breakpoint)
 
     def reverse_step(self, count: int = 1) -> None:
         if self._cycle == 0:
             printf(f"{RED}cannot execute command: cycle=0{DEF}")
             return
 
-        for _i in range(count):
-            if self._cycle == 0:
-                break
+        with self.running():
+            for i in range(count):
+                if not self._running:
+                    break
 
-            self._cycle -= 1
-            self._ram_access_count.pop()
+                is_last = i == count - 1
+                if not self.exec_reverse_step(breakp=not is_last):
+                    break
 
-            assert self.cpu.registers.write_log is not None
-            for reg, (old, _) in self.cpu.registers.write_log.pop().items():
-                self.cpu.registers._table[reg] = old  # noqa: SLF001
+        self.dump_state()
 
-            assert self.cpu.ram.write_log is not None
-            for addr, (oldr, _) in self.cpu.ram.write_log.pop().items():
-                self.cpu.ram._table[addr] = oldr  # noqa: SLF001
+    def reverse_continue(self) -> None:
+        if self._cycle == 0:
+            printf(f"{RED}cannot execute command: cycle=0{DEF}")
+            return
 
-            self.cpu.ram.access_count = self._ram_access_count[-1]
+        with self.running():
+            while self._running:
+                if not self.exec_reverse_step(breakp=True):
+                    break
 
         self.dump_state()
 
@@ -148,11 +197,10 @@ class Ide:
             printf(f"{RED}cannot execute command: machine halted{DEF}")
             return
 
-        self._run = True
-        while self._run:
-            if not self.exec_step(breakp=True):
-                break
-        self._run = False
+        with self.running():
+            while self._running:
+                if not self.exec_step(breakp=True):
+                    break
 
         self.dump_state()
 
@@ -276,7 +324,7 @@ class Ide:
             return
 
         ram_addr = Cell(addr, bits=self.cpu.ram.address_bits)
-        if addr in self._breakpoints:
+        if ram_addr in self._breakpoints:
             self._breakpoints.remove(ram_addr)
             printf(f"{YEL}Unset breakpoint at {ram_addr}{DEF}")
         else:
@@ -295,24 +343,22 @@ class Ide:
 
         if cmd_name == "step":
             self.step(*parsed_cmd[0])
-            return True
-        if cmd_name == "reverse_step":
+        elif cmd_name == "reverse_step":
             self.reverse_step(*parsed_cmd[0])
-            return True
-        if cmd_name == "continue":
+        elif cmd_name == "continue":
             self.continue_()
-            return True
-        if cmd_name == "memory":
+        elif cmd_name == "reverse_continue":
+            self.reverse_continue()
+        elif cmd_name == "memory":
             self.memory(*parsed_cmd[0])
-            return True
-        if cmd_name == "quit":
+        elif cmd_name == "quit":
             self._quit = True
-            return True
-        if cmd_name == "breakpoint":
+        elif cmd_name == "breakpoint":
             self.breakpoint(*parsed_cmd[0])
-            return True
+        else:
+            return False
 
-        return False
+        return True
 
     def confirm_quit(self) -> bool:
         try:
@@ -342,8 +388,8 @@ class Ide:
         command = ""
 
         def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-            if self._run:
-                self._run = False
+            if self._running:
+                self._running = False
                 printf(f"{YEL}Interrupted{DEF}")
                 return
 
