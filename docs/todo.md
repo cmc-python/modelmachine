@@ -5,4 +5,3 @@
 - Show dirty memory with color
 - Edit memory inside ide
 - Disasm
-- Breakpoints

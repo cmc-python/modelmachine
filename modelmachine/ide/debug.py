@@ -41,11 +41,11 @@ if TYPE_CHECKING:
 INSTRUCTION = (
     "\nEnter\n"
     f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
-    f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
     f"  {BLU}c{DEF}ontinue             continue until breakpoint or halt\n"
-    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or halt in reverse direction\n"
-    f"  {BLU}b{DEF}reakpoint [addr]    set breakpoint (pc and data) at addr\n"
+    f"  {BLU}b{DEF}reakpoint [addr]    set/unset breakpoint at addr\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
+    f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
+    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or halt in reverse direction\n"
     f"  {BLU}q{DEF}uit\n"
 )
 
@@ -211,8 +211,9 @@ class Ide:
             printf(f"{YEL}machine halted{DEF}")
 
         printf(
-            f"Cycle: {self._cycle:>4}      "
-            f"RAM access count: {self.cpu.ram.access_count:>4} words\n"
+            f"Cycle: {self._cycle:>4} | "
+            f"RAM access count: {self.cpu.ram.access_count:>4} words | "
+            f"Next opcode: {self.opcode_str}\n"
         )
         self.dump_full_memory()
         printf("")
@@ -227,7 +228,7 @@ class Ide:
             printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
 
     @property
-    def current_cmd(self) -> range:
+    def opcode(self) -> Opcode | int:
         pc = self.cpu.registers[RegisterName.PC]
         opcode_data = self.cpu.ram.fetch(
             address=pc,
@@ -238,9 +239,25 @@ class Ide:
         try:
             opcode = Opcode(opcode_data)
         except ValueError:
-            return range(pc.unsigned, pc.unsigned + 1)
+            return opcode_data
 
         if opcode not in self.cpu.control_unit.KNOWN_OPCODES:
+            return opcode_data
+
+        return opcode
+
+    @property
+    def opcode_str(self) -> str:
+        opcode = self.opcode
+        if isinstance(opcode, Opcode):
+            return opcode.name
+        return f"{opcode:02x} (unknown)"
+
+    @property
+    def current_cmd(self) -> range:
+        pc = self.cpu.registers[RegisterName.PC]
+        opcode = self.opcode
+        if not isinstance(opcode, Opcode):
             return range(pc.unsigned, pc.unsigned + 1)
 
         return range(
