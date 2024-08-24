@@ -1,45 +1,46 @@
-<!doctype html>
-<html lang="ru">
-  <head>
+<!DOCTYPE html>
+<html lang="ru"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8"> 
     <title>Сборник упражнений по учебным машинам (УМ-3) | cmc@msu</title>
-    <meta name="description" content="Материалы по практикуму для студентов ВМК МГУ им. М.В. Ломоносова, литература, слайды лекций, примеры заданий, онлайн-сервисы, ссылки на ресурсы" />
-    <meta name="keywords"    content="ВМК, МГУ, практикум, программирование, архитектура ЭВМ, пособия, лекции, книги, методички, онлайн-эмулятор, МТ, Машина Тьюринга, НАМ, Нормальные алгоритмы Маркова, машинное представление чисел, конвертер" />
-    <link rel=stylesheet type="text/css" href="main.css">
-    <link rel="shortcut icon" href="favicon.png">
+    <meta name="description" content="Материалы по практикуму для студентов ВМК МГУ им. М.В. Ломоносова, литература, слайды лекций, примеры заданий, онлайн-сервисы, ссылки на ресурсы">
+    <meta name="keywords" content="ВМК, МГУ, практикум, программирование, архитектура ЭВМ, пособия, лекции, книги, методички, онлайн-эмулятор, МТ, Машина Тьюринга, НАМ, Нормальные алгоритмы Маркова, машинное представление чисел, конвертер">
+    <link rel="stylesheet" type="text/css" href="um3.tasks_files/main.css">
+    <link rel="shortcut icon" href="https://cmcmsu.info/favicon.png">
   </head>
 <body>
-  <div class=body>
+  <div class="body">
     
-    <div class=header>
+    <div class="header">
       
       <div style="float:right;margin-left:3em;line-height:20pt;">
         <a href="https://cmcmsu.info/map/search.htm">найти на сайте</a>
       </div>
-      <img src="cmc.logo.png" id=logo_icon>
+      <img src="um3.tasks_files/cmc.logo.png" id="logo_icon">
       <div class="spacer"></div>
-      <a href="https://cmcmsu.info/">Главная</a> &rsaquo; <div class=currentSection><a href="https://cmcmsu.info/1course/">1-й курс</a></div> &rsaquo; <a href="https://cmcmsu.info/2course/">2-й курс</a> &rsaquo; <a href="https://cmcmsu.info/3course/">3-й курс</a> &rsaquo; <a href="https://cmcmsu.info/4course/">4-й курс</a> &rsaquo; <a href="https://cmcmsu.info/5course/">5-й курс</a> &rsaquo; <a href="https://cmcmsu.info/special.courses/">Спецкурсы</a> &rsaquo; <a href="https://cmcmsu.info/links/">Ссылки</a> &rsaquo; <a href="https://cmcmsu.info/map/">Карта</a> &rsaquo; <a href="https://cmcmsu.info/1course/um3.tasks.htm?mode=print"><small>(версия для печати)</small></a>
+      <a href="https://cmcmsu.info/">Главная</a> › <div class="currentSection"><a href="https://cmcmsu.info/1course/">1-й курс</a></div> › <a href="https://cmcmsu.info/2course/">2-й курс</a> › <a href="https://cmcmsu.info/3course/">3-й курс</a> › <a href="https://cmcmsu.info/4course/">4-й курс</a> › <a href="https://cmcmsu.info/5course/">5-й курс</a> › <a href="https://cmcmsu.info/special.courses/">Спецкурсы</a> › <a href="https://cmcmsu.info/links/">Ссылки</a> › <a href="https://cmcmsu.info/map/">Карта</a> › <a href="https://cmcmsu.info/1course/um3.tasks.htm?mode=print"><small>(версия для печати)</small></a>
     </div>
-      <div class=page>
+      <div class="page">
 
-<p><h1>Сборник упражнений по учебным машинам (УМ-3)</h1>
+<p></p><h1>Сборник упражнений по учебным машинам (УМ-3)</h1>
 
-</p>
-<p><ul class="formatted"><li before="1.">Ввести вещественное <span class=Serif><i>x</i></span> и вывести значение <span class=Serif><i>y</i>&nbsp;=&nbsp;{&nbsp;<i>x</i>&nbsp;+&nbsp;1,&nbsp;при&nbsp;<i>x</i> &lt; 1;&nbsp;1,&nbsp;при&nbsp;<i>x</i>&nbsp;=&nbsp;1;&nbsp;1/(<i>x</i>+1),&nbsp;при&nbsp;<i>x</i>&nbsp;>&nbsp;1&nbsp;}</span>.
-</li><li before="2.">Ввести координаты двумерных векторов <span class=Serif><i>x</i></span> и <span class=Serif><i>y</i></span>. Вывести 1, если <span class=Serif><i>x</i>&nbsp;||&nbsp;<i>y</i></span>, иначе 0.
+<p></p>
+<p></p><ul class="formatted"><li before="1.">Ввести вещественное <span class="Serif"><i>x</i></span> и вывести значение <span class="Serif"><i>y</i>&nbsp;=&nbsp;{&nbsp;<i>x</i>&nbsp;+&nbsp;1,&nbsp;при&nbsp;<i>x</i> &lt; 1;&nbsp;1,&nbsp;при&nbsp;<i>x</i>&nbsp;=&nbsp;1;&nbsp;1/(<i>x</i>+1),&nbsp;при&nbsp;<i>x</i>&nbsp;&gt;&nbsp;1&nbsp;}</span>.
+</li><li before="2.">Ввести координаты двумерных векторов <span class="Serif"><i>x</i></span> и <span class="Serif"><i>y</i></span>. Вывести 1, если <span class="Serif"><i>x</i>&nbsp;||&nbsp;<i>y</i></span>, иначе 0.
 <h4>Модификация команд (формирование операндов)</h4>
-</li><li before="3.">Ввести координаты 50-мерного вещественного вектора <span class=Serif><i>X</i></span> и вектора <span class=Serif><i>Y</i></span>, вычислить их сумму <span class=Serif><i>Z</i>&nbsp;=&nbsp;(&nbsp;<i>X</i>&nbsp;+&nbsp;<i>Y</i>&nbsp;)</span> и вывести координаты <span class=Serif><i>Z</i></span> на экран.
+</li><li before="3.">Ввести координаты 50-мерного вещественного вектора <span class="Serif"><i>X</i></span> и вектора <span class="Serif"><i>Y</i></span>, вычислить их сумму <span class="Serif"><i>Z</i>&nbsp;=&nbsp;(&nbsp;<i>X</i>&nbsp;+&nbsp;<i>Y</i>&nbsp;)</span> и вывести координаты <span class="Serif"><i>Z</i></span> на экран.
 </li><li before="4.">Ввести последовательность из 100 целых чисел и вывести её в обратном порядке.
 </li><li before="5.">Ввести 50 целых и вывести их сумму.
-</li><li before="6.">Ввести последовательность из 100 целых чисел и вывести 1, если последовательность неубывающая, иначе&nbsp;&mdash; 0.
-</li><li before="7.">Ввести последовательность из 100 целых чисел <span class=Serif>{<i>a</i><sub>100</sub>}</span> и число <span class=Serif><i>x</i></span>. Вывести 1, если <span class=Serif><i>x</i></span> присутствует в последовательности <span class=Serif>{<i>a</i><sub>100</sub>}</span>.
+</li><li before="6.">Ввести последовательность из 100 целых чисел и вывести 1, если последовательность неубывающая, иначе&nbsp;— 0.
+</li><li before="7.">Ввести последовательность из 100 целых чисел <span class="Serif">{<i>a</i><sub>100</sub>}</span> и число <span class="Serif"><i>x</i></span>. Вывести 1, если <span class="Serif"><i>x</i></span> присутствует в последовательности <span class="Serif">{<i>a</i><sub>100</sub>}</span>.
 </li><li before="8.">Ввести последовательность из 100 целых чисел и вывести значение максимума.
-</li><li before="9.">Ввести целое <span class=Serif><i>n</i>&nbsp;(2 &#8804; <i>n</i> &#8804; 100)</span>. Ввести <span class=Serif><i>n</i></span> вещественных чисел и вывести значение максимального из них.
-</li><li before="10.">Ввести целое <span class=Serif><i>n</i>&nbsp;(2 &#8804; <i>n</i> &#8804; 100)</span>. Ввести вещественные координаты двух <span class=Serif><i>n</i></span>-мерных векторов <span class=Serif><i>x</i></span> и <span class=Serif><i>y</i></span>. Вывести их скалярное произведение <span class=Serif>(<i>x</i>,&nbsp;<i>y</i>)</span>.
+</li><li before="9.">Ввести целое <span class="Serif"><i>n</i>&nbsp;(2 ≤ <i>n</i> ≤ 100)</span>. Ввести <span class="Serif"><i>n</i></span> вещественных чисел и вывести значение максимального из них.
+</li><li before="10.">Ввести целое <span class="Serif"><i>n</i>&nbsp;(2 ≤ <i>n</i> ≤ 100)</span>. Ввести вещественные координаты двух <span class="Serif"><i>n</i></span>-мерных векторов <span class="Serif"><i>x</i></span> и <span class="Serif"><i>y</i></span>. Вывести их скалярное произведение <span class="Serif">(<i>x</i>,&nbsp;<i>y</i>)</span>.
 <h4>Модификация команд (формирование кода операции)</h4>
-</li><li before="11.">Имеется шаблон фрагмента кода, при выполнении которого с 52 ячейки происходит суммирование вещественных значений ячеек с 100 по 499.
-<pre class=codepad>
-50  xxx xxx xxx xxx
+</li><li before="11.">Имеется шаблон фрагмента кода, при выполнении 
+которого с 52 ячейки происходит суммирование вещественных значений ячеек
+ с 100 по 499.
+<pre class="codepad">50  xxx xxx xxx xxx
 51  СЛЦ xxx xxx xxx
 52  СЛВ 100 100 101
 53  СЛЦ  52  52  58   ; модификация второго операнда
@@ -47,21 +48,24 @@
 55  УСЛ  56  56  52   ; цикл
 56  ВЫВ 100   1       ; вывод результата
 57  СТОП
-58              <1>   ; константа 1
-59            <399>   ; константа 399
+58              &lt;1&gt;   ; константа 1
+59            &lt;399&gt;   ; константа 399
 60  УВЧ  99  99  98
 61  СЛВ xxx xxx xxx
 </pre>
-Подобрать и вставить в пустые места, обозначенные символами &laquo;x&raquo;, такие значения, чтобы при переходе на 50 ячейку УМ-3 вычислила и вывела бы произведение вещественных значений ячеек с 100 по 499.
-</ul>
-</p><p>
-      </div>
-      <div class=footer>
+Подобрать и вставить в пустые места, обозначенные символами «x», такие 
+значения, чтобы при переходе на 50 ячейку УМ-3 вычислила и вывела бы 
+произведение вещественных значений ячеек с 100 по 499.
+</li></ul>
+<p></p><p>
+      </p></div>
+      <div class="footer">
       <div style="float:right"><a href="http://cmcmsu.info/">cmcmsu.info</a></div>
-        2006&ndash;2024 CMC@MSU<br>
-        &copy; Все права на публикуемые документы принадлежат соответствующим авторам.<br>
-        Если вы нашли неточности или опечатки, смело пишите по адресу <a href="mailto:cmcmsu.info@gmail.com">cmcmsu.info@gmail.com</a></p>
+        2006–2024 CMC@MSU<br>
+        © Все права на публикуемые документы принадлежат соответствующим авторам.<br>
+        Если вы нашли неточности или опечатки, смело пишите по адресу <a href="mailto:cmcmsu.info@gmail.com">cmcmsu.info@gmail.com</a><p></p>
       </div>
     </div>
-  </body>
-</html>
+  
+
+</body></html>

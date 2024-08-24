@@ -1,94 +1,94 @@
-<!doctype html>
-<html lang="ru">
-  <head>
+<!DOCTYPE html>
+<html lang="ru"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8"> 
     <title>Учебная трёхадресная машина УМ-3 (набор команд) | cmc@msu</title>
-    <meta name="description" content="Материалы по практикуму для студентов ВМК МГУ им. М.В. Ломоносова, литература, слайды лекций, примеры заданий, онлайн-сервисы, ссылки на ресурсы" />
-    <meta name="keywords"    content="ВМК, МГУ, практикум, программирование, архитектура ЭВМ, пособия, лекции, книги, методички, онлайн-эмулятор, МТ, Машина Тьюринга, НАМ, Нормальные алгоритмы Маркова, машинное представление чисел, конвертер" />
-    <link rel=stylesheet type="text/css" href="main.css.1">
-    <link rel="shortcut icon" href="favicon.png.1">
+    <meta name="description" content="Материалы по практикуму для студентов ВМК МГУ им. М.В. Ломоносова, литература, слайды лекций, примеры заданий, онлайн-сервисы, ссылки на ресурсы">
+    <meta name="keywords" content="ВМК, МГУ, практикум, программирование, архитектура ЭВМ, пособия, лекции, книги, методички, онлайн-эмулятор, МТ, Машина Тьюринга, НАМ, Нормальные алгоритмы Маркова, машинное представление чисел, конвертер">
+    <link rel="stylesheet" type="text/css" href="um3.command.set_files/main.css">
+    <link rel="shortcut icon" href="https://cmcmsu.info/favicon.png">
   </head>
 <body>
-  <div class=body>
+  <div class="body">
     
-<div class=header>
+<div class="header">
 <div style="float:right;margin-left:3em;line-height:20pt;">
 <a href="https://cmcmsu.info/map/search.htm">найти на сайте</a>
 </div>
 
-<img src="cmc.logo.png.1" id=logo_icon>
+<img src="um3.command.set_files/cmc.logo.png" id="logo_icon">
 <div class="spacer"></div>
-<a href="https://cmcmsu.info/">Главная</a> &rsaquo; <div class=currentSection><a href="https://cmcmsu.info/1course/">1-й курс</a></div> &rsaquo; <a href="https://cmcmsu.info/2course/">2-й курс</a> &rsaquo; <a href="https://cmcmsu.info/3course/">3-й курс</a> &rsaquo; <a href="https://cmcmsu.info/4course/">4-й курс</a> &rsaquo; <a href="https://cmcmsu.info/5course/">5-й курс</a> &rsaquo; <a href="https://cmcmsu.info/special.courses/">Спецкурсы</a> &rsaquo; <a href="https://cmcmsu.info/links/">Ссылки</a> &rsaquo; <a href="https://cmcmsu.info/map/">Карта</a> &rsaquo; <a href="https://cmcmsu.info/1course/um3.command.set.htm?mode=print"><small>(версия для печати)</small></a>
+<a href="https://cmcmsu.info/">Главная</a> › <div class="currentSection"><a href="https://cmcmsu.info/1course/">1-й курс</a></div> › <a href="https://cmcmsu.info/2course/">2-й курс</a> › <a href="https://cmcmsu.info/3course/">3-й курс</a> › <a href="https://cmcmsu.info/4course/">4-й курс</a> › <a href="https://cmcmsu.info/5course/">5-й курс</a> › <a href="https://cmcmsu.info/special.courses/">Спецкурсы</a> › <a href="https://cmcmsu.info/links/">Ссылки</a> › <a href="https://cmcmsu.info/map/">Карта</a> › <a href="https://cmcmsu.info/1course/um3.command.set.htm?mode=print"><small>(версия для печати)</small></a>
 </div>
-      <div class=page>
+      <div class="page">
 
-<p><h1>Учебная трёхадресная машина УМ-3 (набор команд)</h1>
+<p></p><h1>Учебная трёхадресная машина УМ-3 (набор команд)</h1>
 
-</p>
-<p>(см. также <a href="https://cmcmsu.info/1course/um3.tasks.htm">сборник упражнений по учебным машинам &laquo;УМ-3&raquo;</a>)
+<p></p>
+<p>(см. также <a href="https://cmcmsu.info/1course/um3.tasks.htm">сборник упражнений по учебным машинам «УМ-3»</a>)
 </p><p>
 
-Память УМ-3 состоит из 512 32-х разрядных слов с адресами 0&#151;511.
+Память УМ-3 состоит из 512 32-х разрядных слов с адресами 0—511.
 В слове может храниться команда, (длинное) целое или вещественное число.
 Команда имеет обычную структуру:
 </p><p>
 
-<center>
+</p><center>
 <table>
-<tr><td align=center colspan=4>32 разряда</td></h3>
-<tr><th>КОП</th><th>А1</th><th>А2</th><th>А3</th></h3>
-<tr><td align=center>5 бит</td><td>9 бит</td><td>9 бит</td><td>9 бит</td></h3>
-</table>
+<tbody><tr><td align="center" colspan="4">32 разряда</td>
+</tr><tr><th>КОП</th><th>А1</th><th>А2</th><th>А3</th>
+</tr><tr><td align="center">5 бит</td><td>9 бит</td><td>9 бит</td><td>9 бит</td>
+</tr></tbody></table>
 </center>
+<p></p><p>
+
+где КОП занимает 5, а каждый из адресов&nbsp;— 9 двоичных разрядов. Почти все команды выполняются по обычной схеме:
 </p><p>
 
-где КОП занимает 5, а каждый из адресов&nbsp;&mdash; 9 двоичных разрядов. Почти все команды выполняются по обычной схеме:
-</p><p>
-
-<center>
-&lt;<span class=Serif><i>A</i><sub>1</sub></span>> := &lt;<span class=Serif><i>A</i><sub>2</sub></span>> &lt;операция> &lt;<span class=Serif><i>A</i><sub>3</sub></span>>
+</p><center>
+&lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; := &lt;<span class="Serif"><i>A</i><sub>2</sub></span>&gt; &lt;операция&gt; &lt;<span class="Serif"><i>A</i><sub>3</sub></span>&gt;
 </center>
-</p><p>
+<p></p><p>
 
 Ниже приведены номера, мнемоника и семантика операций:
 </p><p>
 
-<table>
-<tr><td width=40>01</td><td width=40>СЛВ</td><td>сложение вещественных чисел;</td></tr>
+</p><table>
+<tbody><tr><td width="40">01</td><td width="40">СЛВ</td><td>сложение вещественных чисел;</td></tr>
 <tr><td>11</td><td>СЛЦ</td><td>сложение целых чисел;</td></tr>
 <tr><td>02</td><td>ВЧВ</td><td>вычитание вещественных чисел;</td></tr>
 <tr><td>12</td><td>ВЧЦ</td><td>вычитание целых чисел;</td></tr>
 <tr><td>03</td><td>УВЧ</td><td>умножение вещественных чисел;</td></tr>
 <tr><td>13</td><td>УЦЧ</td><td>умножение целых чисел;</td></tr>
 <tr><td>04</td><td>ДЕВ</td><td>деление вещественных чисел;</td></tr>
-<tr><td>14</td><td>ДЕЦ</td><td>деление нацело (<span class=Serif><i>div</i></span>) целых чисел;</td></tr>
-<tr><td>24</td><td>МОД</td><td>остаток от деления целых (<span class=Serif><i>mod</i></span>) чисел;</td></tr>
-<tr><td>00</td><td>ПЕР</td><td>пересылка слов: &lt;<span class=Serif><i>A</i><sub>1</sub></span>> := &lt;<span class=Serif><i>A</i><sub>3</sub></span>>;</td></tr>
-<tr><td>10</td><td>ЦЕЛ</td><td>округление: &lt;<span class=Serif><i>A</i><sub>1</sub></span>> := round (&lt;<span class=Serif><i>A</i><sub>3</sub></span>>);</td></tr>
-<tr><td>20</td><td>ВЕЩ</td><td>целое в вещественное: &lt;<span class=Serif><i>A</i><sub>1</sub></span>> := real (&lt;<span class=Serif><i>A</i><sub>3</sub></span>>);</td></tr>
-<tr><td>09</td><td>БЕЗ</td><td>безусловный переход по адресу <span class=Serif><i>A</i><sub>2</sub>:&nbsp;<i>goto</i>&nbsp;<i>A</i><sub>2</sub>;</span></td></tr>
-<tr valign=top><td>19</td><td>УСЛ</td><td>условный переход в зависимости от признака результата <span class=Serif><i>OMEGA</i></span>:
+<tr><td>14</td><td>ДЕЦ</td><td>деление нацело (<span class="Serif"><i>div</i></span>) целых чисел;</td></tr>
+<tr><td>24</td><td>МОД</td><td>остаток от деления целых (<span class="Serif"><i>mod</i></span>) чисел;</td></tr>
+<tr><td>00</td><td>ПЕР</td><td>пересылка слов: &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; := &lt;<span class="Serif"><i>A</i><sub>3</sub></span>&gt;;</td></tr>
+<tr><td>10</td><td>ЦЕЛ</td><td>округление: &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; := round (&lt;<span class="Serif"><i>A</i><sub>3</sub></span>&gt;);</td></tr>
+<tr><td>20</td><td>ВЕЩ</td><td>целое в вещественное: &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; := real (&lt;<span class="Serif"><i>A</i><sub>3</sub></span>&gt;);</td></tr>
+<tr><td>09</td><td>БЕЗ</td><td>безусловный переход по адресу <span class="Serif"><i>A</i><sub>2</sub>:&nbsp;<i>goto</i>&nbsp;<i>A</i><sub>2</sub>;</span></td></tr>
+<tr valign="top"><td>19</td><td>УСЛ</td><td>условный переход в зависимости от признака результата <span class="Serif"><i>OMEGA</i></span>:
 <pre>case OMEGA of
 0 : goto A1;
 1 : goto A2;
 2 : goto A3
 end;</pre></td></tr>
 <tr><td>31</td><td>СТОП</td><td>останов машины;</td></tr>
-<tr><td>05</td><td>BBB</td><td>начиная с адреса <span class=Serif><i>A</i><sub>1</sub></span> вводятся <span class=Serif><i>A</i><sub>2</sub></span> вещественных чисел;</td></tr>
-<tr><td>06</td><td>ВВЦ</td><td>начиная с адреса <span class=Serif><i>A</i><sub>1</sub></span> вводятся <span class=Serif><i>A</i><sub>2</sub></span> целых чисел;</td></tr>
-<tr><td>15</td><td>ВЫВ</td><td>начиная с адреса <span class=Serif><i>A</i><sub>1</sub></span> выводятся <span class=Serif><i>A</i><sub>2</sub></span> веществ, чисел;</td></tr>
-<tr><td>16</td><td>ВЫЦ</td><td>начиная с адреса <span class=Serif><i>A</i><sub>1</sub></span> выводятся <span class=Serif><i>A</i><sub>2</sub></span> целых чисел.</td></tr>
-</table>
-</p><p>
+<tr><td>05</td><td>BBB</td><td>начиная с адреса <span class="Serif"><i>A</i><sub>1</sub></span> вводятся <span class="Serif"><i>A</i><sub>2</sub></span> вещественных чисел;</td></tr>
+<tr><td>06</td><td>ВВЦ</td><td>начиная с адреса <span class="Serif"><i>A</i><sub>1</sub></span> вводятся <span class="Serif"><i>A</i><sub>2</sub></span> целых чисел;</td></tr>
+<tr><td>15</td><td>ВЫВ</td><td>начиная с адреса <span class="Serif"><i>A</i><sub>1</sub></span> выводятся <span class="Serif"><i>A</i><sub>2</sub></span> веществ, чисел;</td></tr>
+<tr><td>16</td><td>ВЫЦ</td><td>начиная с адреса <span class="Serif"><i>A</i><sub>1</sub></span> выводятся <span class="Serif"><i>A</i><sub>2</sub></span> целых чисел.</td></tr>
+</tbody></table>
+<p></p><p>
 
 Признак результата OMEGA вырабатывается для числовых операций по следующим правилам:
 </p><p>
 
-<ul class="formatted"><li before="&#0149;">0 при &lt;<span class=Serif><i>A</i><sub>1</sub></span>> = 0;
-</li><li before="&#0149;">1 при &lt;<span class=Serif><i>A</i><sub>1</sub></span>> &lt; 0;
-</li><li before="&#0149;">2 при &lt;<span class=Serif><i>A</i><sub>1</sub></span>> > 0.</ul>
+</p><ul class="formatted"><li before="•">0 при &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; = 0;
+</li><li before="•">1 при &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; &lt; 0;
+</li><li before="•">2 при &lt;<span class="Serif"><i>A</i><sub>1</sub></span>&gt; &gt; 0.</li></ul>
 
-</p><p>
+<p></p><p>
 
 При запуске машины программа считывается с устройства ввода и помещается в память, начиная с адреса 001.
 Ниже приведено описание соответствующих структур данных на Паскале:
@@ -97,12 +97,11 @@ end;</pre></td></tr>
 Пример программы: вычислить для вещественных X и Y:
 </p><p>
 
-<span class=Serif><i>Y</i>&nbsp;=&nbsp;<i>X</i>&nbsp;+&nbsp;1&nbsp;при&nbsp;<i>X</i> &lt; 1.0,&nbsp;1.0&nbsp;при&nbsp;<i>X</i>&nbsp;=&nbsp;1.0,&nbsp;1.0/(<i>X</i>&nbsp;+&nbsp;1.0)&nbsp;при&nbsp;<i>X</i>&nbsp;>&nbsp;1.0</span>.
+<span class="Serif"><i>Y</i>&nbsp;=&nbsp;<i>X</i>&nbsp;+&nbsp;1&nbsp;при&nbsp;<i>X</i> &lt; 1.0,&nbsp;1.0&nbsp;при&nbsp;<i>X</i>&nbsp;=&nbsp;1.0,&nbsp;1.0/(<i>X</i>&nbsp;+&nbsp;1.0)&nbsp;при&nbsp;<i>X</i>&nbsp;&gt;&nbsp;1.0</span>.
 </p><p>
 
-<pre class=codepad>
-001 :	05	100	001	000	; ввести X в слово по адресу 100
-002 :	01	101	100	010	; <101> := Х+1.0
+</p><pre class="codepad">001 :	05	100	001	000	; ввести X в слово по адресу 100
+002 :	01	101	100	010	; &lt;101&gt; := Х+1.0
 003 :	02	000	100	010	; сравнение X и 1.0
 004 :	19	005	006	008	; условный переход
 005 :	00	101	000	010	; Y := 1.0
@@ -112,15 +111,14 @@ end;</pre></td></tr>
 009 :	09	000	006	000	; goto 006
 010 :		константа 1.0		; маш. представление не конкретизируется
 </pre>
-</p><p>
+<p></p><p>
 
 Кроме того, на лекции разбирается задача суммирования элементов массива с переадресацией команд:
 </p><p>
 
-<pre class=codepad>
-001 :	05	100	100	000	; ввод Х[1..100] вещ. чисел по адресу 100
+</p><pre class="codepad">001 :	05	100	100	000	; ввод Х[1..100] вещ. чисел по адресу 100
 002 :	01	010	010	100	; S := S+X[i]
-003 :	11	002	002	009	; &laquo;i := i+1&raquo;
+003 :	11	002	002	009	; «i := i+1»
 004 :	12	008	008	009	; N := N-1
 005 :	19	006	006	002	; ЦИКЛ
 006 :	15	010	001	000	; вывод S
@@ -129,14 +127,15 @@ end;</pre></td></tr>
 009 :	00	000	000	001	; Целая константа - 1
 010 :	00	000	000	000	; S = 0.0
 </pre>
-</p><p>
-      </div>
-      <div class=footer>
+<p></p><p>
+      </p></div>
+      <div class="footer">
       <div style="float:right"><a href="http://cmcmsu.info/">cmcmsu.info</a></div>
-        2006&ndash;2024 CMC@MSU<br/>
-        &copy; Все права на публикуемые документы принадлежат соответствующим авторам.<br/>
-        Если вы нашли неточности или опечатки, смело пишите по адресу <a href="mailto:cmcmsu.info@gmail.com">cmcmsu.info@gmail.com</a></p>
+        2006–2024 CMC@MSU<br>
+        © Все права на публикуемые документы принадлежат соответствующим авторам.<br>
+        Если вы нашли неточности или опечатки, смело пишите по адресу <a href="mailto:cmcmsu.info@gmail.com">cmcmsu.info@gmail.com</a><p></p>
       </div>
     </div>
-  </body>
-</html>
+  
+
+</body></html>
