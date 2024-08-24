@@ -40,12 +40,12 @@ if TYPE_CHECKING:
 
 INSTRUCTION = (
     "\nEnter\n"
-    f"  {BLU}s{DEF}tep [count=1]       make count of steps\n"
-    f"  {BLU}c{DEF}ontinue             continue until breakpoint or halt\n"
-    f"  {BLU}b{DEF}reakpoint [addr]    set/unset breakpoint at addr\n"
-    f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
-    f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
-    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or cycle=0 in reverse direction\n"
+    f"  {BLU}s{DEF}tep [count=1]        make count of steps\n"
+    f"  {BLU}c{DEF}ontinue              continue until breakpoint or halt\n"
+    f"  {BLU}b{DEF}reakpoint [addr]     set/unset breakpoint at addr\n"
+    f"  {BLU}m{DEF}emory <begin> <end>  view random access memory\n"
+    f"  {BLU}rs{DEF}tep [count=1]       make count of steps in reverse direction\n"
+    f"  {BLU}rc{DEF}ontinue             continue until breakpoint or cycle=0 in reverse direction\n"
     f"  {BLU}q{DEF}uit\n"
 )
 
@@ -63,6 +63,14 @@ breakc = Gr((kw("breakpoint") | kw("break") | kw("b")) + posinteger[0, 1])(
 memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
 debug_cmd = stepc | rstepc | continuec | rcontinuec | memoryc | quitc | breakc
+
+
+def tabulate(data: list[tuple[str, str, str]]) -> str:
+    elem_width = max(len(x) for _, x, _ in data)
+    return "\n".join(
+        f"  {style}{elem.ljust(elem_width)}  {descr}{DEF}{NUND}{BDEF}"
+        for style, elem, descr in data
+    )
 
 
 class Ide:
@@ -403,15 +411,22 @@ class Ide:
             )
             raise ValueError(msg)
 
+        addr = Cell(0, bits=self.cpu.ram.address_bits)
         cell = Cell(0, bits=self.cpu.ram.word_bits)
         printf(
             "Welcome to interactive debug mode\n"
             "Legend:\n"
-            f"  {cell.hex()}  usual memory cell\n"
-            f"  {UND}{cell.hex()}  next command{NUND}\n"
-            f"  {GRE}{cell.hex()}  updated by last command{DEF}\n"
-            f"  {YEL}{cell.hex()}  dirty unset memory{DEF}\n"
-            f"  {BSEL}{cell.hex()}  breakpoint{BDEF}\n"
+            + tabulate(
+                [
+                    ("", f"{addr}:", "address in ram"),
+                    ("", cell.hex(), "filled memory cell"),
+                    (UND, cell.hex(), "next command"),
+                    (GRE, cell.hex(), "updated by last command"),
+                    (YEL, cell.hex(), "dirty unsed memory"),
+                    (BSEL, cell.hex(), "breakpoint"),
+                ]
+            )
+            + "\n"
         )
         self.dump_state()
 
