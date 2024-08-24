@@ -24,11 +24,6 @@ Model machine emulator
 
     $ modelmachine debug samples/mm-3_sample.mmach
 
-Поддерживается компилирование ассемблера модельной машины (mmasm) в ее машинный
-код.
-
-    $ modelmachine asm source.mmasm result.mmach
-
 ### [Пример](samples/mm-3_sample.mmach)
 
     .cpu mm-3
