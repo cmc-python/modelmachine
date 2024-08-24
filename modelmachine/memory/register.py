@@ -86,6 +86,7 @@ class RegisterMemory:
         current = self[name]
         assert current.bits == word.bits
         if self.write_log is not None:
+            current = self.write_log[-1].get(name, (current,))[0]
             self.write_log[-1][name] = (current, word)
         self._table[name] = word
 

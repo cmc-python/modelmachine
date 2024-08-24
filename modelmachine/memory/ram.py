@@ -108,10 +108,9 @@ class RandomAccessMemory:
         assert address.bits == self.address_bits
         assert word.bits == self.word_bits
         if self.write_log is not None:
-            self.write_log[-1][address.unsigned] = (
-                self._table[address.unsigned],
-                word.unsigned,
-            )
+            current = self._table[address.unsigned]
+            current = self.write_log[-1].get(address.unsigned, (current,))[0]
+            self.write_log[-1][address.unsigned] = (current, word.unsigned)
         self._table[address.unsigned] = word.unsigned
         self._fill_cell(address.unsigned)
 
