@@ -155,8 +155,10 @@ class Ide:
             self.cpu.registers._table[reg] = old  # noqa: SLF001
 
         assert self.cpu.ram.write_log is not None
-        for addr, (oldr, _) in self.cpu.ram.write_log.pop().items():
+        for addr, (fill, oldr, _) in self.cpu.ram.write_log.pop().items():
             self.cpu.ram._table[addr] = oldr  # noqa: SLF001
+            if fill:
+                self.cpu.ram._fill[addr] = 0  # noqa: SLF001
 
         self.cpu.ram.access_count = self._ram_access_count[-1]
 
@@ -286,6 +288,8 @@ class Ide:
             assert self.cpu.ram.write_log is not None
             if cell_addr.unsigned in self.cpu.ram.write_log[-1]:
                 cell_value = f"{GRE}{cell_value}{DEF}"
+            elif not self.cpu.ram.is_fill(cell_addr):
+                cell_value = f"{YEL}{cell_value}{DEF}"
 
             if cell_addr in self._breakpoints:
                 cell_value = f"{BSEL}{cell_value}{BDEF}"
@@ -304,7 +308,7 @@ class Ide:
         for interval in self.cpu.ram.filled_intervals:
             for i in range(
                 interval.start // self.cpu.control_unit.PAGE_SIZE,
-                interval.stop // self.cpu.control_unit.PAGE_SIZE + 1,
+                (interval.stop - 1) // self.cpu.control_unit.PAGE_SIZE + 1,
             ):
                 page_set.add(i)
 
@@ -312,7 +316,7 @@ class Ide:
         current_cmd = self.current_cmd
         for i, page in enumerate(page_list):
             if i > 0 and page_list[i - 1] != page - 1:
-                printf("... unset memory ...")
+                printf("... dirty memory ...")
             printf(self.format_page(page, current_cmd))
 
     def memory(self, begin: int = -1, end: int = -1) -> None:
@@ -398,7 +402,16 @@ class Ide:
             )
             raise ValueError(msg)
 
-        printf("Welcome to interactive debug mode\n")
+        cell = Cell(0, bits=self.cpu.ram.word_bits)
+        printf(
+            "Welcome to interactive debug mode\n"
+            "Legend:\n"
+            f"  {cell.hex()}  usual memory cell\n"
+            f"  {UND}{cell.hex()}  next command{NUND}\n"
+            f"  {GRE}{cell.hex()}  updated by last command{DEF}\n"
+            f"  {YEL}{cell.hex()}  dirty unset memory{DEF}\n"
+            f"  {BSEL}{cell.hex()}  breakpoint{BDEF}\n"
+        )
         self.dump_state()
 
         session: PromptSession[str] = PromptSession()
