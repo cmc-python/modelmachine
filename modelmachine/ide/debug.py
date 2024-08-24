@@ -45,7 +45,7 @@ INSTRUCTION = (
     f"  {BLU}b{DEF}reakpoint [addr]    set/unset breakpoint at addr\n"
     f"  {BLU}m{DEF}emory <begin> <end> view random access memory\n"
     f"  {BLU}rs{DEF}tep [count=1]      make count of steps in reverse direction\n"
-    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or halt in reverse direction\n"
+    f"  {BLU}rc{DEF}ontinue            continue until breakpoint or cycle=0 in reverse direction\n"
     f"  {BLU}q{DEF}uit\n"
 )
 
