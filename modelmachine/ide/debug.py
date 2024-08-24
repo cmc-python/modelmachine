@@ -137,7 +137,7 @@ class Ide:
     def step(self, count: int = 1) -> None:
         """Exec debug step command."""
         if self.cpu.control_unit.status == Status.HALTED:
-            printf(f"{RED}cannot execute command: machine halted{DEF}")
+            printf(f"{RED}cannot execute 'step': machine halted{DEF}")
             return
 
         with self.running():
@@ -174,7 +174,7 @@ class Ide:
 
     def reverse_step(self, count: int = 1) -> None:
         if self._cycle == 0:
-            printf(f"{RED}cannot execute command: cycle=0{DEF}")
+            printf(f"{RED}cannot execute 'rstep': cycle=0{DEF}")
             return
 
         with self.running():
@@ -190,7 +190,7 @@ class Ide:
 
     def reverse_continue(self) -> None:
         if self._cycle == 0:
-            printf(f"{RED}cannot execute command: cycle=0{DEF}")
+            printf(f"{RED}cannot execute 'rcontinue': cycle=0{DEF}")
             return
 
         with self.running():
@@ -204,7 +204,7 @@ class Ide:
         """Exec debug continue command."""
 
         if self.cpu.control_unit.status == Status.HALTED:
-            printf(f"{RED}cannot execute command: machine halted{DEF}")
+            printf(f"{RED}cannot execute 'continue': machine halted{DEF}")
             return
 
         with self.running():
