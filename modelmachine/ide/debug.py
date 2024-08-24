@@ -222,9 +222,10 @@ class Ide:
         for reg, value in self.cpu.registers.state.items():
             color = ""
             assert self.cpu.registers.write_log is not None
-            if reg in {RegisterName.PC, RegisterName.IR}:
-                color = YEL
-            elif reg in self.cpu.registers.write_log[-1]:
+            if (
+                reg in {RegisterName.PC, RegisterName.IR}
+                or reg in self.cpu.registers.write_log[-1]
+            ):
                 color = GRE
             hex_data = str(value).rjust(self.max_register_hex, " ")
             printf(f"  {color}{reg.name:<5s}  {hex_data}{DEF}")
