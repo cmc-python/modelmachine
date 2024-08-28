@@ -42,8 +42,12 @@ integer = (pp.Opt("-") + decinteger ^ hexinteger).set_parse_action(
 cpu_name = pp.MatchFirst([pp.CaselessKeyword(name) for name in CPU_MAP])
 cpu = (kw(".cpu") + cpu_name + nl)("cpu")
 
-inputd = Gr(kw(".input") + posinteger + string[0, 1] + nl)("input")
-output = Gr(kw(".output") + posinteger + string[0, 1] + nl)("output")
+inputd = Gr(
+    kw(".input") + pp.DelimitedList(posinteger, ",") + string[0, 1] + nl
+)("input")
+output = Gr(
+    kw(".output") + pp.DelimitedList(posinteger, ",") + string[0, 1] + nl
+)("output")
 enter = Gr(kw(".enter") + string + nl)("enter")
 
 code = Gr(
@@ -72,18 +76,22 @@ def source(
 
     for directive in result[1:]:
         if directive.get_name() == "input":
-            input_req.append(
-                IOReq(
-                    address=directive[0],
-                    message=directive[1] if len(directive) > 1 else None,
-                )
+            message, msgidx = (
+                (directive[-1], -1)
+                if isinstance(directive[-1], str)
+                else (None, None)
+            )
+            input_req.extend(
+                IOReq(address, message) for address in directive[:msgidx]
             )
         elif directive.get_name() == "output":
-            output_req.append(
-                IOReq(
-                    address=directive[0],
-                    message=directive[1] if len(directive) > 1 else None,
-                )
+            message, msgidx = (
+                (directive[-1], -1)
+                if isinstance(directive[-1], str)
+                else (None, None)
+            )
+            output_req.extend(
+                IOReq(address, message) for address in directive[:msgidx]
             )
         elif directive.get_name() == "enter":
             enter_text += f" {directive[0]}"

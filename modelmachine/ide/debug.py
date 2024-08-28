@@ -369,7 +369,7 @@ class Ide:
         except pp.ParseException:
             return False
 
-        cmd_name = parsed_cmd.get_name()  # type: ignore[no-untyped-call]
+        cmd_name = parsed_cmd.get_name()
 
         if cmd_name == "step":
             self.step(*parsed_cmd[0])

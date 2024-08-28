@@ -89,6 +89,15 @@ def test_enter_too_long() -> None:
         source(".cpu mm-1\n.input 0x100\n.enter 10 20\n.code 99 0000")
 
 
+def test_mutli_input() -> None:
+    cpu = source(
+        ".cpu mm-3\n.input 0x100, 0x101, 0x102\n.code\n99 0000 0000 0000\n.enter 1 2 3"
+    )
+    assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=56) == 1
+    assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=56) == 2
+    assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=56) == 3
+
+
 def test_several_code() -> None:
     cpu = source(".cpu mm-1\n.code\n01 1234\n.code 0x100\n02 1234")
     assert cpu.ram.fetch(Cell(0, bits=AB), bits=WB) == 0x011234

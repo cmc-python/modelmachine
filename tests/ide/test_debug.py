@@ -25,7 +25,7 @@ from modelmachine.ide.debug import debug_cmd
 )
 def test_debug_cmd(cmd: str, cmd_str: str, res: list[int]) -> None:
     result = debug_cmd.parse_string(cmd_str, parse_all=True)
-    assert result.get_name() == cmd  # type: ignore[no-untyped-call]
+    assert result.get_name() == cmd
     assert list(result[0]) == res
 
 
