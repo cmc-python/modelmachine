@@ -90,13 +90,10 @@ target-version = "py37"
 [tool.ruff.lint]
 ignore = [
     "S101",
+    "TID252",
 ]
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**/*" = [
-    "PLC1901",
     "PLR2004",
-    "PLR6301",
-    "S",
-    "TID252",
     "SLF001",
 ]
