@@ -14,28 +14,18 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - os: "ubuntu-24.04"
-            python-version: "3.12"
-          - os: "ubuntu-22.04"
-            python-version: "3.8"
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.12
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install hatch mypy pytest
-        pip install `hatch dep show requirements`
+        pip install hatch
     - name: Build package
       run: |
         hatch build
@@ -44,7 +34,7 @@ jobs:
         hatch fmt --check
     - name: Test with pytest
       run: |
-        hatch test
+        hatch test -a
     - name: Check types
       run: |
-        mypy --strict .
+        hatch run dev:mypy --strict .

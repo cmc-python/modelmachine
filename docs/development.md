@@ -20,7 +20,7 @@ hatch shell
 ```
 Now you are in local environment and command `modelmachine` is accessable
 
-If separate environment is not needed for you, instead of last 2 commands:
+If separate environment is not needed for you, instead of last command:
 ```shell
 pip install --editable .
 ```

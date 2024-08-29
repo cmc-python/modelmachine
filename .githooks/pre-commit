@@ -4,4 +4,4 @@ set -ex
 
 hatch fmt --check
 hatch test
-mypy --strict .
+hatch run dev:mypy --strict .
