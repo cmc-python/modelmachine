@@ -421,7 +421,7 @@ class Ide:
                     ("", cell.hex(), "filled memory cell"),
                     (UND, cell.hex(), "next command"),
                     (GRE, cell.hex(), "updated by last command"),
-                    (CYA, cell.hex(), "dirty unsed memory"),
+                    (CYA, cell.hex(), "dirty unused memory"),
                     (BLD, cell.hex(), "breakpoint"),
                 ]
             )
