@@ -8,8 +8,8 @@ from __future__ import annotations
 from enum import IntEnum, auto
 from typing import TYPE_CHECKING
 
-from modelmachine.cell import Cell
-from modelmachine.memory.ram import MAX_WORD_BITS
+from ..cell import Cell
+from ..memory.ram import MAX_WORD_BITS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

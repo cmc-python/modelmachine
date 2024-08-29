@@ -2,23 +2,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from modelmachine.alu import AluRegisters
-from modelmachine.cell import Cell
-from modelmachine.cu.control_unit import ControlUnit
-from modelmachine.cu.opcode import (
+from ..alu import AluRegisters
+from ..cell import Cell
+from ..memory.register import RegisterName
+from .control_unit import ControlUnit
+from .opcode import (
     ARITHMETIC_OPCODES,
     JUMP_OPCODES,
     OPCODE_BITS,
     Opcode,
 )
-from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
     from typing import Final
 
-    from modelmachine.alu import ArithmeticLogicUnit
-    from modelmachine.memory.ram import RandomAccessMemory
-    from modelmachine.memory.register import RegisterMemory
+    from ..alu import ArithmeticLogicUnit
+    from ..memory.ram import RandomAccessMemory
+    from ..memory.register import RegisterMemory
 
 
 class ControlUnitS(ControlUnit):
@@ -123,7 +123,13 @@ class ControlUnitS(ControlUnit):
             self._registers[RegisterName.ADDR] = self._address
 
     _SP_PLUS: Final = frozenset(
-        {Opcode.add, Opcode.sub, Opcode.smul, Opcode.umul, Opcode.pop}
+        {
+            Opcode.add,
+            Opcode.sub,
+            Opcode.smul,
+            Opcode.umul,
+            Opcode.pop,
+        }
     )
     _SP_MINUS: Final = frozenset({Opcode.push, Opcode.dup})
 

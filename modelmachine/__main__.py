@@ -1,6 +1,6 @@
 """Modelmachine - model machine emulator."""
 
-from modelmachine.cli import cli
+from .cli import cli
 
 
 def main() -> int:

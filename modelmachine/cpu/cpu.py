@@ -15,23 +15,23 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from modelmachine.alu import ArithmeticLogicUnit
-from modelmachine.cu.control_unit_1 import ControlUnit1
-from modelmachine.cu.control_unit_2 import ControlUnit2
-from modelmachine.cu.control_unit_3 import ControlUnit3
-from modelmachine.cu.control_unit_m import ControlUnitM
-from modelmachine.cu.control_unit_r import ControlUnitR
-from modelmachine.cu.control_unit_s import ControlUnitS
-from modelmachine.cu.control_unit_v import ControlUnitV
-from modelmachine.io import InputOutputUnit
-from modelmachine.memory.ram import RandomAccessMemory
-from modelmachine.memory.register import RegisterMemory
+from ..alu import ArithmeticLogicUnit
+from ..cu.control_unit_1 import ControlUnit1
+from ..cu.control_unit_2 import ControlUnit2
+from ..cu.control_unit_3 import ControlUnit3
+from ..cu.control_unit_m import ControlUnitM
+from ..cu.control_unit_r import ControlUnitR
+from ..cu.control_unit_s import ControlUnitS
+from ..cu.control_unit_v import ControlUnitV
+from ..io import InputOutputUnit
+from ..memory.ram import RandomAccessMemory
+from ..memory.register import RegisterMemory
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Final, TextIO
 
-    from modelmachine.cu.control_unit import ControlUnit
+    from ..cu.control_unit import ControlUnit
 
 
 @dataclass(frozen=True)

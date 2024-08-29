@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from modelmachine.cell import Cell
-from modelmachine.cu.control_unit_r import REG_NO_BITS, ControlUnitR
-from modelmachine.cu.opcode import JUMP_OPCODES, Opcode
-from modelmachine.memory.register import RegisterName
+from ..cell import Cell
+from ..memory.register import RegisterName
+from .control_unit_r import REG_NO_BITS, ControlUnitR
+from .opcode import JUMP_OPCODES, Opcode
 
 
 class ControlUnitM(ControlUnitR):

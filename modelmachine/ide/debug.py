@@ -13,12 +13,12 @@ import pyparsing as pp
 from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
-from modelmachine.cell import Cell
-from modelmachine.cpu.source import kw, posinteger
-from modelmachine.cu.opcode import OPCODE_BITS, Opcode
-from modelmachine.cu.status import Status
-from modelmachine.memory.register import RegisterName
-from modelmachine.prompt import (
+from ..cell import Cell
+from ..cpu.source import kw, posinteger
+from ..cu.opcode import OPCODE_BITS, Opcode
+from ..cu.status import Status
+from ..memory.register import RegisterName
+from ..prompt import (
     BDEF,
     BLU,
     BSEL,
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from types import FrameType
     from typing import Final, Iterator
 
-    from modelmachine.cpu.cpu import Cpu
+    from ..cpu.cpu import Cpu
 
 INSTRUCTION = (
     "\nEnter\n"

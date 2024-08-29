@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from enum import Flag
 from typing import TYPE_CHECKING
 
-from modelmachine.cell import Cell, div_to_zero
-from modelmachine.memory.register import RegisterName
+from .cell import Cell, div_to_zero
+from .memory.register import RegisterName
 
 if TYPE_CHECKING:
     from typing import Callable, Final
 
-    from modelmachine.memory.register import RegisterMemory
+    from .memory.register import RegisterMemory
 
 
 class Flags(Flag):

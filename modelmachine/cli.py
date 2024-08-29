@@ -11,14 +11,14 @@ from pyparsing import CaselessLiteral as Li
 from pyparsing import Group as Gr
 from pyparsing import Word as Wd
 
-from modelmachine.__about__ import __version__
-from modelmachine.cpu.source import source
-from modelmachine.ide.debug import debug as ide_debug
+from .__about__ import __version__
+from .cpu.source import source
+from .ide.debug import debug as ide_debug
 
 if TYPE_CHECKING:
     from typing import Callable
 
-    from modelmachine.cpu.cpu import Cpu
+    from .cpu.cpu import Cpu
 
 
 @dataclass(frozen=True)

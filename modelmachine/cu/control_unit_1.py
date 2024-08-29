@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from modelmachine.alu import AluRegisters
-from modelmachine.cu.control_unit import ControlUnit
-from modelmachine.cu.opcode import (
+from ..alu import AluRegisters
+from ..memory.register import RegisterName
+from .control_unit import ControlUnit
+from .opcode import (
     ARITHMETIC_OPCODES,
     JUMP_OPCODES,
     OPCODE_BITS,
     Opcode,
 )
-from modelmachine.memory.register import RegisterName
 
 if TYPE_CHECKING:
     from typing import Final
 
-    from modelmachine.cell import Cell
+    from ..cell import Cell
 
 
 class ControlUnit1(ControlUnit):

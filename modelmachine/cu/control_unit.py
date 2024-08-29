@@ -4,19 +4,19 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from modelmachine.alu import EQUAL, GREATER, LESS, AluZeroDivisionError, Flags
-from modelmachine.cell import Cell
-from modelmachine.cu.opcode import OPCODE_BITS, Opcode
-from modelmachine.cu.status import Status
-from modelmachine.memory.ram import RamAccessError
-from modelmachine.memory.register import RegisterName
+from ..alu import EQUAL, GREATER, LESS, AluZeroDivisionError, Flags
+from ..cell import Cell
+from ..memory.ram import RamAccessError
+from ..memory.register import RegisterName
+from .opcode import OPCODE_BITS, Opcode
+from .status import Status
 
 if TYPE_CHECKING:
     from typing import ClassVar, Final
 
-    from modelmachine.alu import AluRegisters, ArithmeticLogicUnit
-    from modelmachine.memory.ram import RandomAccessMemory
-    from modelmachine.memory.register import RegisterMemory
+    from ..alu import AluRegisters, ArithmeticLogicUnit
+    from ..memory.ram import RandomAccessMemory
+    from ..memory.register import RegisterMemory
 
 
 class WrongOpcodeError(ValueError):

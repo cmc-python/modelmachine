@@ -1,5 +1,5 @@
 """Modelmachine - Model machine emulator."""
 
-from modelmachine.__about__ import __version__, __version_tuple__
+from .__about__ import __version__, __version_tuple__
 
 __all__ = ["__version__", "__version_tuple__"]

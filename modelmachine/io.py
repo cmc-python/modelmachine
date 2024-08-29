@@ -6,13 +6,13 @@ import sys
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
-from modelmachine.cell import Cell
-from modelmachine.prompt import printf, prompt
+from .cell import Cell
+from .prompt import printf, prompt
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
-    from modelmachine.memory.ram import RandomAccessMemory
+    from .memory.ram import RandomAccessMemory
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 

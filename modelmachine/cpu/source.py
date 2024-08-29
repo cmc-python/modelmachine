@@ -6,7 +6,7 @@ from typing import TextIO
 import pyparsing as pp
 from pyparsing import Group as Gr
 
-from modelmachine.cpu.cpu import CPU_MAP, Cpu, IOReq
+from .cpu import CPU_MAP, Cpu, IOReq
 
 
 def remove_comment_and_empty_lines(inp: str) -> str:

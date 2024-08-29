@@ -4,8 +4,8 @@ import warnings
 from array import array
 from typing import TYPE_CHECKING
 
-from modelmachine.cell import Cell, Endianess
-from modelmachine.memory.insort import insort
+from ..cell import Cell, Endianess
+from .insort import insort
 
 if TYPE_CHECKING:
     from collections.abc import Collection
