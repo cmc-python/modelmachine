@@ -12,6 +12,7 @@ typing-extensions = "*"
 hatch = "~=1.12"
 mypy = "~=1.10"
 pytest = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.12"
