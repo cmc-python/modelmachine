@@ -9,19 +9,16 @@ from prompt_toolkit import prompt as pprompt
 if TYPE_CHECKING:
     from typing import TextIO
 
-DEF = "\x1b[39m" if sys.stdout.isatty() else ""
+DEF = "\x1b[0m" if sys.stdout.isatty() else ""
+BLD = "\x1b[1m" if sys.stdout.isatty() else ""
+UND = "\x1b[4m" if sys.stdout.isatty() else ""
+
 RED = "\x1b[31m" if sys.stdout.isatty() else ""
 GRE = "\x1b[32m" if sys.stdout.isatty() else ""
 YEL = "\x1b[33m" if sys.stdout.isatty() else ""
 BLU = "\x1b[34m" if sys.stdout.isatty() else ""
 MAG = "\x1b[35m" if sys.stdout.isatty() else ""
 CYA = "\x1b[36m" if sys.stdout.isatty() else ""
-
-BSEL = "\x1b[40m" if sys.stdout.isatty() else ""
-BDEF = "\x1b[49m" if sys.stdout.isatty() else ""
-
-UND = "\x1b[4m" if sys.stdout.isatty() else ""
-NUND = "\x1b[24m" if sys.stdout.isatty() else ""
 
 
 def printf(out: str, *, file: TextIO = sys.stdout) -> None:

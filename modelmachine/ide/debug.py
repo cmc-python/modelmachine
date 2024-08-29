@@ -19,15 +19,12 @@ from ..cu.opcode import OPCODE_BITS, Opcode
 from ..cu.status import Status
 from ..memory.register import RegisterName
 from ..prompt import (
-    BDEF,
-    BLU,
-    BSEL,
+    BLD,
+    CYA,
     DEF,
     GRE,
-    NUND,
     RED,
     UND,
-    YEL,
     printf,
     prompt,
 )
@@ -40,13 +37,13 @@ if TYPE_CHECKING:
 
 INSTRUCTION = (
     "\nEnter\n"
-    f"  {BLU}s{DEF}tep [count=1]        make count of steps\n"
-    f"  {BLU}c{DEF}ontinue              continue until breakpoint or halt\n"
-    f"  {BLU}b{DEF}reakpoint [addr]     set/unset breakpoint at addr\n"
-    f"  {BLU}m{DEF}emory <begin> <end>  view random access memory\n"
-    f"  {BLU}rs{DEF}tep [count=1]       make count of steps in reverse direction\n"
-    f"  {BLU}rc{DEF}ontinue             continue until breakpoint or cycle=0 in reverse direction\n"
-    f"  {BLU}q{DEF}uit\n"
+    f"  {RED}s{DEF}tep [count=1]        make count of steps\n"
+    f"  {RED}c{DEF}ontinue              continue until breakpoint or halt\n"
+    f"  {RED}b{DEF}reakpoint [addr]     set/unset breakpoint at addr\n"
+    f"  {RED}m{DEF}emory <begin> <end>  view random access memory\n"
+    f"  {RED}rs{DEF}tep [count=1]       make count of steps in reverse direction\n"
+    f"  {RED}rc{DEF}ontinue             continue until breakpoint or cycle=0 in reverse direction\n"
+    f"  {RED}q{DEF}uit\n"
 )
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
@@ -68,7 +65,7 @@ debug_cmd = stepc | rstepc | continuec | rcontinuec | memoryc | quitc | breakc
 def tabulate(data: list[tuple[str, str, str]]) -> str:
     elem_width = max(len(x) for _, x, _ in data)
     return "\n".join(
-        f"  {style}{elem.ljust(elem_width)}  {descr}{DEF}{NUND}{BDEF}"
+        f"  {style}{elem.ljust(elem_width)}  {descr}{DEF}"
         for style, elem, descr in data
     )
 
@@ -109,12 +106,12 @@ class Ide:
         assert self.cpu.ram.write_log is not None
         for br in self._breakpoints:
             if br.unsigned in current_cmd:
-                printf(f"{YEL}pause at breakpoint: operation at {br}{DEF}")
+                printf(f"{CYA}pause at breakpoint: operation at {br}{DEF}")
                 return True
             for addr in self.cpu.ram.write_log[-1]:
                 if br.unsigned == addr:
                     printf(
-                        f"{YEL}pause at data breakpoint: write to {br}{DEF}"
+                        f"{CYA}pause at data breakpoint: write to {br}{DEF}"
                     )
                     return True
         return False
@@ -218,7 +215,7 @@ class Ide:
         """Print contents of registers."""
 
         if self.cpu.control_unit.status == Status.HALTED:
-            printf(f"{YEL}machine halted{DEF}")
+            printf(f"{CYA}machine halted{DEF}")
 
         printf(
             f"Cycle: {self._cycle:>4} | "
@@ -292,21 +289,23 @@ class Ide:
                 from_cpu=False,
             )
 
-            cell_value = cell.hex()
+            cell_value = cell.hex() + DEF
 
             assert self.cpu.ram.write_log is not None
             if cell_addr.unsigned in self.cpu.ram.write_log[-1]:
-                cell_value = f"{GRE}{cell_value}{DEF}"
+                cell_value = f"{GRE}{cell_value}"
             elif not self.cpu.ram.is_fill(cell_addr):
-                cell_value = f"{YEL}{cell_value}{DEF}"
+                cell_value = f"{CYA}{cell_value}"
 
             if cell_addr in self._breakpoints:
-                cell_value = f"{BSEL}{cell_value}{BDEF}"
+                cell_value = f"{BLD}{cell_value}"
 
-            if cell_addr in current_cmd:
+            if cell_addr == current_cmd.start:
                 cell_value = f" {UND}{cell_value}"
+            elif cell_addr in current_cmd:
+                cell_value = f"{UND} {cell_value}"
             else:
-                cell_value = f"{NUND} {cell_value}"
+                cell_value = f" {cell_value}"
 
             line += cell_value
 
@@ -348,18 +347,18 @@ class Ide:
         if addr == -1:
             if self._breakpoints:
                 breakpoints = ", ".join(str(x) for x in self._breakpoints)
-                printf(f"{YEL}Breakpoints: {breakpoints}{DEF}")
+                printf(f"{CYA}Breakpoints: {breakpoints}{DEF}")
             else:
-                printf(f"{YEL}No breakpoints set{DEF}")
+                printf(f"{CYA}No breakpoints set{DEF}")
             return
 
         ram_addr = Cell(addr, bits=self.cpu.ram.address_bits)
         if ram_addr in self._breakpoints:
             self._breakpoints.remove(ram_addr)
-            printf(f"{YEL}Unset breakpoint at {ram_addr}{DEF}")
+            printf(f"{CYA}Unset breakpoint at {ram_addr}{DEF}")
         else:
             self._breakpoints.add(ram_addr)
-            printf(f"{YEL}Set breakpoint at {ram_addr}{DEF}")
+            printf(f"{CYA}Set breakpoint at {ram_addr}{DEF}")
 
     def cmd(self, command: str) -> bool:
         """Exec one command."""
@@ -422,8 +421,8 @@ class Ide:
                     ("", cell.hex(), "filled memory cell"),
                     (UND, cell.hex(), "next command"),
                     (GRE, cell.hex(), "updated by last command"),
-                    (YEL, cell.hex(), "dirty unsed memory"),
-                    (BSEL, cell.hex(), "breakpoint"),
+                    (CYA, cell.hex(), "dirty unsed memory"),
+                    (BLD, cell.hex(), "breakpoint"),
                 ]
             )
             + "\n"
@@ -436,7 +435,7 @@ class Ide:
         def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
             if self._running:
                 self._running = False
-                printf(f"{YEL}Interrupted{DEF}")
+                printf(f"{CYA}Interrupted{DEF}")
                 return
 
             signal.signal(signal.SIGINT, original_sigint)
