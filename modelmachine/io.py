@@ -7,7 +7,7 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 
 from .cell import Cell
-from .prompt import printf, prompt
+from .prompt.prompt import printf, prompt
 
 if TYPE_CHECKING:
     from typing import Final, TextIO

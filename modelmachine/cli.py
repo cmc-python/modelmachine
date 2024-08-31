@@ -195,12 +195,14 @@ def debug(
     filename: str,
     protect_memory: bool = False,
     enter: str | None = None,
+    colors: bool = True,
 ) -> int:
     """Debug the program.
 
     filename -- file containing machine code
     protect_memory, -m -- halt, if program tries to read dirty memory
     enter, -e -- file with input data, disables .enter, '-' for stdin
+    colors -- disable colors and other formatting
     """
     if filename == "-":
         msg = "Debug doesn't support loading source from stdin"
@@ -208,7 +210,7 @@ def debug(
 
     cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
 
-    return ide_debug(cpu)
+    return ide_debug(cpu=cpu, colors=colors)
 
 
 # @cli
