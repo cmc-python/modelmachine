@@ -9,8 +9,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Final
 
-    from typing_extensions import Self
-
 
 class Endianess(IntEnum):
     BIG = 0
@@ -67,7 +65,7 @@ class Cell:
         return f"{self._value:x}".rjust(self.bits // 4, "0")
 
     @classmethod
-    def from_hex(cls, inp: str) -> Self:
+    def from_hex(cls, inp: str) -> Cell:
         return cls(int(inp, 16), bits=len(inp) * 4)
 
     def __init__(self, value: int, *, bits: int) -> None:
@@ -81,7 +79,7 @@ class Cell:
         """Hash is important for indexing."""
         return hash((self.bits, self._value))
 
-    def _check_compatibility(self, other: Self) -> None:
+    def _check_compatibility(self, other: Cell) -> None:
         """Test compatibility of two numbers."""
         if not isinstance(other, type(self)):
             msg = f"expected {type(self)}, got {type(other)}"
@@ -91,31 +89,31 @@ class Cell:
             msg = f"Uncompatible bits: {self.bits} and {other.bits}"
             raise TypeError(msg)
 
-    def __add__(self, other: Self) -> Self:
+    def __add__(self, other: Cell) -> Cell:
         """Equal to self + other."""
         self._check_compatibility(other)
         value = self.signed + other.signed
         return type(self)(value, bits=self.bits)
 
-    def __sub__(self, other: Self) -> Self:
+    def __sub__(self, other: Cell) -> Cell:
         """Equal to self - other."""
         self._check_compatibility(other)
         value = self.signed - other.signed
         return type(self)(value, bits=self.bits)
 
-    def smul(self, other: Self) -> Self:
+    def smul(self, other: Cell) -> Cell:
         """Equal to self * other."""
         self._check_compatibility(other)
         value = self.signed * other.signed
         return type(self)(value, bits=self.bits)
 
-    def umul(self, other: Self) -> Self:
+    def umul(self, other: Cell) -> Cell:
         """Equal to self * other."""
         self._check_compatibility(other)
         value = self.unsigned * other.unsigned
         return type(self)(value, bits=self.bits)
 
-    def sdivmod(self, other: Self) -> tuple[Self, Self]:
+    def sdivmod(self, other: Cell) -> tuple[Cell, Cell]:
         self._check_compatibility(other)
 
         div = div_to_zero(self.signed, other.signed)
@@ -126,7 +124,7 @@ class Cell:
             type(self)(mod, bits=self.bits),
         )
 
-    def udivmod(self, other: Self) -> tuple[Self, Self]:
+    def udivmod(self, other: Cell) -> tuple[Cell, Cell]:
         self._check_compatibility(other)
 
         div = self.unsigned // other.unsigned
@@ -150,14 +148,14 @@ class Cell:
         raise NotImplementedError
 
     @classmethod
-    def _from_bits(cls, bits: list[int]) -> Self:
+    def _from_bits(cls, bits: list[int]) -> Cell:
         value = 0
         for i, part in enumerate(bits):
             assert 0 <= part <= 1
             value |= part << i
         return cls(value, bits=len(bits))
 
-    def __getitem__(self, key: int | slice) -> Self:
+    def __getitem__(self, key: int | slice) -> Cell:
         """Get bits of unsigned representation.
 
         Zero-indexed bit is minor.
@@ -178,7 +176,7 @@ class Cell:
         raise TypeError(msg)
 
     @classmethod
-    def decode(cls, memory: Sequence[Self], *, endianess: Endianess) -> Self:
+    def decode(cls, memory: Sequence[Cell], *, endianess: Endianess) -> Cell:
         if endianess is Endianess.BIG:
             return cls.decode(memory[::-1], endianess=Endianess.LITTLE)
 
@@ -191,7 +189,7 @@ class Cell:
 
         return cls(value, bits=shift)
 
-    def encode(self, *, bits: int, endianess: Endianess) -> list[Self]:
+    def encode(self, *, bits: int, endianess: Endianess) -> list[Cell]:
         if endianess is Endianess.BIG:
             return self.encode(bits=bits, endianess=Endianess.LITTLE)[::-1]
 
