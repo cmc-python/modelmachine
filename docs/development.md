@@ -16,7 +16,7 @@ git clone https://github.com/cmc-python/modelmachine.git
 cd modelmachine
 ln -s $(pwd)/.githooks/* .git/hooks
 pip install hatch
-hatch shell
+hatch shell dev
 ```
 Now you are in local environment and command `modelmachine` is accessable
 
