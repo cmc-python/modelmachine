@@ -41,7 +41,7 @@ rcontinuec = Gr(kw("reverse-continue") | kw("rcontinue") | kw("rc"))(
 breakc = Gr((kw("breakpoint") | kw("break") | kw("b")) + posinteger[0, 1])(
     "breakpoint"
 )
-memoryc = Gr((kw("memory") | kw("m")) + posinteger[2][0, 1])("memory")
+memoryc = Gr((kw("memory") | kw("m")) + posinteger[0, 2])("memory")
 quitc = Gr(kw("quit") | kw("q"))("quit")
 debug_cmd = stepc | rstepc | continuec | rcontinuec | memoryc | quitc | breakc
 
@@ -316,7 +316,7 @@ class Ide:
         current_cmd = self.current_cmd
         for i, page in enumerate(page_list):
             if i > 0 and page_list[i - 1] != page - 1:
-                printf("... dirty memory ...")
+                printf(self.c.dirty_memory("... dirty memory ..."))
             printf(self.format_page(page, current_cmd))
 
     def memory(self, begin: int = -1, end: int = -1) -> None:
@@ -328,7 +328,10 @@ class Ide:
             assert end == -1
             self.dump_full_memory()
 
-        current_cmd = self.current_cmd
+        if end == -1:
+            end = begin
+
+        current_cmd = range(begin, end + 1)
         for page in range(
             begin // self.cpu.control_unit.PAGE_SIZE,
             end // self.cpu.control_unit.PAGE_SIZE + 1,
@@ -431,7 +434,7 @@ class Ide:
             f"  {self.c.hl('s')}tep [count=1]        make count of steps\n"
             f"  {self.c.hl('c')}ontinue              continue until breakpoint or halt\n"
             f"  {self.c.hl('b')}reakpoint [addr]     set/unset breakpoint at addr\n"
-            f"  {self.c.hl('m')}emory <begin> <end>  view random access memory\n"
+            f"  {self.c.hl('m')}emory [begin] [end]  view random access memory\n"
             f"  {self.c.hl('rs')}tep [count=1]       make count of steps in reverse direction\n"
             f"  {self.c.hl('rc')}ontinue             continue until breakpoint or cycle=0 in reverse direction\n"
             f"  {self.c.hl('q')}uit\n"
