@@ -147,7 +147,7 @@ def load_cpu(
     filename: str, *, protect_memory: bool, enter: str | None = None
 ) -> Cpu:
     if not protect_memory:
-        protect_memory = user_config().get("protect_memory", True)
+        protect_memory = user_config().get("protect_memory", False)
         assert isinstance(protect_memory, bool)
 
     if filename == "-":
