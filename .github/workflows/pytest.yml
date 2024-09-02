@@ -27,11 +27,12 @@ jobs:
       uses: gabrielfalcao/pyenv-action@v18
       with:
         default: "${{ matrix.python }}"
-        command: |
-          pip install -U pip
-          pip install hatch
-          hatch build
-          hatch env create dev
+    - name: Install dependencies
+      run: |
+        pip install -U pip
+        pip install hatch
+        hatch build
+        hatch env create dev
     - name: Run tests
       run: |
         hatch shell dev
