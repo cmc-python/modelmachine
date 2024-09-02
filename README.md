@@ -596,6 +596,7 @@ Model machine emulator
 
 ## See also
 
+- [Config](docs/config.md)
 - [Implementation](docs/implementation.md)
 - [Development](docs/development.md)
 - [Change log](docs/changelog.md)

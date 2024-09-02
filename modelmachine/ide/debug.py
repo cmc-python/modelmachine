@@ -18,7 +18,7 @@ from ..cpu.source import kw, posinteger
 from ..cu.opcode import OPCODE_BITS, Opcode
 from ..cu.status import Status
 from ..memory.register import RegisterName
-from ..prompt.color_theme import ColorTheme
+from ..prompt.colors import Colors
 from ..prompt.prompt import (
     printf,
     prompt,
@@ -62,7 +62,7 @@ class Ide:
     _quit: bool
     _running: bool
     _breakpoints: set[Cell]
-    c: Final[ColorTheme]
+    c: Final[Colors]
 
     def __init__(self, *, cpu: Cpu, colors: bool):
         self.cpu = cpu
@@ -76,7 +76,7 @@ class Ide:
         self._quit = False
         self._running = False
         self._breakpoints = set()
-        self.c = ColorTheme(enabled=colors)
+        self.c = Colors(enabled=colors)
 
     @contextmanager
     def running(self) -> Iterator[None]:

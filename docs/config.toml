@@ -1,0 +1,35 @@
+# Uncomment required lines and change default value to required
+
+[colors]
+# enabled = true
+
+## Color scheme for different styles
+## Each style can set one or several of formating parameters
+
+## Available formatting parameters:
+##     faint = false
+##     bold = false
+##     italic = false
+##     underline = false
+##     foreground = "default" # color
+##     background = "default" # color
+##     invert = false
+
+## Available colors:
+##     "default"
+##     "black"
+##     "red"
+##     "green"
+##     "yellow"
+##     "blue"
+##     "magenta"
+##     "cyan"
+##     "gray"
+
+# hl = {foreground = "red"}
+# error = {foreground = "red"}
+# info = {foreground = "cyan"}
+# next_command = {underline = true}
+# just_updated = {foreground = "green"}
+# dirty_memory = {foreground = "cyan"}
+# breakpoint = {invert = true}

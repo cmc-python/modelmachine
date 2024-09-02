@@ -29,6 +29,7 @@ requires-python = ">=3.7"
 dependencies = [
     "pyparsing~=3.1",
     "prompt_toolkit~=3.0",
+    "tomli~=2.0",
 ]
 
 [project.scripts]
