@@ -1,5 +1,7 @@
 # Uncomment required lines and change default value to required
 
+# protect_memory = false
+
 [colors]
 # enabled = true
 

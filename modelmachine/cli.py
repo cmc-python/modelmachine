@@ -14,6 +14,7 @@ from pyparsing import Word as Wd
 from .__about__ import __version__
 from .cpu.source import source
 from .ide.debug import debug as ide_debug
+from .ide.user_config import user_config
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -145,6 +146,10 @@ cli = Cli(f"Modelmachine {__version__}")
 def load_cpu(
     filename: str, *, protect_memory: bool, enter: str | None = None
 ) -> Cpu:
+    if not protect_memory:
+        protect_memory = user_config().get("protect_memory", True)
+        assert isinstance(protect_memory, bool)
+
     if filename == "-":
         source_code = sys.stdin.read()
     else:
