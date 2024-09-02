@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=1)
 def user_config() -> dict[str, Any]:
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return {}
+
     config = Path.home() / ".config"
     xdg_config = os.getenv("XDG_CONFIG_HOME")
     if xdg_config:
