@@ -83,10 +83,9 @@ class Colors:
             if name == "enabled":
                 continue
 
-            if "foreground" in style:
-                style["foreground"] = Color.__members__[style["foreground"]]
-            if "background" in style:
-                style["background"] = Color.__members__[style["background"]]
+            for c in ("foreground", "background"):
+                if c in style:
+                    style[c] = Color.__members__[style[c]]
             user_styles[name] = Style(**style)
 
         self.scheme = StyleScheme(**user_styles)
