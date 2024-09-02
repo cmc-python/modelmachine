@@ -35,8 +35,7 @@ jobs:
         hatch env create dev
     - name: Run tests
       run: |
-        hatch shell dev
-        pytest
+        hatch run dev:pytest
 
   lint:
     runs-on: ubuntu-latest
