@@ -599,7 +599,6 @@ Model machine emulator
 - [Config](docs/config.md)
 - [Implementation](docs/implementation.md)
 - [Development](docs/development.md)
-- [Change log](docs/changelog.md)
 - [Road map](docs/todo.md)
 
 ## References

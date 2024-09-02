@@ -40,7 +40,7 @@ Homepage = "https://github.com/cmc-python/modelmachine"
 Repository = "https://github.com/cmc-python/modelmachine.git"
 Documentation = "https://github.com/cmc-python/modelmachine#readme"
 Issues = "https://github.com/cmc-python/modelmachine/issues"
-Changelog = "https://github.com/cmc-python/modelmachine/blob/main/docs/changelog.md"
+Changelog = "https://github.com/cmc-python/modelmachine/releases"
 
 [tool.hatch.version]
 source="vcs"
