@@ -74,19 +74,3 @@ CONDJUMP_OPCODES = frozenset(
     }
 )
 JUMP_OPCODES = CONDJUMP_OPCODES | {Opcode.jump}
-
-REGISTER_ARITH_OPCODES = frozenset(
-    {
-        Opcode.radd,
-        Opcode.rsub,
-        Opcode.rsmul,
-        Opcode.rsdiv,
-        Opcode.rumul,
-        Opcode.rudiv,
-    }
-)
-
-REGISTER_OPCODES = REGISTER_ARITH_OPCODES | {
-    Opcode.rmove,
-    Opcode.rcomp,
-}

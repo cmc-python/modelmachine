@@ -10,8 +10,6 @@ from .opcode import (
     ARITHMETIC_OPCODES,
     JUMP_OPCODES,
     OPCODE_BITS,
-    REGISTER_ARITH_OPCODES,
-    REGISTER_OPCODES,
     Opcode,
 )
 
@@ -23,6 +21,22 @@ if TYPE_CHECKING:
     from ..memory.register import RegisterMemory
 
 REG_NO_BITS = 4
+
+REGISTER_ARITH_OPCODES = frozenset(
+    {
+        Opcode.radd,
+        Opcode.rsub,
+        Opcode.rsmul,
+        Opcode.rsdiv,
+        Opcode.rumul,
+        Opcode.rudiv,
+    }
+)
+
+REGISTER_OPCODES = REGISTER_ARITH_OPCODES | {
+    Opcode.rmove,
+    Opcode.rcomp,
+}
 
 
 class ControlUnitR(ControlUnit):
@@ -131,7 +145,7 @@ class ControlUnitR(ControlUnit):
     _LOAD_S: Final = (
         ARITHMETIC_OPCODES
         | REGISTER_ARITH_OPCODES
-        | {Opcode.comp, Opcode.store}
+        | {Opcode.rcomp, Opcode.comp, Opcode.store}
     )
 
     def _load(self) -> None:

@@ -303,6 +303,92 @@ class TestControlUnitM:
             (-0x2, 0x7FFFFFFF, False, True, False),
         ],
     )
+    def test_register_cond_jump(
+        self,
+        *,
+        a: int,
+        b: int,
+        eq: bool,
+        sl: bool,
+        ul: bool,
+    ) -> None:
+        def cond(opcode: Opcode, *, a: int, b: int, j: bool) -> None:
+            self.setup_method()
+            self.ram.put(
+                address=Cell(0x10, bits=AB),
+                value=Cell(0x2513, bits=AB),
+            )
+
+            self.registers[RegisterName.R1] = Cell(a, bits=self.OPERAND_BITS)
+            self.registers[RegisterName.R3] = Cell(b, bits=self.OPERAND_BITS)
+            self.registers[RegisterName.PC] = Cell(0x10, bits=AB)
+            with warnings.catch_warnings(record=False):
+                warnings.simplefilter("ignore")
+                self.control_unit.step()
+
+            self.ram.put(
+                address=Cell(0x11, bits=AB),
+                value=Cell(
+                    (opcode.value << 2 * RB + AB) | 0x080040,
+                    bits=self.OPERAND_BITS,
+                ),
+            )
+            self.ram.put(
+                address=Cell(0x40, bits=AB),
+                value=Cell(0x77, bits=self.OPERAND_BITS),
+            )
+            self.ram.put(
+                address=Cell(0x42, bits=AB),
+                value=Cell(0x88, bits=self.OPERAND_BITS),
+            )
+            with warnings.catch_warnings(record=False):
+                warnings.simplefilter("ignore")
+                self.control_unit.step()
+            assert self.registers[RegisterName.PC] == (0x40 if j else 0x13)
+            assert (
+                self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
+                == 0x77
+            )
+            assert (
+                self.ram.fetch(Cell(0x42, bits=AB), bits=self.OPERAND_BITS)
+                == 0x88
+            )
+            assert self.control_unit.status is Status.RUNNING
+
+        cond(Opcode.jeq, a=a, b=b, j=eq)
+        cond(Opcode.jneq, a=a, b=b, j=not eq)
+        cond(Opcode.jeq, a=b, b=a, j=eq)
+        cond(Opcode.jneq, a=b, b=a, j=not eq)
+        cond(Opcode.sjl, a=a, b=b, j=sl and not eq)
+        cond(Opcode.sjgeq, a=a, b=b, j=not sl or eq)
+        cond(Opcode.sjleq, a=a, b=b, j=sl or eq)
+        cond(Opcode.sjg, a=a, b=b, j=not sl and not eq)
+        cond(Opcode.sjl, a=b, b=a, j=not sl and not eq)
+        cond(Opcode.sjgeq, a=b, b=a, j=sl or eq)
+        cond(Opcode.sjleq, a=b, b=a, j=not sl or eq)
+        cond(Opcode.sjg, a=b, b=a, j=sl and not eq)
+        cond(Opcode.ujl, a=a, b=b, j=ul and not eq)
+        cond(Opcode.ujgeq, a=a, b=b, j=not ul or eq)
+        cond(Opcode.ujleq, a=a, b=b, j=ul or eq)
+        cond(Opcode.ujg, a=a, b=b, j=not ul and not eq)
+        cond(Opcode.ujl, a=b, b=a, j=not ul and not eq)
+        cond(Opcode.ujgeq, a=b, b=a, j=ul or eq)
+        cond(Opcode.ujleq, a=b, b=a, j=not ul or eq)
+        cond(Opcode.ujg, a=b, b=a, j=ul and not eq)
+
+    @pytest.mark.parametrize(
+        ("a", "b", "eq", "sl", "ul"),
+        [
+            (0x41, 0x10, False, False, False),
+            (0x41, 0x41, True, False, False),
+            (-0x41, -0x41, True, False, False),
+            (-0x41, 0x10, False, True, False),
+            (0x41, -0x10, False, False, True),
+            (-0x41, -0x10, False, True, True),
+            (-0x1, 0x7FFFFFFF, False, True, False),
+            (-0x2, 0x7FFFFFFF, False, True, False),
+        ],
+    )
     def test_cond_jump(
         self,
         *,
