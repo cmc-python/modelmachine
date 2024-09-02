@@ -58,9 +58,6 @@ dependencies = [
   "pytest>=7.4",
 ]
 
-[[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.12", "3.8"]
-
 [tool.coverage.run]
 source_pkgs = ["modelmachine", "tests"]
 branch = true

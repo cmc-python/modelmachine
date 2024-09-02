@@ -13,8 +13,32 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+          - 3.7
+          - 3.12
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install python version
+      uses: gabrielfalcao/pyenv-action@v18
+      with:
+        default: "${{ matrix.python }}"
+        command: |
+          pip install -U pip
+          pip install hatch
+          hatch build
+          hatch env create dev
+    - name: Run tests
+      run: |
+        hatch shell dev
+        pytest
+
+  lint:
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -24,17 +48,12 @@ jobs:
         python-version: 3.12
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        pip install -U pip
         pip install hatch~=1.12
-    - name: Build package
-      run: |
         hatch build
-    - name: Linting with ruff
+    - name: Linting
       run: |
         hatch fmt --check
-    - name: Test with pytest
-      run: |
-        hatch test -a
     - name: Check types
       run: |
         hatch run dev:mypy --strict .
