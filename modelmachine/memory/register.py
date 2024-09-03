@@ -5,6 +5,7 @@ Word is long integer.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import TYPE_CHECKING
 
@@ -42,11 +43,17 @@ class RegisterName(IntEnum):
     RF = auto()
 
 
+@dataclass(frozen=True)
+class RegisterWriteLog:
+    old: Cell
+    new: Cell
+
+
 class RegisterMemory:
     """Registers."""
 
     _table: list[Cell | None]
-    write_log: list[dict[RegisterName, tuple[Cell, Cell]]] | None
+    write_log: list[dict[RegisterName, RegisterWriteLog]] | None
 
     def __init__(self) -> None:
         self._table = [None] * len(RegisterName)
@@ -86,8 +93,10 @@ class RegisterMemory:
         current = self[name]
         assert current.bits == word.bits
         if self.write_log is not None:
-            current = self.write_log[-1].get(name, (current,))[0]
-            self.write_log[-1][name] = (current, word)
+            mod = self.write_log[-1].get(
+                name, RegisterWriteLog(current, current)
+            )
+            self.write_log[-1][name] = RegisterWriteLog(old=mod.old, new=word)
         self._table[name] = word
 
     def __contains__(self, name: RegisterName) -> bool:

@@ -144,13 +144,13 @@ class Ide:
         self._ram_access_count.pop()
 
         assert self.cpu.registers.write_log is not None
-        for reg, (old, _) in self.cpu.registers.write_log.pop().items():
-            self.cpu.registers._table[reg] = old  # noqa: SLF001
+        for reg, modm in self.cpu.registers.write_log.pop().items():
+            self.cpu.registers._table[reg] = modm.old  # noqa: SLF001
 
         assert self.cpu.ram.write_log is not None
-        for addr, (fill, oldr, _) in self.cpu.ram.write_log.pop().items():
-            self.cpu.ram._table[addr] = oldr  # noqa: SLF001
-            if fill:
+        for addr, modr in self.cpu.ram.write_log.pop().items():
+            self.cpu.ram._table[addr] = modr.old  # noqa: SLF001
+            if modr.fill:
                 self.cpu.ram._fill[addr] = 0  # noqa: SLF001
 
         self.cpu.ram.access_count = self._ram_access_count[-1]
