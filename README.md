@@ -88,42 +88,43 @@ Model machine emulator
 
 ## Таблица команд модельных машин
 
-|OPCODE|mm-3 |mm-2 |mm-v |mm-1 |mm-s |mm-r |mm-m  |
-|:-----|:---:|:---:|:---:|:---:|:---:|:---:|:----:|
-|0x00  |move |move |move |load |     |load | load |
-|0x01  | add | add | add | add | add | add | add  |
-|0x02  | sub | sub | sub | sub | sub | sub | sub  |
-|0x03  |smul |smul |smul |smul |smul |smul | smul |
-|0x04  |sdiv |sdiv |sdiv |sdiv |sdiv |sdiv | sdiv |
-|0x05  |     |comp |comp |comp |comp |comp | comp |
-|0x13  |umul |umul |umul |umul |umul |umul | umul |
-|0x14  |udiv |udiv |udiv |udiv |udiv |udiv | udiv |
-|0x10  |     |     |     |store|     |store|store |
-|0x11  |     |     |     |     |     |     | addr |
-|0x20  |     |     |     |swap |     |rmove|rmove |
-|0x21  |     |     |     |     |     |radd | radd |
-|0x22  |     |     |     |     |     |rsub | rsub |
-|0x23  |     |     |     |     |     |rsmul|rsmul |
-|0x24  |     |     |     |     |     |rsdiv|rsdiv |
-|0x25  |     |     |     |     |     |rcomp|rcomp |
-|0x33  |     |     |     |     |     |rumul|rumul |
-|0x34  |     |     |     |     |     |rudiv|rudiv |
-|0x5A  |     |     |     |     |push |     |      |
-|0x5B  |     |     |     |     | pop |     |      |
-|0x5C  |     |     |     |     | dup |     |      |
-|0x5D  |     |     |     |     |sswap|     |      |
-|0x80  |jump |jump |jump |jump |jump |jump | jump |
-|0x81  | jeq | jeq | jeq | jeq | jeq | jeq | jeq  |
-|0x82  |jneq |jneq |jneq |jneq |jneq |jneq | jneq |
-|0x83  | sjl | sjl | sjl | sjl | sjl | sjl | sjl  |
-|0x84  |sjgeq|sjgeq|sjneq|sjgeq|sjgeq|sjgeq|sjgeq |
-|0x85  |sjleq|sjleq|sjleq|sjleq|sjleq|sjleq|sjleq |
-|0x86  | sjg | sjg | sjg | sjg | sjg | sjg | sjg  |
-|0x93  | ujl | ujl | ujl | ujl | ujl | ujl | ujl  |
-|0x94  |ujgeq|ujgeq|ujgeq|ujgeq|ujgeq|ujgeq|ujgeq |
-|0x95  |ujleq|ujleq|ujleq|ujleq|ujleq|ujleq|ujleq |
-|0x96  | ujg | ujg | ujg | ujg | ujg | ujg | ujg  |
-|0x99  |halt |halt |halt |halt |halt |halt | halt |
+|OPCODE|mm-3 |mm-2 |mm-v |mm-1 |mm-s |mm-0 |mm-r |mm-m  |
+|:-----|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:----:|
+|0x00  |move |move |move |load |     |     |load | load |
+|0x01  | add | add | add | add | add | add | add | add  |
+|0x02  | sub | sub | sub | sub | sub | sub | sub | sub  |
+|0x03  |smul |smul |smul |smul |smul |smul |smul | smul |
+|0x04  |sdiv |sdiv |sdiv |sdiv |sdiv |sdiv |sdiv | sdiv |
+|0x05  |     |comp |comp |comp |comp |comp |comp | comp |
+|0x13  |umul |umul |umul |umul |umul |umul |umul | umul |
+|0x14  |udiv |udiv |udiv |udiv |udiv |udiv |udiv | udiv |
+|0x10  |     |     |     |store|     |     |store|store |
+|0x11  |     |     |     |     |     |     |     | addr |
+|0x20  |     |     |     |swap |     |     |rmove|rmove |
+|0x21  |     |     |     |     |     |     |radd | radd |
+|0x22  |     |     |     |     |     |     |rsub | rsub |
+|0x23  |     |     |     |     |     |     |rsmul|rsmul |
+|0x24  |     |     |     |     |     |     |rsdiv|rsdiv |
+|0x25  |     |     |     |     |     |     |rcomp|rcomp |
+|0x33  |     |     |     |     |     |     |rumul|rumul |
+|0x34  |     |     |     |     |     |     |rudiv|rudiv |
+|0x40  |     |     |     |     |     |push |     |      |
+|0x5A  |     |     |     |     |push |     |     |      |
+|0x5B  |     |     |     |     | pop | pop |     |      |
+|0x5C  |     |     |     |     | dup | dup |     |      |
+|0x5D  |     |     |     |     |swap |swap |     |      |
+|0x80  |jump |jump |jump |jump |jump |jump |jump | jump |
+|0x81  | jeq | jeq | jeq | jeq | jeq | jeq | jeq | jeq  |
+|0x82  |jneq |jneq |jneq |jneq |jneq |jneq |jneq | jneq |
+|0x83  | sjl | sjl | sjl | sjl | sjl | sjl | sjl | sjl  |
+|0x84  |sjgeq|sjgeq|sjneq|sjgeq|sjgeq|sjgeq|sjgeq|sjgeq |
+|0x85  |sjleq|sjleq|sjleq|sjleq|sjleq|sjleq|sjleq|sjleq |
+|0x86  | sjg | sjg | sjg | sjg | sjg | sjg | sjg | sjg  |
+|0x93  | ujl | ujl | ujl | ujl | ujl | ujl | ujl | ujl  |
+|0x94  |ujgeq|ujgeq|ujgeq|ujgeq|ujgeq|ujgeq|ujgeq|ujgeq |
+|0x95  |ujleq|ujleq|ujleq|ujleq|ujleq|ujleq|ujleq|ujleq |
+|0x96  | ujg | ujg | ujg | ujg | ujg | ujg | ujg | ujg  |
+|0x99  |halt |halt |halt |halt |halt |halt |halt | halt |
 
 На самом деле операция `div` запускает в АЛУ схему `divmod`.
 
@@ -374,7 +375,7 @@ Model machine emulator
 |0x5A       |push    |push  A|               3|
 |0x5B       |pop     |pop   A|               3|
 |0x5C       |dup     |dup    |               1|
-|0x5D       |sswap   |sswap  |               1|
+|0x5D       |swap    |swap   |               1|
 |0x80       |jump    |jump  A|               3|
 |0x81       |jeq     |jeq   A|               3|
 |0x82       |jneq    |jneq  A|               3|
@@ -412,8 +413,52 @@ Model machine emulator
 * `dup`:
     - `SP := SP - 3`
     - `[SP] := [SP + 3]`
-* `sswap`: `[SP + 3] := [SP]; [SP] := [SP + 3]`
+* `swap`: `[SP + 3] := [SP]; [SP] := [SP + 3]`
 * `halt`: `FLAGS := HALT`
+
+
+### mm-0
+
+Архитектура безадресной стековой модельной машины.
+
+* Размер ячейки оперативной памяти: 2 байта.
+* Размер адреса: 2 байтa.
+* Код команды помещается в одну ячейку оперативной памяти `COP А`.
+  Размер значения `A` в коде команды - 1 байт.
+* Регистры: `R1`, `R2`, `FLAGS`, `PC`, `IR`, `SP`.
+
+В регистры `R1` и `R2` загружаются данные из стека - ячеек оперативной
+памяти по адресу `[SP]`. Результат вычислений записывается обратно на
+вершину стека. При этом значение региста `SP` увеличивается или уменьшается
+в зависимости от семантики команды.
+Стек растет в сторону меньших адресов.
+
+#### Описание команд
+
+* `add`, `sub`, `smul`, `umul`:
+    - load: `R1 := [SP + A]; R2 := [SP]`
+    - exec: `R1 := R1 op R2 and set FLAGS; SP := SP - 1`
+    - write back: `[SP] := R1`
+* `sdiv`, `udiv`:
+    - load: `R1 := [SP + A]; R2 := [SP]`
+    - exec: `R1 := R1 / R2 and set FLAGS; R2 := R1 % R2; SP := SP - 1`
+    - write back: `[SP + 1] := R1; [SP] := R2`
+* `jump`: `PC := PC + A`
+* `cmp`:
+    - load: `R1 := [SP + A]; R2 := [SP]`
+    - exec: `calc R1 - R2 and set FLAGS; SP := SP + 1`
+* `jeq`, `jneq`, `jl`, `jleq`, `jg`, `jgeq`: `if op(FLAGS) then PC := PC + A`
+* `push`:
+    - `SP := SP - 1`
+    - `[SP] := A` - `A` расширяется до 16 битного числа с учетом знака
+* `pop`:
+    - `SP := SP + A`
+* `dup`:
+    - `R1 := [SP + A]`
+    - `SP := SP - 1`
+    - `[SP] := R1`
+* `swap`: `[SP - A] := [SP]; [SP] := [SP - A]`
+* `halt 00`: `FLAGS := HALT`
 
 
 ### mm-r
