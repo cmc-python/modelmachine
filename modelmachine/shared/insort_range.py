@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 
-def insort(a: list[range], x: range) -> None:
-    lo = bisect_right(a, x)
+def insort_range(a: list[range], x: range) -> None:
+    lo = bisect_right_range(a, x)
     a.insert(lo, x)
 
 
-def bisect_right(a: list[range], x: range) -> int:
+def bisect_right_range(a: list[range], x: range) -> int:
     lo = 0
     hi = len(a)
 

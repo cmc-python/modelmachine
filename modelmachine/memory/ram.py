@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..cell import Cell, Endianess
-from .insort import insort
+from ..shared.insort_range import insort_range
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -112,7 +112,7 @@ class RandomAccessMemory:
                         del self._filled_intervals[i + 1]
                 break
         else:
-            insort(
+            insort_range(
                 self._filled_intervals,
                 range(address, address + 1),
             )
