@@ -1,18 +1,35 @@
-from enum import IntEnum
+from __future__ import annotations
+
+from ..shared.enum_mixin import EnumMixin
 
 
-class Opcode(IntEnum):
-    move = 0x00
-    load = 0x00
+class UniversalOpcode(EnumMixin):
     add = 0x01
     sub = 0x02
     smul = 0x03
     sdiv = 0x04
+    umul = 0x13
+    udiv = 0x14
+    jump = 0x80
+    jeq = 0x81
+    jneq = 0x82
+    sjl = 0x83
+    sjgeq = 0x84
+    sjleq = 0x85
+    sjg = 0x86
+    ujl = 0x93
+    ujgeq = 0x94
+    ujleq = 0x95
+    ujg = 0x96
+    halt = 0x99
+
+
+class Opcode(UniversalOpcode):  # type: ignore
+    move = 0x00
+    load = 0x00
     comp = 0x05
     store = 0x10
     addr = 0x11
-    umul = 0x13
-    udiv = 0x14
     swap = 0x20
     rmove = 0x20
     radd = 0x21
@@ -26,22 +43,6 @@ class Opcode(IntEnum):
     pop = 0x5B
     dup = 0x5C
     sswap = 0x5D
-    jump = 0x80
-    jeq = 0x81
-    jneq = 0x82
-    sjl = 0x83
-    sjgeq = 0x84
-    sjleq = 0x85
-    sjg = 0x86
-    ujl = 0x93
-    ujgeq = 0x94
-    ujleq = 0x95
-    ujg = 0x96
-    reserved_unknown = 0x98
-    halt = 0x99
-
-    def __str__(self) -> str:
-        return f"Opcode.{self.name}"
 
 
 OPCODE_BITS = 8
