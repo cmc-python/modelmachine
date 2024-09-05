@@ -52,13 +52,13 @@ class ControlUnit3(ControlUnit):
         return self._ir[: self._ram.address_bits]
 
     def _decode(self) -> None:
-        if self._opcode is Opcode.jump:
+        if self._opcode == Opcode.jump:
             self._expect_zero(self._ram.address_bits)
 
-        if self._opcode is Opcode.halt:
+        if self._opcode == Opcode.halt:
             self._expect_zero()
 
-        if self._opcode is Opcode.move:
+        if self._opcode == Opcode.move:
             self._expect_zero(
                 self._ram.address_bits, 2 * self._ram.address_bits
             )
@@ -68,7 +68,7 @@ class ControlUnit3(ControlUnit):
     def _load(self) -> None:
         """Load registers R1 and R2."""
 
-        if self._opcode is Opcode.move:
+        if self._opcode == Opcode.move:
             self._registers[RegisterName.S] = self._ram.fetch(
                 address=self._address1, bits=self._alu.operand_bits
             )

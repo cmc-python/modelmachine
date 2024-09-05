@@ -62,7 +62,7 @@ class ControlUnit1(ControlUnit):
                 address=self._address, bits=self._alu.operand_bits
             )
 
-        if self._opcode is Opcode.load:
+        if self._opcode == Opcode.load:
             self._registers[RegisterName.S] = self._ram.fetch(
                 address=self._address, bits=self._alu.operand_bits
             )
@@ -72,18 +72,18 @@ class ControlUnit1(ControlUnit):
 
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""
-        if self._opcode is Opcode.comp:
+        if self._opcode == Opcode.comp:
             saved_s = self._registers[RegisterName.S]
             self._alu.sub()
             self._registers[RegisterName.S] = saved_s
-        elif self._opcode is Opcode.swap:
+        elif self._opcode == Opcode.swap:
             self._alu.swap()
         else:
             super()._execute()
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode is Opcode.store:
+        if self._opcode == Opcode.store:
             self._ram.put(
                 address=self._address, value=self._registers[RegisterName.S]
             )

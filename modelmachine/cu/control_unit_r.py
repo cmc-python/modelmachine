@@ -135,7 +135,7 @@ class ControlUnitR(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(self._ram.address_bits)
 
-        if self._opcode is Opcode.halt:
+        if self._opcode == Opcode.halt:
             self._expect_zero()
 
     _LOAD_FROM_MEMORY: Final = ARITHMETIC_OPCODES | {
@@ -175,15 +175,15 @@ class ControlUnitR(ControlUnit):
             self._alu.sub()
         elif self._opcode in self._EXEC_MOV:
             self._registers[RegisterName.S] = self._registers[RegisterName.S1]
-        elif self._opcode is Opcode.radd:
+        elif self._opcode == Opcode.radd:
             self._alu.add()
-        elif self._opcode is Opcode.rumul:
+        elif self._opcode == Opcode.rumul:
             self._alu.umul()
-        elif self._opcode is Opcode.rudiv:
+        elif self._opcode == Opcode.rudiv:
             self._alu.udivmod()
-        elif self._opcode is Opcode.rsmul:
+        elif self._opcode == Opcode.rsmul:
             self._alu.smul()
-        elif self._opcode is Opcode.rsdiv:
+        elif self._opcode == Opcode.rsdiv:
             self._alu.sdivmod()
         else:
             super()._execute()
@@ -210,7 +210,7 @@ class ControlUnitR(ControlUnit):
         if self._opcode in self._WB_R_NEXT:
             self._registers[self._r_next] = self._registers[RegisterName.S1]
 
-        if self._opcode is Opcode.store:
+        if self._opcode == Opcode.store:
             self._ram.put(
                 address=self._address, value=self._registers[RegisterName.S]
             )

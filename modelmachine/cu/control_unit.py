@@ -206,41 +206,41 @@ class ControlUnit:
         """Run arithmetic instructions."""
         if self._opcode in self._CU_ABS_EXEC_NOP:
             pass
-        elif self._opcode is Opcode.halt:
+        elif self._opcode == Opcode.halt:
             self._alu.halt()
-        elif self._opcode is Opcode.add:
+        elif self._opcode == Opcode.add:
             self._alu.add()
-        elif self._opcode is Opcode.sub:
+        elif self._opcode == Opcode.sub:
             self._alu.sub()
-        elif self._opcode is Opcode.smul:
+        elif self._opcode == Opcode.smul:
             self._alu.smul()
-        elif self._opcode is Opcode.umul:
+        elif self._opcode == Opcode.umul:
             self._alu.umul()
-        elif self._opcode is Opcode.sdiv:
+        elif self._opcode == Opcode.sdiv:
             self._alu.sdivmod()
-        elif self._opcode is Opcode.udiv:
+        elif self._opcode == Opcode.udiv:
             self._alu.udivmod()
-        elif self._opcode is Opcode.jump:
+        elif self._opcode == Opcode.jump:
             self._alu.jump()
-        elif self._opcode is Opcode.jeq:
+        elif self._opcode == Opcode.jeq:
             self._alu.cond_jump(signed=False, comp=EQUAL, equal=True)
-        elif self._opcode is Opcode.jneq:
+        elif self._opcode == Opcode.jneq:
             self._alu.cond_jump(signed=False, comp=EQUAL, equal=False)
-        elif self._opcode is Opcode.sjl:
+        elif self._opcode == Opcode.sjl:
             self._alu.cond_jump(signed=True, comp=LESS, equal=False)
-        elif self._opcode is Opcode.sjgeq:
+        elif self._opcode == Opcode.sjgeq:
             self._alu.cond_jump(signed=True, comp=GREATER, equal=True)
-        elif self._opcode is Opcode.sjleq:
+        elif self._opcode == Opcode.sjleq:
             self._alu.cond_jump(signed=True, comp=LESS, equal=True)
-        elif self._opcode is Opcode.sjg:
+        elif self._opcode == Opcode.sjg:
             self._alu.cond_jump(signed=True, comp=GREATER, equal=False)
-        elif self._opcode is Opcode.ujl:
+        elif self._opcode == Opcode.ujl:
             self._alu.cond_jump(signed=False, comp=LESS, equal=False)
-        elif self._opcode is Opcode.ujgeq:
+        elif self._opcode == Opcode.ujgeq:
             self._alu.cond_jump(signed=False, comp=GREATER, equal=True)
-        elif self._opcode is Opcode.ujleq:
+        elif self._opcode == Opcode.ujleq:
             self._alu.cond_jump(signed=False, comp=LESS, equal=True)
-        elif self._opcode is Opcode.ujg:
+        elif self._opcode == Opcode.ujg:
             self._alu.cond_jump(signed=False, comp=GREATER, equal=False)
         else:
             self._wrong_opcode(self._opcode)

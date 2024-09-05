@@ -50,14 +50,14 @@ class ControlUnit2(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(self._ram.address_bits)
 
-        if self._opcode is Opcode.halt:
+        if self._opcode == Opcode.halt:
             self._expect_zero()
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode is Opcode.move:
+        if self._opcode == Opcode.move:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address2, bits=self._alu.operand_bits
             )
@@ -76,7 +76,7 @@ class ControlUnit2(ControlUnit):
 
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""
-        if self._opcode is Opcode.comp:
+        if self._opcode == Opcode.comp:
             self._alu.sub()
         else:
             super()._execute()

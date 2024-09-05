@@ -25,12 +25,12 @@ class ControlUnitM(ControlUnitR):
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(-REG_NO_BITS)
 
-        if self._opcode is Opcode.halt:
+        if self._opcode == Opcode.halt:
             self._expect_zero()
 
     def _load(self) -> None:
         """Load registers S and S1."""
-        if self._opcode is Opcode.addr:
+        if self._opcode == Opcode.addr:
             self._registers[RegisterName.S] = Cell(
                 self._address.unsigned, bits=self._alu.operand_bits
             )

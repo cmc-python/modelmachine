@@ -48,7 +48,7 @@ class ControlUnitV(ControlUnit):
     def instruction_bits(self, opcode: Opcode) -> int:
         assert opcode in self.KNOWN_OPCODES
 
-        if opcode is Opcode.halt:
+        if opcode == Opcode.halt:
             return OPCODE_BITS
 
         if opcode in JUMP_OPCODES:
@@ -60,7 +60,7 @@ class ControlUnitV(ControlUnit):
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode is Opcode.move:
+        if self._opcode == Opcode.move:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address2, bits=self._alu.operand_bits
             )
@@ -79,7 +79,7 @@ class ControlUnitV(ControlUnit):
 
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""
-        if self._opcode is Opcode.comp:
+        if self._opcode == Opcode.comp:
             self._alu.sub()
         else:
             super()._execute()

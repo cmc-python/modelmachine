@@ -98,7 +98,7 @@ class ControlUnitS(ControlUnit):
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode is Opcode.push:
+        if self._opcode == Opcode.push:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address, bits=self._alu.operand_bits
             )
@@ -135,14 +135,14 @@ class ControlUnitS(ControlUnit):
 
     def _execute(self) -> None:
         """Add specific commands."""
-        if self._opcode is Opcode.comp:
+        if self._opcode == Opcode.comp:
             self._alu.sub()
-        elif self._opcode is Opcode.sswap:
+        elif self._opcode == Opcode.sswap:
             self._alu.swap()
         else:
             super()._execute()
 
-        if self._opcode is Opcode.comp:
+        if self._opcode == Opcode.comp:
             self._stack_pointer += Cell(6, bits=self._ram.address_bits)
         elif self._opcode in self._SP_PLUS:
             self._stack_pointer += Cell(3, bits=self._ram.address_bits)
@@ -170,7 +170,7 @@ class ControlUnitS(ControlUnit):
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode is Opcode.pop:
+        if self._opcode == Opcode.pop:
             self._ram.put(
                 address=self._address, value=self._registers[RegisterName.R1]
             )
