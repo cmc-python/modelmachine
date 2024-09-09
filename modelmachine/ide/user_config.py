@@ -5,7 +5,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import tomli
+try:
+    from tomllib import load
+except ImportError:
+    from tomli import load  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     from typing import Any
@@ -25,6 +28,6 @@ def user_config() -> dict[str, Any]:
 
     try:
         with open(config, "rb") as config_file:
-            return tomli.load(config_file)
+            return load(config_file)
     except FileNotFoundError:
         return {}
