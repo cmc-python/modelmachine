@@ -437,13 +437,13 @@ Model machine emulator
 
 * `add`, `sub`, `smul`, `umul`:
     - load: `R1 := [SP + A]; R2 := [SP]`
-    - exec: `R1 := R1 op R2 and set FLAGS; SP := SP - 1`
+    - exec: `R1 := R1 op R2 and set FLAGS`
     - write back: `[SP] := R1`
 * `sdiv`, `udiv`:
     - load: `R1 := [SP + A]; R2 := [SP]`
     - exec: `R1 := R1 / R2 and set FLAGS; R2 := R1 % R2; SP := SP - 1`
     - write back: `[SP + 1] := R1; [SP] := R2`
-* `jump`: `PC := PC + A`
+* `jump`: `PC := PC + A` - `A` расширяется до 16 битного числа с учетом знака
 * `cmp`:
     - load: `R1 := [SP + A]; R2 := [SP]`
     - exec: `calc R1 - R2 and set FLAGS; SP := SP + 1`
@@ -457,7 +457,7 @@ Model machine emulator
     - `R1 := [SP + A]`
     - `SP := SP - 1`
     - `[SP] := R1`
-* `swap`: `[SP - A] := [SP]; [SP] := [SP - A]`
+* `swap`: `[SP + A] := [SP]; [SP] := [SP + A]`
 * `halt 00`: `FLAGS := HALT`
 
 
