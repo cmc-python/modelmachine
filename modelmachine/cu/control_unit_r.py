@@ -8,9 +8,12 @@ from ..memory.register import RegisterName
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
+    COMP,
     JUMP_OPCODES,
+    LOAD,
     OPCODE_BITS,
-    Opcode,
+    STORE,
+    CommonOpcode,
 )
 
 if TYPE_CHECKING:
@@ -22,38 +25,25 @@ if TYPE_CHECKING:
 
 REG_NO_BITS = 4
 
-REGISTER_ARITH_OPCODES = frozenset(
-    {
-        Opcode.radd,
-        Opcode.rsub,
-        Opcode.rsmul,
-        Opcode.rsdiv,
-        Opcode.rumul,
-        Opcode.rudiv,
-    }
-)
-
-REGISTER_OPCODES = REGISTER_ARITH_OPCODES | {
-    Opcode.rmove,
-    Opcode.rcomp,
-}
-
 
 class ControlUnitR(ControlUnit):
     """Control unit for register model machine."""
 
     NAME = "mm-r"
-    KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | REGISTER_OPCODES
-        | JUMP_OPCODES
-        | {
-            Opcode.halt,
-            Opcode.comp,
-            Opcode.load,
-            Opcode.store,
-        }
-    )
+
+    class Opcode(CommonOpcode):
+        load = LOAD
+        comp = COMP
+        store = STORE
+        rmove = 0x20
+        radd = 0x21
+        rsub = 0x22
+        rsmul = 0x23
+        rsdiv = 0x24
+        rcomp = 0x25
+        rumul = 0x33
+        rudiv = 0x34
+
     IR_BITS = OPCODE_BITS + 2 * REG_NO_BITS + ControlUnit.ADDRESS_BITS
     WORD_BITS = ControlUnit.ADDRESS_BITS
     ALU_REGISTERS = AluRegisters(
@@ -62,6 +52,22 @@ class ControlUnitR(ControlUnit):
         R1=RegisterName.S,
         R2=RegisterName.S1,
     )
+
+    REGISTER_ARITH_OPCODES: Final = frozenset(
+        {
+            Opcode.radd,
+            Opcode.rsub,
+            Opcode.rsmul,
+            Opcode.rsdiv,
+            Opcode.rumul,
+            Opcode.rudiv,
+        }
+    )
+
+    REGISTER_OPCODES: Final = REGISTER_ARITH_OPCODES | {
+        Opcode.rmove,
+        Opcode.rcomp,
+    }
 
     @property
     def _rx(self) -> RegisterName:
@@ -115,8 +121,6 @@ class ControlUnitR(ControlUnit):
     _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
     def instruction_bits(self, opcode: Opcode) -> int:
-        assert opcode in self.KNOWN_OPCODES
-
         if opcode in self._ONE_WORD_OPCODES:
             return self._ram.word_bits
 
@@ -135,7 +139,7 @@ class ControlUnitR(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(self._ram.address_bits)
 
-        if self._opcode == Opcode.halt:
+        if self._opcode == self.Opcode.halt:
             self._expect_zero()
 
     _LOAD_FROM_MEMORY: Final = ARITHMETIC_OPCODES | {
@@ -155,7 +159,7 @@ class ControlUnitR(ControlUnit):
                 address=self._address, bits=self._alu.operand_bits
             )
 
-        if self._opcode in REGISTER_OPCODES:
+        if self._opcode in self.REGISTER_OPCODES:
             self._registers[RegisterName.S1] = self._registers[self._ry]
 
         if self._opcode in self._LOAD_S:
@@ -169,21 +173,23 @@ class ControlUnitR(ControlUnit):
     )
     _EXEC_MOV: Final = frozenset({Opcode.load, Opcode.rmove})
 
+    _EXEC_NOP = frozenset({Opcode.load, Opcode.store, Opcode.rmove})
+
     def _execute(self) -> None:
         """Execute the command."""
         if self._opcode in self._EXEC_SUB:
             self._alu.sub()
         elif self._opcode in self._EXEC_MOV:
             self._registers[RegisterName.S] = self._registers[RegisterName.S1]
-        elif self._opcode == Opcode.radd:
+        elif self._opcode == self.Opcode.radd:
             self._alu.add()
-        elif self._opcode == Opcode.rumul:
+        elif self._opcode == self.Opcode.rumul:
             self._alu.umul()
-        elif self._opcode == Opcode.rudiv:
+        elif self._opcode == self.Opcode.rudiv:
             self._alu.udivmod()
-        elif self._opcode == Opcode.rsmul:
+        elif self._opcode == self.Opcode.rsmul:
             self._alu.smul()
-        elif self._opcode == Opcode.rsdiv:
+        elif self._opcode == self.Opcode.rsdiv:
             self._alu.sdivmod()
         else:
             super()._execute()
@@ -210,7 +216,7 @@ class ControlUnitR(ControlUnit):
         if self._opcode in self._WB_R_NEXT:
             self._registers[self._r_next] = self._registers[RegisterName.S1]
 
-        if self._opcode == Opcode.store:
+        if self._opcode == self.Opcode.store:
             self._ram.put(
                 address=self._address, value=self._registers[RegisterName.S]
             )

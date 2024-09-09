@@ -7,10 +7,12 @@ from ..memory.register import RegisterName
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
+    COMP,
     DWORD_WRITE_BACK,
     JUMP_OPCODES,
+    MOVE,
     OPCODE_BITS,
-    Opcode,
+    CommonOpcode,
 )
 
 if TYPE_CHECKING:
@@ -23,11 +25,11 @@ class ControlUnit2(ControlUnit):
     """Control unit for model-machine-2."""
 
     NAME = "mm-2"
-    KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | JUMP_OPCODES
-        | {Opcode.move, Opcode.halt, Opcode.comp}
-    )
+
+    class Opcode(CommonOpcode):
+        move = MOVE
+        comp = COMP
+
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = IR_BITS
     ALU_REGISTERS = AluRegisters(
@@ -50,14 +52,14 @@ class ControlUnit2(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(self._ram.address_bits)
 
-        if self._opcode == Opcode.halt:
+        if self._opcode == self.Opcode.halt:
             self._expect_zero()
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode == Opcode.move:
+        if self._opcode == self.Opcode.move:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address2, bits=self._alu.operand_bits
             )
@@ -74,9 +76,11 @@ class ControlUnit2(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._registers[RegisterName.ADDR] = self._address2
 
+    _EXEC_NOP = frozenset({Opcode.move})
+
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""
-        if self._opcode == Opcode.comp:
+        if self._opcode == self.Opcode.comp:
             self._alu.sub()
         else:
             super()._execute()

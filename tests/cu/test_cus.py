@@ -7,13 +7,14 @@ import pytest
 from modelmachine.alu import ArithmeticLogicUnit, Flags
 from modelmachine.cell import Cell
 from modelmachine.cu.control_unit_s import ControlUnitS
-from modelmachine.cu.opcode import OPCODE_BITS, Opcode
+from modelmachine.cu.opcode import OPCODE_BITS
 from modelmachine.cu.status import Status
 from modelmachine.memory.ram import RandomAccessMemory
 from modelmachine.memory.register import RegisterMemory, RegisterName
 
 AB = 16
 BYTE = 8
+Opcode = ControlUnitS.Opcode
 
 
 class TestControlUnitS:
@@ -118,10 +119,7 @@ class TestControlUnitS:
 
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
-            if (
-                opcode in Opcode.__members__.values()
-                and Opcode(opcode) in self.control_unit.KNOWN_OPCODES
-            ):
+            if opcode in Opcode:
                 continue
             self.setup_method()
             self.run_opcode(opcode=opcode, o=1, a=0x41, b=0x10)
@@ -171,7 +169,7 @@ class TestControlUnitS:
             (Opcode.push, 3),
             (Opcode.pop, 3),
             (Opcode.dup, 1),
-            (Opcode.sswap, 1),
+            (Opcode.swap, 1),
             (Opcode.jump, 3),
             (Opcode.jeq, 3),
             (Opcode.jneq, 3),
@@ -196,7 +194,7 @@ class TestControlUnitS:
         ("opcode", "a", "b", "new_a", "new_b", "sp", "flags"),
         [
             (Opcode.dup, 0x41, 0x10, 0x10, 0x10, 0xFFF0, 0),
-            (Opcode.sswap, 0x41, 0x10, 0x10, 0x41, 0xFFF3, 0),
+            (Opcode.swap, 0x41, 0x10, 0x10, 0x41, 0xFFF3, 0),
             (Opcode.add, 0x41, 0x10, 0x88, 0x51, 0xFFF6, 0),
             (Opcode.add, 0x10, 0x41, 0x88, 0x51, 0xFFF6, 0),
             (Opcode.add, 0x41, -0x10, 0x88, 0x31, 0xFFF6, Flags.CF),
@@ -321,7 +319,9 @@ class TestControlUnitS:
             assert self.registers[RegisterName.SP] == 0xFFF9
             self.ram.put(
                 address=Cell(0x11, bits=AB),
-                value=Cell((opcode.value << AB) | 0x40, bits=OPCODE_BITS + AB),
+                value=Cell(
+                    (opcode._value_ << AB) | 0x40, bits=OPCODE_BITS + AB
+                ),
             )
             self.ram.put(
                 address=Cell(0x40, bits=AB),

@@ -30,6 +30,7 @@ dependencies = [
     "pyparsing~=3.1",
     "prompt_toolkit~=3.0",
     "tomli~=2.0",
+    "typing_extensions>=4.7",
 ]
 
 [project.scripts]
@@ -96,3 +97,6 @@ ignore = [
     "PLR2004",
     "SLF001",
 ]
+
+[tool.mypy]
+plugins = "modelmachine.shared.enum_mixin"

@@ -7,10 +7,12 @@ from ..memory.register import RegisterName
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
+    COMP,
     DWORD_WRITE_BACK,
     JUMP_OPCODES,
+    MOVE,
     OPCODE_BITS,
-    Opcode,
+    CommonOpcode,
 )
 
 if TYPE_CHECKING:
@@ -23,11 +25,11 @@ class ControlUnitV(ControlUnit):
     """Control unit for model-machine-variable."""
 
     NAME = "mm-v"
-    KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | JUMP_OPCODES
-        | {Opcode.move, Opcode.halt, Opcode.comp}
-    )
+
+    class Opcode(CommonOpcode):
+        move = MOVE
+        comp = COMP
+
     IR_BITS = OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
     WORD_BITS = 8
     ALU_REGISTERS = AluRegisters(
@@ -46,9 +48,7 @@ class ControlUnitV(ControlUnit):
         return self._ir[: self._ram.address_bits]
 
     def instruction_bits(self, opcode: Opcode) -> int:
-        assert opcode in self.KNOWN_OPCODES
-
-        if opcode == Opcode.halt:
+        if opcode == self.Opcode.halt:
             return OPCODE_BITS
 
         if opcode in JUMP_OPCODES:
@@ -60,7 +60,7 @@ class ControlUnitV(ControlUnit):
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode == Opcode.move:
+        if self._opcode == self.Opcode.move:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address2, bits=self._alu.operand_bits
             )
@@ -77,9 +77,11 @@ class ControlUnitV(ControlUnit):
         if self._opcode in JUMP_OPCODES:
             self._registers[RegisterName.ADDR] = self._address1
 
+    _EXEC_NOP = frozenset({Opcode.move})
+
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""
-        if self._opcode == Opcode.comp:
+        if self._opcode == self.Opcode.comp:
             self._alu.sub()
         else:
             super()._execute()

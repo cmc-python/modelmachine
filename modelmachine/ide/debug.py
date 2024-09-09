@@ -15,7 +15,7 @@ from pyparsing import Group as Gr
 
 from ..cell import Cell
 from ..cpu.source import kw, posinteger
-from ..cu.opcode import OPCODE_BITS, Opcode
+from ..cu.opcode import OPCODE_BITS, CommonOpcode
 from ..cu.status import Status
 from ..memory.register import RegisterName
 from ..prompt.colors import Colors
@@ -227,7 +227,7 @@ class Ide:
                 printf(line)
 
     @property
-    def opcode(self) -> Opcode | int:
+    def opcode(self) -> CommonOpcode | int:
         pc = self.cpu.registers[RegisterName.PC]
         opcode_data = self.cpu.ram.fetch(
             address=pc,
@@ -236,11 +236,8 @@ class Ide:
         )[-OPCODE_BITS:].unsigned
 
         try:
-            opcode = Opcode(opcode_data)
+            opcode: CommonOpcode = self.cpu.control_unit.Opcode(opcode_data)
         except ValueError:
-            return opcode_data
-
-        if opcode not in self.cpu.control_unit.KNOWN_OPCODES:
             return opcode_data
 
         return opcode
@@ -248,15 +245,15 @@ class Ide:
     @property
     def opcode_str(self) -> str:
         opcode = self.opcode
-        if isinstance(opcode, Opcode):
-            return opcode.name
+        if isinstance(opcode, CommonOpcode):
+            return str(opcode)
         return f"{opcode:02x} (unknown)"
 
     @property
     def current_cmd(self) -> range:
         pc = self.cpu.registers[RegisterName.PC]
         opcode = self.opcode
-        if not isinstance(opcode, Opcode):
+        if not isinstance(opcode, CommonOpcode):
             return range(pc.unsigned, pc.unsigned + 1)
 
         return range(

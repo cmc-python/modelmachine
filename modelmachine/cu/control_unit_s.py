@@ -8,9 +8,10 @@ from ..memory.register import RegisterName
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
+    COMP,
     JUMP_OPCODES,
     OPCODE_BITS,
-    Opcode,
+    CommonOpcode,
 )
 
 if TYPE_CHECKING:
@@ -25,18 +26,14 @@ class ControlUnitS(ControlUnit):
     """Control unit for model-machine-stack."""
 
     NAME = "mm-s"
-    KNOWN_OPCODES = (
-        ARITHMETIC_OPCODES
-        | JUMP_OPCODES
-        | {
-            Opcode.push,
-            Opcode.pop,
-            Opcode.dup,
-            Opcode.sswap,
-            Opcode.halt,
-            Opcode.comp,
-        }
-    )
+
+    class Opcode(CommonOpcode):
+        comp = COMP
+        push = 0x5A
+        pop = 0x5B
+        dup = 0x5C
+        swap = 0x5D
+
     IR_BITS = OPCODE_BITS + ControlUnit.ADDRESS_BITS
     WORD_BITS = 8
     ALU_REGISTERS = AluRegisters(
@@ -86,19 +83,17 @@ class ControlUnitS(ControlUnit):
     }
 
     def instruction_bits(self, opcode: Opcode) -> int:
-        assert opcode in self.KNOWN_OPCODES
-
         if opcode in self._OPCODES_WITH_ADDRESS:
             return OPCODE_BITS + self._ram.address_bits
 
         return OPCODE_BITS
 
-    _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.sswap}
+    _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.swap}
     _LOAD_R1: Final = frozenset({Opcode.pop, Opcode.dup})
 
     def _load(self) -> None:
         """Load registers R1 and R2."""
-        if self._opcode == Opcode.push:
+        if self._opcode == self.Opcode.push:
             self._registers[RegisterName.R1] = self._ram.fetch(
                 address=self._address, bits=self._alu.operand_bits
             )
@@ -133,16 +128,18 @@ class ControlUnitS(ControlUnit):
     )
     _SP_MINUS: Final = frozenset({Opcode.push, Opcode.dup})
 
+    _EXEC_NOP = frozenset({Opcode.push, Opcode.pop, Opcode.dup})
+
     def _execute(self) -> None:
         """Add specific commands."""
-        if self._opcode == Opcode.comp:
+        if self._opcode == self.Opcode.comp:
             self._alu.sub()
-        elif self._opcode == Opcode.sswap:
+        elif self._opcode == self.Opcode.swap:
             self._alu.swap()
         else:
             super()._execute()
 
-        if self._opcode == Opcode.comp:
+        if self._opcode == self.Opcode.comp:
             self._stack_pointer += Cell(6, bits=self._ram.address_bits)
         elif self._opcode in self._SP_PLUS:
             self._stack_pointer += Cell(3, bits=self._ram.address_bits)
@@ -164,13 +161,13 @@ class ControlUnitS(ControlUnit):
         {
             Opcode.sdiv,
             Opcode.udiv,
-            Opcode.sswap,
+            Opcode.swap,
         }
     )
 
     def _write_back(self) -> None:
         """Write result back."""
-        if self._opcode == Opcode.pop:
+        if self._opcode == self.Opcode.pop:
             self._ram.put(
                 address=self._address, value=self._registers[RegisterName.R1]
             )

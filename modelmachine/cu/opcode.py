@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..shared.enum_mixin import EnumMixin
 
 
-class UniversalOpcode(EnumMixin):
+class CommonOpcode(EnumMixin):
     add = 0x01
     sub = 0x02
     smul = 0x03
@@ -24,54 +24,39 @@ class UniversalOpcode(EnumMixin):
     halt = 0x99
 
 
-class Opcode(UniversalOpcode):  # type: ignore
-    move = 0x00
-    load = 0x00
-    comp = 0x05
-    store = 0x10
-    addr = 0x11
-    swap = 0x20
-    rmove = 0x20
-    radd = 0x21
-    rsub = 0x22
-    rsmul = 0x23
-    rsdiv = 0x24
-    rcomp = 0x25
-    rumul = 0x33
-    rudiv = 0x34
-    push = 0x5A
-    pop = 0x5B
-    dup = 0x5C
-    sswap = 0x5D
+MOVE = 0x00
+LOAD = 0x00
+STORE = 0x10
+COMP = 0x05
 
 
 OPCODE_BITS = 8
 
-DWORD_WRITE_BACK = frozenset({Opcode.udiv, Opcode.sdiv})
+DWORD_WRITE_BACK = frozenset({CommonOpcode.udiv, CommonOpcode.sdiv})
 
 ARITHMETIC_OPCODES = frozenset(
     {
-        Opcode.add,
-        Opcode.sub,
-        Opcode.smul,
-        Opcode.sdiv,
-        Opcode.umul,
-        Opcode.udiv,
+        CommonOpcode.add,
+        CommonOpcode.sub,
+        CommonOpcode.smul,
+        CommonOpcode.sdiv,
+        CommonOpcode.umul,
+        CommonOpcode.udiv,
     }
 )
 
 CONDJUMP_OPCODES = frozenset(
     {
-        Opcode.jeq,
-        Opcode.jneq,
-        Opcode.sjl,
-        Opcode.sjgeq,
-        Opcode.sjleq,
-        Opcode.sjg,
-        Opcode.ujl,
-        Opcode.ujgeq,
-        Opcode.ujleq,
-        Opcode.ujg,
+        CommonOpcode.jeq,
+        CommonOpcode.jneq,
+        CommonOpcode.sjl,
+        CommonOpcode.sjgeq,
+        CommonOpcode.sjleq,
+        CommonOpcode.sjg,
+        CommonOpcode.ujl,
+        CommonOpcode.ujgeq,
+        CommonOpcode.ujleq,
+        CommonOpcode.ujg,
     }
 )
-JUMP_OPCODES = CONDJUMP_OPCODES | {Opcode.jump}
+JUMP_OPCODES = CONDJUMP_OPCODES | {CommonOpcode.jump}

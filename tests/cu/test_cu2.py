@@ -7,12 +7,13 @@ import pytest
 from modelmachine.alu import ArithmeticLogicUnit, Flags
 from modelmachine.cell import Cell
 from modelmachine.cu.control_unit_2 import ControlUnit2
-from modelmachine.cu.opcode import OPCODE_BITS, Opcode
+from modelmachine.cu.opcode import OPCODE_BITS
 from modelmachine.cu.status import Status
 from modelmachine.memory.ram import RandomAccessMemory
 from modelmachine.memory.register import RegisterMemory, RegisterName
 
 AB = 16
+Opcode = ControlUnit2.Opcode
 
 
 class TestControlUnit2:
@@ -67,10 +68,7 @@ class TestControlUnit2:
     def test_fail_decode(self) -> None:
         for opcode in range(1 << OPCODE_BITS):
             self.run_opcode(opcode=opcode, a=0x41, b=0x10)
-            if (
-                opcode in Opcode.__members__.values()
-                and Opcode(opcode) in self.control_unit.KNOWN_OPCODES
-            ):
+            if opcode in Opcode:
                 continue
             assert self.registers[RegisterName.PC] == 0x10
             assert self.registers[RegisterName.FLAGS] == Flags.HALT
@@ -216,7 +214,7 @@ class TestControlUnit2:
             self.ram.put(
                 address=Cell(0x11, bits=AB),
                 value=Cell(
-                    (opcode.value << 2 * AB) | 0x40, bits=self.OPERAND_BITS
+                    (opcode._value_ << 2 * AB) | 0x40, bits=self.OPERAND_BITS
                 ),
             )
             self.ram.put(

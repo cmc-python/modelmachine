@@ -8,11 +8,11 @@ from ..alu import EQUAL, GREATER, LESS, AluZeroDivisionError, Flags
 from ..cell import Cell
 from ..memory.ram import RamAccessError
 from ..memory.register import RegisterName
-from .opcode import OPCODE_BITS, Opcode
+from .opcode import OPCODE_BITS, CommonOpcode
 from .status import Status
 
 if TYPE_CHECKING:
-    from typing import ClassVar, Final
+    from typing import ClassVar, Final, TypeAlias
 
     from ..alu import AluRegisters, ArithmeticLogicUnit
     from ..memory.ram import RandomAccessMemory
@@ -27,12 +27,12 @@ class ControlUnit:
     """Abstract control unit allow to execute two methods: step and run."""
 
     NAME: ClassVar[str]
-    KNOWN_OPCODES: ClassVar[frozenset[Opcode]]
-    ADDRESS_BITS: ClassVar[int] = 16
+    ADDRESS_BITS: ClassVar = 16
     IR_BITS: ClassVar[int]
     WORD_BITS: ClassVar[int]
     ALU_REGISTERS: ClassVar[AluRegisters]
-    PAGE_SIZE: ClassVar[int] = 16
+    PAGE_SIZE: ClassVar = 16
+    Opcode: ClassVar[TypeAlias] = CommonOpcode
 
     _registers: Final[RegisterMemory]
     _ram: Final[RandomAccessMemory]
@@ -53,7 +53,7 @@ class ControlUnit:
     def _opcode(self) -> Opcode:
         res = self._ir[-OPCODE_BITS:].unsigned
         try:
-            return Opcode(res)
+            return self.Opcode(res)
         except ValueError as e:
             self._wrong_opcode(res, e)
 
@@ -137,8 +137,7 @@ class ControlUnit:
         while self.status == Status.RUNNING:
             self.step()
 
-    def instruction_bits(self, opcode: Opcode) -> int:
-        assert opcode in self.KNOWN_OPCODES
+    def instruction_bits(self, opcode: Opcode) -> int:  # noqa: ARG002
         return self.IR_BITS
 
     def _fetch(self) -> None:
@@ -150,11 +149,9 @@ class ControlUnit:
         opcode_data = opcode_word[-OPCODE_BITS:].unsigned
 
         try:
-            opcode = Opcode(opcode_data)
+            opcode = self.Opcode(opcode_data)
         except ValueError as e:
             self._wrong_opcode(opcode_data, e)
-        if opcode not in self.KNOWN_OPCODES:
-            self._wrong_opcode(opcode)
 
         instruction_bits = self.instruction_bits(opcode)
 
@@ -190,57 +187,47 @@ class ControlUnit:
         """Load data from memory to operation registers."""
         raise NotImplementedError
 
-    _CU_ABS_EXEC_NOP: Final = frozenset(
-        {
-            Opcode.move,
-            Opcode.load,
-            Opcode.store,
-            Opcode.addr,
-            Opcode.push,
-            Opcode.pop,
-            Opcode.dup,
-        }
-    )
+    _EXEC_NOP: ClassVar[frozenset[Opcode]] = frozenset({})
 
     def _execute(self) -> None:
         """Run arithmetic instructions."""
-        if self._opcode in self._CU_ABS_EXEC_NOP:
+        if self._opcode in self._EXEC_NOP:
             pass
-        elif self._opcode == Opcode.halt:
+        elif self._opcode == self.Opcode.halt:
             self._alu.halt()
-        elif self._opcode == Opcode.add:
+        elif self._opcode == self.Opcode.add:
             self._alu.add()
-        elif self._opcode == Opcode.sub:
+        elif self._opcode == self.Opcode.sub:
             self._alu.sub()
-        elif self._opcode == Opcode.smul:
+        elif self._opcode == self.Opcode.smul:
             self._alu.smul()
-        elif self._opcode == Opcode.umul:
+        elif self._opcode == self.Opcode.umul:
             self._alu.umul()
-        elif self._opcode == Opcode.sdiv:
+        elif self._opcode == self.Opcode.sdiv:
             self._alu.sdivmod()
-        elif self._opcode == Opcode.udiv:
+        elif self._opcode == self.Opcode.udiv:
             self._alu.udivmod()
-        elif self._opcode == Opcode.jump:
+        elif self._opcode == self.Opcode.jump:
             self._alu.jump()
-        elif self._opcode == Opcode.jeq:
+        elif self._opcode == self.Opcode.jeq:
             self._alu.cond_jump(signed=False, comp=EQUAL, equal=True)
-        elif self._opcode == Opcode.jneq:
+        elif self._opcode == self.Opcode.jneq:
             self._alu.cond_jump(signed=False, comp=EQUAL, equal=False)
-        elif self._opcode == Opcode.sjl:
+        elif self._opcode == self.Opcode.sjl:
             self._alu.cond_jump(signed=True, comp=LESS, equal=False)
-        elif self._opcode == Opcode.sjgeq:
+        elif self._opcode == self.Opcode.sjgeq:
             self._alu.cond_jump(signed=True, comp=GREATER, equal=True)
-        elif self._opcode == Opcode.sjleq:
+        elif self._opcode == self.Opcode.sjleq:
             self._alu.cond_jump(signed=True, comp=LESS, equal=True)
-        elif self._opcode == Opcode.sjg:
+        elif self._opcode == self.Opcode.sjg:
             self._alu.cond_jump(signed=True, comp=GREATER, equal=False)
-        elif self._opcode == Opcode.ujl:
+        elif self._opcode == self.Opcode.ujl:
             self._alu.cond_jump(signed=False, comp=LESS, equal=False)
-        elif self._opcode == Opcode.ujgeq:
+        elif self._opcode == self.Opcode.ujgeq:
             self._alu.cond_jump(signed=False, comp=GREATER, equal=True)
-        elif self._opcode == Opcode.ujleq:
+        elif self._opcode == self.Opcode.ujleq:
             self._alu.cond_jump(signed=False, comp=LESS, equal=True)
-        elif self._opcode == Opcode.ujg:
+        elif self._opcode == self.Opcode.ujg:
             self._alu.cond_jump(signed=False, comp=GREATER, equal=False)
         else:
             self._wrong_opcode(self._opcode)
