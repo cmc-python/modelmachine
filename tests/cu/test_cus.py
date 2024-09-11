@@ -37,7 +37,7 @@ class TestControlUnitS:
         self.control_unit = ControlUnitS(
             registers=self.registers, ram=self.ram, alu=self.alu
         )
-        assert self.registers[RegisterName.SP] == 0xFFFF
+        assert self.registers[RegisterName.SP] == 0x0
 
     def test_push(self) -> None:
         self.ram.put(
@@ -52,7 +52,7 @@ class TestControlUnitS:
         )
         self.control_unit.step()
         assert self.registers[RegisterName.PC] == 3
-        assert self.registers[RegisterName.SP] == 0xFFFC
+        assert self.registers[RegisterName.SP] == 0xFFFD
         assert (
             self.ram.fetch(
                 self.registers[RegisterName.SP], bits=self.OPERAND_BITS
@@ -67,13 +67,13 @@ class TestControlUnitS:
             value=Cell((int(Opcode.pop) << AB) | 0x10, bits=self.OPERAND_BITS),
         )
         self.ram.put(
-            address=Cell(0xFFFC, bits=AB),
+            address=Cell(0xFFFD, bits=AB),
             value=Cell(0x123456, bits=self.OPERAND_BITS),
         )
-        self.registers[RegisterName.SP] = Cell(0xFFFC, bits=AB)
+        self.registers[RegisterName.SP] = Cell(0xFFFD, bits=AB)
         self.control_unit.step()
         assert self.registers[RegisterName.PC] == 3
-        assert self.registers[RegisterName.SP] == 0xFFFF
+        assert self.registers[RegisterName.SP] == 0x0
         assert (
             self.ram.fetch(Cell(0x10, bits=AB), bits=self.OPERAND_BITS)
             == 0x123456
@@ -96,23 +96,23 @@ class TestControlUnitS:
         )
 
         self.ram.put(
-            address=Cell(0xFFFC, bits=AB),
+            address=Cell(0xFFFD, bits=AB),
             value=Cell(0x77, bits=self.OPERAND_BITS),
         )
         self.ram.put(
-            address=Cell(0xFFF9, bits=AB),
+            address=Cell(0xFFFA, bits=AB),
             value=Cell(0x88, bits=self.OPERAND_BITS),
         )
         self.ram.put(
-            address=Cell(0xFFF6, bits=AB),
+            address=Cell(0xFFF7, bits=AB),
             value=Cell(a, bits=self.OPERAND_BITS),
         )
         self.ram.put(
-            address=Cell(0xFFF3, bits=AB),
+            address=Cell(0xFFF4, bits=AB),
             value=Cell(b, bits=self.OPERAND_BITS),
         )
         self.registers[RegisterName.PC] = Cell(0x10, bits=AB)
-        self.registers[RegisterName.SP] = Cell(0xFFF3, bits=AB)
+        self.registers[RegisterName.SP] = Cell(0xFFF4, bits=AB)
         with warnings.catch_warnings(record=False):
             warnings.simplefilter("ignore")
             self.control_unit.step()
@@ -124,22 +124,71 @@ class TestControlUnitS:
             self.setup_method()
             self.run_opcode(opcode=opcode, o=1, a=0x41, b=0x10)
             assert self.registers[RegisterName.PC] == 0x10
-            assert self.registers[RegisterName.SP] == 0xFFF3
+            assert self.registers[RegisterName.SP] == 0xFFF4
             assert self.registers[RegisterName.FLAGS] == Flags.HALT
             assert (
-                self.ram.fetch(Cell(0xFFF6, bits=AB), bits=self.OPERAND_BITS)
+                self.ram.fetch(Cell(0xFFF7, bits=AB), bits=self.OPERAND_BITS)
                 == 0x41
             )
             assert (
-                self.ram.fetch(Cell(0xFFF3, bits=AB), bits=self.OPERAND_BITS)
+                self.ram.fetch(Cell(0xFFF4, bits=AB), bits=self.OPERAND_BITS)
                 == 0x10
             )
+            assert self.control_unit.status is Status.HALTED
+
+    @pytest.mark.parametrize(
+        ("opcode", "ir_words", "stack_size"),
+        [
+            (Opcode.add, 1, 2),
+            (Opcode.sub, 1, 2),
+            (Opcode.smul, 1, 2),
+            (Opcode.sdiv, 1, 2),
+            (Opcode.umul, 1, 2),
+            (Opcode.udiv, 1, 2),
+            (Opcode.comp, 1, 2),
+            (Opcode.pop, 3, 1),
+            (Opcode.dup, 1, 1),
+            (Opcode.swap, 1, 1),
+        ],
+    )
+    def test_empty_stack(
+        self, opcode: Opcode, ir_words: int, stack_size: int
+    ) -> None:
+        for sp in range(stack_size):
+            self.setup_method()
+
+            if ir_words == 1:
+                v = int(opcode)
+            elif ir_words == 3:
+                v = (int(opcode) << AB) | 0x20
+            else:
+                raise NotImplementedError
+            self.ram.put(
+                address=Cell(0x10, bits=AB),
+                value=Cell(v, bits=ir_words * BYTE),
+            )
+            self.registers[RegisterName.PC] = Cell(0x10, bits=AB)
+
+            self.registers[RegisterName.SP] = Cell((1 << AB) - 3 * sp, bits=AB)
+            for i in range(sp + 1):
+                self.ram.put(
+                    address=Cell((1 << AB) - 3 * i, bits=AB),
+                    value=Cell(i, bits=self.OPERAND_BITS),
+                )
+
+            with warnings.catch_warnings(record=False):
+                warnings.simplefilter("ignore")
+                self.control_unit.step()
+
+            assert self.registers[RegisterName.PC] == 0x10 + ir_words
+            assert self.registers[RegisterName.SP] == (1 << AB) - 3 * sp
+            assert self.registers[RegisterName.FLAGS] == Flags.HALT
             assert self.control_unit.status is Status.HALTED
 
     def test_jump(self) -> None:
         self.run_opcode(opcode=Opcode.jump, o=3, a=0x1, b=0x2)
         assert self.registers[RegisterName.PC] == 0x20
-        assert self.registers[RegisterName.SP] == 0xFFF3
+        assert self.registers[RegisterName.SP] == 0xFFF4
         assert self.registers[RegisterName.FLAGS] == 0
         assert (
             self.ram.fetch(
@@ -193,69 +242,69 @@ class TestControlUnitS:
     @pytest.mark.parametrize(
         ("opcode", "a", "b", "new_a", "new_b", "sp", "flags"),
         [
-            (Opcode.dup, 0x41, 0x10, 0x10, 0x10, 0xFFF0, 0),
-            (Opcode.swap, 0x41, 0x10, 0x10, 0x41, 0xFFF3, 0),
-            (Opcode.add, 0x41, 0x10, 0x88, 0x51, 0xFFF6, 0),
-            (Opcode.add, 0x10, 0x41, 0x88, 0x51, 0xFFF6, 0),
-            (Opcode.add, 0x41, -0x10, 0x88, 0x31, 0xFFF6, Flags.CF),
-            (Opcode.add, 0x10, -0x41, 0x88, -0x31, 0xFFF6, Flags.SF),
-            (Opcode.add, -1, -1, 0x88, -2, 0xFFF6, Flags.SF | Flags.CF),
+            (Opcode.dup, 0x41, 0x10, 0x10, 0x10, 0xFFF1, 0),
+            (Opcode.swap, 0x41, 0x10, 0x10, 0x41, 0xFFF4, 0),
+            (Opcode.add, 0x41, 0x10, 0x88, 0x51, 0xFFF7, 0),
+            (Opcode.add, 0x10, 0x41, 0x88, 0x51, 0xFFF7, 0),
+            (Opcode.add, 0x41, -0x10, 0x88, 0x31, 0xFFF7, Flags.CF),
+            (Opcode.add, 0x10, -0x41, 0x88, -0x31, 0xFFF7, Flags.SF),
+            (Opcode.add, -1, -1, 0x88, -2, 0xFFF7, Flags.SF | Flags.CF),
             (
                 Opcode.add,
                 0x7FFFFF,
                 0x7FFFFF,
                 0x88,
                 -2,
-                0xFFF6,
+                0xFFF7,
                 Flags.SF | Flags.OF,
             ),
-            (Opcode.sub, 0x41, 0x10, 0x88, 0x31, 0xFFF6, 0),
+            (Opcode.sub, 0x41, 0x10, 0x88, 0x31, 0xFFF7, 0),
             (
                 Opcode.sub,
                 0x10,
                 0x41,
                 0x88,
                 -0x31,
-                0xFFF6,
+                0xFFF7,
                 Flags.SF | Flags.CF,
             ),
-            (Opcode.sub, 0x41, -0x10, 0x88, 0x51, 0xFFF6, Flags.CF),
-            (Opcode.sub, 0x10, -0x41, 0x88, 0x51, 0xFFF6, Flags.CF),
-            (Opcode.sub, -1, -1, 0x88, 0, 0xFFF6, Flags.ZF),
+            (Opcode.sub, 0x41, -0x10, 0x88, 0x51, 0xFFF7, Flags.CF),
+            (Opcode.sub, 0x10, -0x41, 0x88, 0x51, 0xFFF7, Flags.CF),
+            (Opcode.sub, -1, -1, 0x88, 0, 0xFFF7, Flags.ZF),
             (
                 Opcode.sub,
                 0x7FFFFF,
                 0x7FFFFF,
                 0x88,
                 0,
-                0xFFF6,
+                0xFFF7,
                 Flags.ZF,
             ),
-            (Opcode.umul, 0x41, 0x10, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.umul, 0x10, 0x41, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.umul, 0x41, 0x0, 0x88, 0x0, 0xFFF6, Flags.ZF),
-            (Opcode.smul, 0x41, 0x10, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.smul, 0x10, 0x41, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.smul, 0x41, 0x0, 0x88, 0x0, 0xFFF6, Flags.ZF),
-            (Opcode.smul, -0x41, 0x0, 0x88, 0x0, 0xFFF6, Flags.ZF),
-            (Opcode.smul, -0x41, -0x10, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.smul, -0x10, -0x41, 0x88, 0x410, 0xFFF6, 0),
-            (Opcode.smul, 0x41, -0x10, 0x88, -0x410, 0xFFF6, Flags.SF),
-            (Opcode.smul, 0x10, -0x41, 0x88, -0x410, 0xFFF6, Flags.SF),
-            (Opcode.smul, -0x41, 0x10, 0x88, -0x410, 0xFFF6, Flags.SF),
-            (Opcode.smul, -0x10, 0x41, 0x88, -0x410, 0xFFF6, Flags.SF),
-            (Opcode.udiv, 0x41, 0x10, 0x4, 0x1, 0xFFF3, 0),
-            (Opcode.udiv, 0x41, 0x0, 0x41, 0x0, 0xFFF3, Flags.HALT),
-            (Opcode.udiv, 0x10, 0x41, 0x0, 0x10, 0xFFF3, Flags.ZF),
-            (Opcode.sdiv, 0x41, 0x10, 0x4, 0x1, 0xFFF3, 0),
-            (Opcode.sdiv, -0x41, 0x10, -0x4, -0x1, 0xFFF3, Flags.SF),
-            (Opcode.sdiv, 0x41, -0x10, -0x4, 0x1, 0xFFF3, Flags.SF),
-            (Opcode.sdiv, -0x41, -0x10, 0x4, -0x1, 0xFFF3, 0),
-            (Opcode.sdiv, 0x10, 0x41, 0x0, 0x10, 0xFFF3, Flags.ZF),
-            (Opcode.sdiv, -0x10, 0x41, 0x0, -0x10, 0xFFF3, Flags.ZF),
-            (Opcode.sdiv, 0x10, -0x41, 0x0, 0x10, 0xFFF3, Flags.ZF),
-            (Opcode.sdiv, -0x10, -0x41, 0x0, -0x10, 0xFFF3, Flags.ZF),
-            (Opcode.halt, 0x41, 0x10, 0x41, 0x10, 0xFFF3, Flags.HALT),
+            (Opcode.umul, 0x41, 0x10, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.umul, 0x10, 0x41, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.umul, 0x41, 0x0, 0x88, 0x0, 0xFFF7, Flags.ZF),
+            (Opcode.smul, 0x41, 0x10, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.smul, 0x10, 0x41, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.smul, 0x41, 0x0, 0x88, 0x0, 0xFFF7, Flags.ZF),
+            (Opcode.smul, -0x41, 0x0, 0x88, 0x0, 0xFFF7, Flags.ZF),
+            (Opcode.smul, -0x41, -0x10, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.smul, -0x10, -0x41, 0x88, 0x410, 0xFFF7, 0),
+            (Opcode.smul, 0x41, -0x10, 0x88, -0x410, 0xFFF7, Flags.SF),
+            (Opcode.smul, 0x10, -0x41, 0x88, -0x410, 0xFFF7, Flags.SF),
+            (Opcode.smul, -0x41, 0x10, 0x88, -0x410, 0xFFF7, Flags.SF),
+            (Opcode.smul, -0x10, 0x41, 0x88, -0x410, 0xFFF7, Flags.SF),
+            (Opcode.udiv, 0x41, 0x10, 0x4, 0x1, 0xFFF4, 0),
+            (Opcode.udiv, 0x41, 0x0, 0x41, 0x0, 0xFFF4, Flags.HALT),
+            (Opcode.udiv, 0x10, 0x41, 0x0, 0x10, 0xFFF4, Flags.ZF),
+            (Opcode.sdiv, 0x41, 0x10, 0x4, 0x1, 0xFFF4, 0),
+            (Opcode.sdiv, -0x41, 0x10, -0x4, -0x1, 0xFFF4, Flags.SF),
+            (Opcode.sdiv, 0x41, -0x10, -0x4, 0x1, 0xFFF4, Flags.SF),
+            (Opcode.sdiv, -0x41, -0x10, 0x4, -0x1, 0xFFF4, 0),
+            (Opcode.sdiv, 0x10, 0x41, 0x0, 0x10, 0xFFF4, Flags.ZF),
+            (Opcode.sdiv, -0x10, 0x41, 0x0, -0x10, 0xFFF4, Flags.ZF),
+            (Opcode.sdiv, 0x10, -0x41, 0x0, 0x10, 0xFFF4, Flags.ZF),
+            (Opcode.sdiv, -0x10, -0x41, 0x0, -0x10, 0xFFF4, Flags.ZF),
+            (Opcode.halt, 0x41, 0x10, 0x41, 0x10, 0xFFF4, Flags.HALT),
         ],
     )
     def test_step(
@@ -316,7 +365,7 @@ class TestControlUnitS:
             self.setup_method()
             self.run_opcode(opcode=Opcode.comp, o=1, a=a, b=b)
             assert self.registers[RegisterName.PC] == 0x11
-            assert self.registers[RegisterName.SP] == 0xFFF9
+            assert self.registers[RegisterName.SP] == 0xFFFA
             self.ram.put(
                 address=Cell(0x11, bits=AB),
                 value=Cell(
@@ -328,26 +377,26 @@ class TestControlUnitS:
                 value=Cell(0x77, bits=self.OPERAND_BITS),
             )
             self.ram.put(
-                address=Cell(0x45, bits=AB),
+                address=Cell(0x43, bits=AB),
                 value=Cell(0x88, bits=self.OPERAND_BITS),
             )
             self.control_unit.step()
             assert self.registers[RegisterName.PC] == (0x40 if j else 0x14)
-            assert self.registers[RegisterName.SP] == 0xFFF9
+            assert self.registers[RegisterName.SP] == 0xFFFA
             assert (
                 self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
                 == 0x77
             )
             assert (
-                self.ram.fetch(Cell(0x45, bits=AB), bits=self.OPERAND_BITS)
+                self.ram.fetch(Cell(0x43, bits=AB), bits=self.OPERAND_BITS)
                 == 0x88
             )
             assert (
-                self.ram.fetch(Cell(0xFFFC, bits=AB), bits=self.OPERAND_BITS)
+                self.ram.fetch(Cell(0xFFFD, bits=AB), bits=self.OPERAND_BITS)
                 == 0x77
             )
             assert (
-                self.ram.fetch(Cell(0xFFF9, bits=AB), bits=self.OPERAND_BITS)
+                self.ram.fetch(Cell(0xFFFA, bits=AB), bits=self.OPERAND_BITS)
                 == 0x88
             )
             assert self.control_unit.status is Status.RUNNING

@@ -7,6 +7,7 @@ from enum import Flag
 from typing import TYPE_CHECKING
 
 from .cell import Cell, div_to_zero
+from .cu.halt_error import HaltError
 from .memory.register import RegisterName
 
 if TYPE_CHECKING:
@@ -39,7 +40,7 @@ class AluRegisters:
     R2: RegisterName
 
 
-class AluZeroDivisionError(Exception):
+class AluZeroDivisionError(ZeroDivisionError, HaltError):
     pass
 
 

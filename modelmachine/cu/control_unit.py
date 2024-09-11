@@ -4,10 +4,10 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from ..alu import EQUAL, GREATER, LESS, AluZeroDivisionError, Flags
+from ..alu import EQUAL, GREATER, LESS, Flags
 from ..cell import Cell
-from ..memory.ram import RamAccessError
 from ..memory.register import RegisterName
+from .halt_error import HaltError
 from .opcode import OPCODE_BITS, CommonOpcode
 from .status import Status
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ..memory.register import RegisterMemory
 
 
-class WrongOpcodeError(ValueError):
+class WrongOpcodeError(ValueError, HaltError):
     pass
 
 
@@ -118,7 +118,7 @@ class ControlUnit:
             self._load()
             self._execute()
             self._write_back()
-        except (WrongOpcodeError, RamAccessError, AluZeroDivisionError):
+        except HaltError:
             print_exc()
             warn("Because of previous exception cpu halted", stacklevel=1)
             self._failed = True

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..cell import Cell, Endianess
+from ..cu.halt_error import HaltError
 from ..shared.insort_range import insort_range
 
 if TYPE_CHECKING:
@@ -16,7 +17,7 @@ MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
 
 
-class RamAccessError(Exception):
+class RamAccessError(KeyError, HaltError):
     pass
 
 
