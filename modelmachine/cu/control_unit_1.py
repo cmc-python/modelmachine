@@ -8,7 +8,6 @@ from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
     COMP,
-    JUMP_OPCODES,
     LOAD,
     OPCODE_BITS,
     STORE,
@@ -44,13 +43,15 @@ class ControlUnit1(ControlUnit):
 
     @property
     def _address(self) -> Cell:
-        return self._ir[: self._ram.address_bits]
+        return self._registers[RegisterName.ADDR]
 
     _EXPECT_ZERO_ADDR: Final = frozenset({Opcode.swap, Opcode.halt})
 
     def _decode(self) -> None:
         if self._opcode in self._EXPECT_ZERO_ADDR:
             self._expect_zero()
+
+        self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
 
     _LOAD_R: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 
@@ -65,9 +66,6 @@ class ControlUnit1(ControlUnit):
             self._registers[RegisterName.S] = self._ram.fetch(
                 address=self._address, bits=self._alu.operand_bits
             )
-
-        if self._opcode in JUMP_OPCODES:
-            self._registers[RegisterName.ADDR] = self._address
 
     _EXEC_NOP = frozenset({Opcode.load, Opcode.store})
 
