@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 class RegisterName(IntEnum):
     PC = 0
     IR = auto()
+    ADDR1 = auto()
+    ADDR2 = auto()
     ADDR = auto()
     SP = auto()
     S = auto()

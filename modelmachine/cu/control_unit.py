@@ -12,6 +12,7 @@ from .opcode import OPCODE_BITS, CommonOpcode
 from .status import Status
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing import ClassVar, Final, TypeAlias
 
     from ..alu import AluRegisters, ArithmeticLogicUnit
@@ -31,6 +32,7 @@ class ControlUnit:
     IR_BITS: ClassVar[int]
     WORD_BITS: ClassVar[int]
     ALU_REGISTERS: ClassVar[AluRegisters]
+    CU_REGISTERS: ClassVar[Iterable[tuple[RegisterName, int]]] = ()
     PAGE_SIZE: ClassVar = 16
     Opcode: ClassVar[TypeAlias] = CommonOpcode
 
@@ -81,6 +83,10 @@ class ControlUnit:
                 stacklevel=2,
             )
 
+    @property
+    def _address(self) -> Cell:
+        return self._registers[RegisterName.ADDR]
+
     def __init__(
         self,
         *,
@@ -109,6 +115,9 @@ class ControlUnit:
             RegisterName.ADDR, bits=self._ram.address_bits
         )
         self._registers.add_register(RegisterName.IR, bits=self.IR_BITS)
+
+        for reg, bits in self.CU_REGISTERS:
+            self._registers.add_register(reg, bits=bits)
 
     def step(self) -> None:
         """Execution of one instruction."""
@@ -181,7 +190,8 @@ class ControlUnit:
         self._registers[RegisterName.PC] = instruction_address
 
     def _decode(self) -> None:
-        """Verify that opcode is correct."""
+        """Verify that opcode is correct and decode addreses."""
+        raise NotImplementedError
 
     def _load(self) -> None:
         """Load data from memory to operation registers."""

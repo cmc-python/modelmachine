@@ -38,15 +38,16 @@ class ControlUnit2(ControlUnit):
         R1=RegisterName.R1,
         R2=RegisterName.R2,
     )
+    CU_REGISTERS = ((RegisterName.ADDR1, ControlUnit.ADDRESS_BITS),)
     PAGE_SIZE = 8
 
     @property
     def _address1(self) -> Cell:
-        return self._ir[self._ram.address_bits : 2 * self._ram.address_bits]
+        return self._registers[RegisterName.ADDR1]
 
     @property
     def _address2(self) -> Cell:
-        return self._ir[: self._ram.address_bits]
+        return self._registers[RegisterName.ADDR]
 
     def _decode(self) -> None:
         if self._opcode in JUMP_OPCODES:
@@ -54,6 +55,11 @@ class ControlUnit2(ControlUnit):
 
         if self._opcode == self.Opcode.halt:
             self._expect_zero()
+
+        self._registers[RegisterName.ADDR1] = self._ir[
+            self._ram.address_bits : 2 * self._ram.address_bits
+        ]
+        self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 
@@ -72,9 +78,6 @@ class ControlUnit2(ControlUnit):
             self._registers[RegisterName.R2] = self._ram.fetch(
                 address=self._address2, bits=self._alu.operand_bits
             )
-
-        if self._opcode in JUMP_OPCODES:
-            self._registers[RegisterName.ADDR] = self._address2
 
     _EXEC_NOP = frozenset({Opcode.move})
 

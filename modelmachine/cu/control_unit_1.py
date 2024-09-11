@@ -17,8 +17,6 @@ from .opcode import (
 if TYPE_CHECKING:
     from typing import Final
 
-    from ..cell import Cell
-
 
 class ControlUnit1(ControlUnit):
     """Control unit for model machine 1."""
@@ -40,10 +38,6 @@ class ControlUnit1(ControlUnit):
         R2=RegisterName.R,
     )
     PAGE_SIZE = 8
-
-    @property
-    def _address(self) -> Cell:
-        return self._registers[RegisterName.ADDR]
 
     _EXPECT_ZERO_ADDR: Final = frozenset({Opcode.swap, Opcode.halt})
 

@@ -14,21 +14,20 @@ class ControlUnitM(ControlUnitR):
     class Opcode(ControlUnitR.Opcode):
         addr = 0x11
 
-    @property
-    def _address(self) -> Cell:
-        address = self._ir[: self._ram.address_bits]
-        if self._ry == RegisterName.R0:
-            modifier = Cell(0, bits=self._ram.address_bits)
-        else:
-            modifier = self._registers[self._ry][: self._ram.address_bits]
-        return address + modifier
-
     def _decode(self) -> None:
         if self._opcode in JUMP_OPCODES:
             self._expect_zero(-REG_NO_BITS)
 
         if self._opcode == self.Opcode.halt:
             self._expect_zero()
+
+        if self._ry == RegisterName.R0:
+            modifier = Cell(0, bits=self._ram.address_bits)
+        else:
+            modifier = self._registers[self._ry][: self._ram.address_bits]
+        self._registers[RegisterName.ADDR] = (
+            self._ir[: self._ram.address_bits] + modifier
+        )
 
     _EXEC_NOP = ControlUnitR._EXEC_NOP | {Opcode.addr}  # noqa: SLF001
 

@@ -19,9 +19,6 @@ from .opcode import (
 if TYPE_CHECKING:
     from typing import ClassVar, Final
 
-    from ..alu import ArithmeticLogicUnit
-    from ..memory.ram import RandomAccessMemory
-    from ..memory.register import RegisterMemory
 
 REG_NO_BITS = 4
 
@@ -51,6 +48,13 @@ class ControlUnitR(ControlUnit):
         RES=RegisterName.S1,
         R1=RegisterName.S,
         R2=RegisterName.S1,
+    )
+    CU_REGISTERS = tuple(
+        (
+            RegisterName(reg_no),
+            OPCODE_BITS + 2 * REG_NO_BITS + ControlUnit.ADDRESS_BITS,
+        )
+        for reg_no in range(RegisterName.R0, RegisterName.RF + 1)
     )
 
     REGISTER_ARITH_OPCODES: Final = frozenset(
@@ -95,29 +99,6 @@ class ControlUnitR(ControlUnit):
         ].unsigned
         return RegisterName(RegisterName.R0 + reg_no)
 
-    @property
-    def _address(self) -> Cell:
-        return self._ir[: self._ram.address_bits]
-
-    def __init__(
-        self,
-        *,
-        registers: RegisterMemory,
-        ram: RandomAccessMemory,
-        alu: ArithmeticLogicUnit,
-    ):
-        """See help(type(x))."""
-        super().__init__(
-            registers=registers,
-            ram=ram,
-            alu=alu,
-        )
-
-        for reg_no in range(RegisterName.R0, RegisterName.RF + 1):
-            self._registers.add_register(
-                RegisterName(reg_no), bits=self._alu.operand_bits
-            )
-
     _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
     def instruction_bits(self, opcode: Opcode) -> int:
@@ -142,6 +123,8 @@ class ControlUnitR(ControlUnit):
         if self._opcode == self.Opcode.halt:
             self._expect_zero()
 
+        self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
+
     _LOAD_FROM_MEMORY: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
         Opcode.load,
@@ -164,9 +147,6 @@ class ControlUnitR(ControlUnit):
 
         if self._opcode in self._LOAD_S:
             self._registers[RegisterName.S] = self._registers[self._rx]
-
-        if self._opcode in JUMP_OPCODES:
-            self._registers[RegisterName.ADDR] = self._address
 
     _EXEC_SUB: Final = frozenset(
         {Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub}

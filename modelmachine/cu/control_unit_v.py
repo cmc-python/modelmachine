@@ -38,14 +38,15 @@ class ControlUnitV(ControlUnit):
         R1=RegisterName.R1,
         R2=RegisterName.R2,
     )
+    CU_REGISTERS = ((RegisterName.ADDR1, ControlUnit.ADDRESS_BITS),)
 
     @property
     def _address1(self) -> Cell:
-        return self._ir[self._ram.address_bits : 2 * self._ram.address_bits]
+        return self._registers[RegisterName.ADDR1]
 
     @property
     def _address2(self) -> Cell:
-        return self._ir[: self._ram.address_bits]
+        return self._registers[RegisterName.ADDR]
 
     def instruction_bits(self, opcode: Opcode) -> int:
         if opcode == self.Opcode.halt:
@@ -55,6 +56,12 @@ class ControlUnitV(ControlUnit):
             return OPCODE_BITS + self._ram.address_bits
 
         return OPCODE_BITS + 2 * self._ram.address_bits
+
+    def _decode(self):
+        self._registers[RegisterName.ADDR1] = self._ir[
+            self._ram.address_bits : 2 * self._ram.address_bits
+        ]
+        self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp}
 

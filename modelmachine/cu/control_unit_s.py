@@ -18,10 +18,6 @@ from .opcode import (
 if TYPE_CHECKING:
     from typing import Final
 
-    from ..alu import ArithmeticLogicUnit
-    from ..memory.ram import RandomAccessMemory
-    from ..memory.register import RegisterMemory
-
 
 class StackAccessError(KeyError, HaltError):
     pass
@@ -47,10 +43,7 @@ class ControlUnitS(ControlUnit):
         R1=RegisterName.R1,
         R2=RegisterName.R2,
     )
-
-    @property
-    def _address(self) -> Cell:
-        return self._registers[RegisterName.ADDR]
+    CU_REGISTERS = ((RegisterName.SP, ControlUnit.ADDRESS_BITS),)
 
     @property
     def _stack_size(self) -> int:
@@ -81,24 +74,6 @@ class ControlUnitS(ControlUnit):
             3, bits=self._ram.address_bits
         )
 
-    def __init__(
-        self,
-        *,
-        registers: RegisterMemory,
-        ram: RandomAccessMemory,
-        alu: ArithmeticLogicUnit,
-    ):
-        """See help(type(x))."""
-        super().__init__(
-            registers=registers,
-            ram=ram,
-            alu=alu,
-        )
-
-        self._registers.add_register(
-            RegisterName.SP, bits=self._ram.address_bits
-        )
-
     _OPCODES_WITH_ADDRESS: Final = JUMP_OPCODES | {
         Opcode.push,
         Opcode.pop,
@@ -110,13 +85,8 @@ class ControlUnitS(ControlUnit):
 
         return OPCODE_BITS
 
-    _HAVE_ADDR: Final = JUMP_OPCODES | {Opcode.push, Opcode.pop}
-
     def _decode(self) -> None:
-        if self._opcode in self._HAVE_ADDR:
-            self._registers[RegisterName.ADDR] = self._ir[
-                : self._ram.address_bits
-            ]
+        self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
 
     _LOAD_R1R2: Final = ARITHMETIC_OPCODES | {Opcode.comp, Opcode.swap}
     _LOAD_R1: Final = frozenset({Opcode.pop, Opcode.dup})
