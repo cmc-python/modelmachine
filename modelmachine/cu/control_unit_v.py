@@ -57,7 +57,7 @@ class ControlUnitV(ControlUnit):
 
         return OPCODE_BITS + 2 * self._ram.address_bits
 
-    def _decode(self):
+    def _decode(self) -> None:
         self._registers[RegisterName.ADDR1] = self._ir[
             self._ram.address_bits : 2 * self._ram.address_bits
         ]
