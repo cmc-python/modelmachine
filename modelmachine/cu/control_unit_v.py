@@ -38,11 +38,11 @@ class ControlUnitV(ControlUnit):
         R1=RegisterName.R1,
         R2=RegisterName.R2,
     )
-    CU_REGISTERS = ((RegisterName.ADDR1, ControlUnit.ADDRESS_BITS),)
+    CU_REGISTERS = ((RegisterName.A1, ControlUnit.ADDRESS_BITS),)
 
     @property
     def _address1(self) -> Cell:
-        return self._registers[RegisterName.ADDR1]
+        return self._registers[RegisterName.A1]
 
     @property
     def _address2(self) -> Cell:
@@ -58,7 +58,7 @@ class ControlUnitV(ControlUnit):
         return OPCODE_BITS + 2 * self._ram.address_bits
 
     def _decode(self) -> None:
-        self._registers[RegisterName.ADDR1] = self._ir[
+        self._registers[RegisterName.A1] = self._ir[
             self._ram.address_bits : 2 * self._ram.address_bits
         ]
         self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]

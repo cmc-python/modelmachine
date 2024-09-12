@@ -38,18 +38,18 @@ class ControlUnit3(ControlUnit):
         R2=RegisterName.R2,
     )
     CU_REGISTERS = (
-        (RegisterName.ADDR1, ControlUnit.ADDRESS_BITS),
-        (RegisterName.ADDR2, ControlUnit.ADDRESS_BITS),
+        (RegisterName.A1, ControlUnit.ADDRESS_BITS),
+        (RegisterName.A2, ControlUnit.ADDRESS_BITS),
     )
     PAGE_SIZE = 4
 
     @property
     def _address1(self) -> Cell:
-        return self._registers[RegisterName.ADDR1]
+        return self._registers[RegisterName.A1]
 
     @property
     def _address2(self) -> Cell:
-        return self._registers[RegisterName.ADDR2]
+        return self._registers[RegisterName.A2]
 
     @property
     def _address3(self) -> Cell:
@@ -67,10 +67,10 @@ class ControlUnit3(ControlUnit):
                 self._ram.address_bits, 2 * self._ram.address_bits
             )
 
-        self._registers[RegisterName.ADDR1] = self._ir[
+        self._registers[RegisterName.A1] = self._ir[
             2 * self._ram.address_bits : 3 * self._ram.address_bits
         ]
-        self._registers[RegisterName.ADDR2] = self._ir[
+        self._registers[RegisterName.A2] = self._ir[
             self._ram.address_bits : 2 * self._ram.address_bits
         ]
         self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
