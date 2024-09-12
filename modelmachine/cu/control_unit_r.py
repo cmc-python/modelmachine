@@ -49,12 +49,16 @@ class ControlUnitR(ControlUnit):
         R1=RegisterName.S,
         R2=RegisterName.S1,
     )
-    CU_REGISTERS = tuple(
-        (
-            RegisterName(reg_no),
-            OPCODE_BITS + 2 * REG_NO_BITS + ControlUnit.ADDRESS_BITS,
-        )
-        for reg_no in range(RegisterName.R0, RegisterName.RF + 1)
+    CU_REGISTERS = (
+        (RegisterName.R, REG_NO_BITS),
+        (RegisterName.M, REG_NO_BITS),
+        *tuple(
+            (
+                RegisterName(reg_no),
+                OPCODE_BITS + 2 * REG_NO_BITS + ControlUnit.ADDRESS_BITS,
+            )
+            for reg_no in range(RegisterName.R0, RegisterName.RF + 1)
+        ),
     )
 
     REGISTER_ARITH_OPCODES: Final = frozenset(
@@ -74,30 +78,23 @@ class ControlUnitR(ControlUnit):
     }
 
     @property
-    def _rx(self) -> RegisterName:
-        reg_no = self._ir[
-            self._ram.address_bits + REG_NO_BITS : self._ram.address_bits
-            + 2 * REG_NO_BITS
-        ].unsigned
-        return RegisterName(RegisterName.R0 + reg_no)
+    def _r(self) -> RegisterName:
+        return RegisterName(
+            RegisterName.R0._value_ + self._registers[RegisterName.R].unsigned
+        )
 
     @property
     def _r_next(self) -> RegisterName:
         reg_no = (
-            self._ir[
-                self._ram.address_bits + REG_NO_BITS : self._ram.address_bits
-                + 2 * REG_NO_BITS
-            ]
-            + Cell(1, bits=REG_NO_BITS)
+            self._registers[RegisterName.R] + Cell(1, bits=REG_NO_BITS)
         ).unsigned
         return RegisterName(RegisterName.R0 + reg_no)
 
     @property
-    def _ry(self) -> RegisterName:
-        reg_no = self._ir[
-            self._ram.address_bits : self._ram.address_bits + REG_NO_BITS
-        ].unsigned
-        return RegisterName(RegisterName.R0 + reg_no)
+    def _m(self) -> RegisterName:
+        return RegisterName(
+            RegisterName.R0._value_ + self._registers[RegisterName.M].unsigned
+        )
 
     _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
@@ -107,14 +104,14 @@ class ControlUnitR(ControlUnit):
 
         return 2 * self._ram.word_bits
 
-    _EXPECT_ZERO_RY: Final = ARITHMETIC_OPCODES | {
+    _EXPECT_ZERO_M: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
         Opcode.load,
         Opcode.store,
     }
 
     def _decode(self) -> None:
-        if self._opcode in self._EXPECT_ZERO_RY:
+        if self._opcode in self._EXPECT_ZERO_M:
             self._expect_zero(self._ram.address_bits, -REG_NO_BITS)
 
         if self._opcode in JUMP_OPCODES:
@@ -123,6 +120,13 @@ class ControlUnitR(ControlUnit):
         if self._opcode == self.Opcode.halt:
             self._expect_zero()
 
+        self._registers[RegisterName.R] = self._ir[
+            self._ram.address_bits + REG_NO_BITS : self._ram.address_bits
+            + 2 * REG_NO_BITS
+        ]
+        self._registers[RegisterName.M] = self._ir[
+            self._ram.address_bits : self._ram.address_bits + REG_NO_BITS
+        ]
         self._registers[RegisterName.ADDR] = self._ir[: self._ram.address_bits]
 
     _LOAD_FROM_MEMORY: Final = ARITHMETIC_OPCODES | {
@@ -143,10 +147,10 @@ class ControlUnitR(ControlUnit):
             )
 
         if self._opcode in self.REGISTER_OPCODES:
-            self._registers[RegisterName.S1] = self._registers[self._ry]
+            self._registers[RegisterName.S1] = self._registers[self._m]
 
         if self._opcode in self._LOAD_S:
-            self._registers[RegisterName.S] = self._registers[self._rx]
+            self._registers[RegisterName.S] = self._registers[self._r]
 
     _EXEC_SUB: Final = frozenset(
         {Opcode.comp, Opcode.rcomp, Opcode.sub, Opcode.rsub}
@@ -191,7 +195,7 @@ class ControlUnitR(ControlUnit):
     def _write_back(self) -> None:
         """Write result back."""
         if self._opcode in self.WB_R1:
-            self._registers[self._rx] = self._registers[RegisterName.S]
+            self._registers[self._r] = self._registers[RegisterName.S]
 
         if self._opcode in self._WB_R_NEXT:
             self._registers[self._r_next] = self._registers[RegisterName.S1]

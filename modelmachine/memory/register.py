@@ -26,6 +26,7 @@ class RegisterName(IntEnum):
     S = auto()
     S1 = auto()
     R = auto()
+    M = auto()
     FLAGS = auto()
     R0 = auto()
     R1 = auto()

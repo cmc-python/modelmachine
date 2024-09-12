@@ -21,10 +21,17 @@ class ControlUnitM(ControlUnitR):
         if self._opcode == self.Opcode.halt:
             self._expect_zero()
 
-        if self._ry == RegisterName.R0:
+        self._registers[RegisterName.R] = self._ir[
+            self._ram.address_bits + REG_NO_BITS : self._ram.address_bits
+            + 2 * REG_NO_BITS
+        ]
+        self._registers[RegisterName.M] = self._ir[
+            self._ram.address_bits : self._ram.address_bits + REG_NO_BITS
+        ]
+        if self._m == RegisterName.R0:
             modifier = Cell(0, bits=self._ram.address_bits)
         else:
-            modifier = self._registers[self._ry][: self._ram.address_bits]
+            modifier = self._registers[self._m][: self._ram.address_bits]
         self._registers[RegisterName.ADDR] = (
             self._ir[: self._ram.address_bits] + modifier
         )
