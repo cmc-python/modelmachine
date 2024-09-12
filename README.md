@@ -88,7 +88,7 @@ Model machine emulator
 
 ## Таблица команд модельных машин
 
-|OPCODE|mm-3 |mm-2 |mm-v |mm-1 |mm-s |mm-0 |mm-r |mm-m  |
+|OPCODE|[mm-3](#mm-3)|[mm-2](#mm-2)|[mm-v](#mm-v)|[mm-1](#mm-1)|[mm-s](#mm-s)|[mm-0](#mm-0)|[mm-r](#mm-r)|[mm-m](#mm-m)|
 |:-----|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:----:|
 |0x00  |move |move |move |load |     |     |load | load |
 |0x01  | add | add | add | add | add | add | add | add  |
