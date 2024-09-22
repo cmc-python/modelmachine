@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..alu import ArithmeticLogicUnit
+from ..cu.control_unit_0 import ControlUnit0
 from ..cu.control_unit_1 import ControlUnit1
 from ..cu.control_unit_2 import ControlUnit2
 from ..cu.control_unit_3 import ControlUnit3
@@ -108,6 +109,7 @@ class Cpu:
 CPU_MAP = {
     unit.NAME: unit
     for unit in (
+        ControlUnit0,
         ControlUnit1,
         ControlUnit2,
         ControlUnit3,

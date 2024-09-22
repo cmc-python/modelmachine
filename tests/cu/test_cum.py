@@ -166,6 +166,7 @@ class TestControlUnitM:
             (Opcode.udiv, 0x41, 0x0, 0x41, 0x88, 0x12, Flags.HALT),
             (Opcode.udiv, 0x10, 0x41, 0x0, 0x10, 0x12, Flags.ZF),
             (Opcode.sdiv, 0x41, 0x10, 0x4, 0x1, 0x12, 0),
+            (Opcode.sdiv, 0x41, 0x0, 0x41, 0x88, 0x12, Flags.HALT),
             (Opcode.sdiv, -0x41, 0x10, -0x4, -0x1, 0x12, Flags.SF),
             (Opcode.sdiv, 0x41, -0x10, -0x4, 0x1, 0x12, Flags.SF),
             (Opcode.sdiv, -0x41, -0x10, 0x4, -0x1, 0x12, 0),
@@ -236,6 +237,7 @@ class TestControlUnitM:
             (Opcode.rudiv, 0x41, 0x0, 0x41, 0x88, Flags.HALT),
             (Opcode.rudiv, 0x10, 0x41, 0x0, 0x10, Flags.ZF),
             (Opcode.rsdiv, 0x41, 0x10, 0x4, 0x1, 0),
+            (Opcode.rsdiv, 0x41, 0x0, 0x41, 0x88, Flags.HALT),
             (Opcode.rsdiv, -0x41, 0x10, -0x4, -0x1, Flags.SF),
             (Opcode.rsdiv, 0x41, -0x10, -0x4, 0x1, Flags.SF),
             (Opcode.rsdiv, -0x41, -0x10, 0x4, -0x1, 0),
@@ -320,9 +322,7 @@ class TestControlUnitM:
             self.registers[RegisterName.R1] = Cell(a, bits=self.OPERAND_BITS)
             self.registers[RegisterName.R3] = Cell(b, bits=self.OPERAND_BITS)
             self.registers[RegisterName.PC] = Cell(0x10, bits=AB)
-            with warnings.catch_warnings(record=False):
-                warnings.simplefilter("ignore")
-                self.control_unit.step()
+            self.control_unit.step()
 
             self.ram.put(
                 address=Cell(0x11, bits=AB),
@@ -339,9 +339,7 @@ class TestControlUnitM:
                 address=Cell(0x42, bits=AB),
                 value=Cell(0x88, bits=self.OPERAND_BITS),
             )
-            with warnings.catch_warnings(record=False):
-                warnings.simplefilter("ignore")
-                self.control_unit.step()
+            self.control_unit.step()
             assert self.registers[RegisterName.PC] == (0x40 if j else 0x13)
             assert (
                 self.ram.fetch(Cell(0x40, bits=AB), bits=self.OPERAND_BITS)
@@ -455,8 +453,7 @@ class TestControlUnitM:
             address=Cell(0, bits=AB),
             value=Cell(operation, bits=self.OPERAND_BITS),
         )
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0x02
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
@@ -468,16 +465,14 @@ class TestControlUnitM:
             value=Cell(0x00, bits=AB),
         )
         self.registers[RegisterName.PC] = Cell(0xFFFF, bits=AB)
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0xFFFF
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
         assert self.control_unit.status is Status.HALTED
 
     def test_fetch_from_dirty_memory(self) -> None:
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0
         assert self.registers[RegisterName.FLAGS] == Flags.HALT

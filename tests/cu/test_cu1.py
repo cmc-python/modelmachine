@@ -158,6 +158,7 @@ class TestControlUnit1:
             (Opcode.udiv, 0x41, 0x0, 0x41, 0x88, 0x11, Flags.HALT),
             (Opcode.udiv, 0x10, 0x41, 0x0, 0x10, 0x11, Flags.ZF),
             (Opcode.sdiv, 0x41, 0x10, 0x4, 0x1, 0x11, 0),
+            (Opcode.sdiv, 0x41, 0x0, 0x41, 0x88, 0x11, Flags.HALT),
             (Opcode.sdiv, -0x41, 0x10, -0x4, -0x1, 0x11, Flags.SF),
             (Opcode.sdiv, 0x41, -0x10, -0x4, 0x1, 0x11, Flags.SF),
             (Opcode.sdiv, -0x41, -0x10, 0x4, -0x1, 0x11, 0),
@@ -275,8 +276,7 @@ class TestControlUnit1:
         cond(Opcode.ujg, a=b, b=a, j=ul and not eq)
 
     def test_fetch_from_dirty_memory(self) -> None:
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0
         assert self.registers[RegisterName.FLAGS] == Flags.HALT

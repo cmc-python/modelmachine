@@ -179,6 +179,7 @@ class TestControlUnitV:
             (Opcode.udiv, 5, 0x41, 0x0, 0x41, 0x88, Flags.HALT),
             (Opcode.udiv, 5, 0x10, 0x41, 0x0, 0x10, Flags.ZF),
             (Opcode.sdiv, 5, 0x41, 0x10, 0x4, 0x1, 0),
+            (Opcode.sdiv, 5, 0x41, 0x0, 0x41, 0x88, Flags.HALT),
             (Opcode.sdiv, 5, -0x41, 0x10, -0x4, -0x1, Flags.SF),
             (Opcode.sdiv, 5, 0x41, -0x10, -0x4, 0x1, Flags.SF),
             (Opcode.sdiv, 5, -0x41, -0x10, 0x4, -0x1, 0),
@@ -305,8 +306,7 @@ class TestControlUnitV:
             address=Cell(0, bits=AB),
             value=Cell(operation, bits=self.OPERAND_BITS),
         )
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0x05
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
@@ -318,16 +318,14 @@ class TestControlUnitV:
             value=Cell(0x00, bits=OPCODE_BITS),
         )
         self.registers[RegisterName.PC] = Cell(0xFFFF, bits=AB)
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0xFFFF
         assert self.registers[RegisterName.FLAGS] == Flags.HALT
         assert self.control_unit.status is Status.HALTED
 
     def test_fetch_from_dirty_memory(self) -> None:
-        with warnings.catch_warnings(record=False):
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning, match="cpu halted"):
             self.control_unit.step()
         assert self.registers[RegisterName.PC] == 0
         assert self.registers[RegisterName.FLAGS] == Flags.HALT

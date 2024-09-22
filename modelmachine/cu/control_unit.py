@@ -79,7 +79,7 @@ class ControlUnit:
             warn(
                 f"Expected zero bits at {start_bit}:{end_bit} bits for"
                 f" {self._opcode}, got {part}; these bits will be ignored;"
-                f" whole instruction: {self._ir}",
+                f" ir={self._ir}",
                 stacklevel=2,
             )
 
