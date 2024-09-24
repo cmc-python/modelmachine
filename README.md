@@ -670,3 +670,4 @@ Model machine emulator
 3. [В. Г. Баула - Введение в архитектуру ЭВМ и системы программирования](docs/references/baula.intro.pdf)
 4. [Учебная трёхадресная машина УМ-3](docs/references/um3.command.set.html)
 5. [Сборник упражнений по учебным машинам](docs/references/um3.tasks.html)
+6. [Безадресная УМ-0](https://uneex.org/LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing#MM0) [archieved](docs/references/mm0.html)

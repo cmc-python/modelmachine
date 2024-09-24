@@ -1,0 +1,278 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head>
+
+    <script type="text/javascript" src="mm0_files/mspace.js"></script>
+    <script type="text/javascript" src="mm0_files/ASCIIMathML.js"></script><style type="text/css" id="AMMLcustomStyleSheet">#AMMLcloseDiv {font-size:0.8em; padding-top:1em; color:#014}
+#AMMLwarningBox {position:absolute; width:100%; top:0; left:0; z-index:200; text-align:center; font-size:1em; font-weight:bold; padding:0.5em 0 0.5em 0; color:#ffc; background:#c30}</style>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="robots" content="noindex,nofollow">
+
+<title>LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing - UNИX</title>
+<script type="text/javascript" src="mm0_files/common.js"></script>
+
+
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="mm0_files/common.css">
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="mm0_files/print.css">
+
+<!-- css only for MS IE6/IE7 browsers -->
+<!--[if lt IE 8]>
+   <link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="/moin_static197/modernized/css/msie.css">
+<![endif]-->
+
+
+<link rel="alternate" title="UNИX: LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing" href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing?diffs=1&amp;show_att=1&amp;action=rss_rc&amp;unique=0&amp;page=LecturesCMC%2FArchitectureAssemblerProject%2F04_VarAddressing&amp;ddiffs=1" type="application/rss+xml">
+
+
+<link rel="Start" href="https://uneex.org/MainPage">
+<link rel="Alternate" title="Wiki Markup" href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing?action=raw">
+<link rel="Alternate" media="print" title="Print View" href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing?action=print">
+<link rel="Up" href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject">
+<link rel="Search" href="https://uneex.org/FindPage">
+<link rel="Index" href="https://uneex.org/TitleIndex">
+<link rel="Glossary" href="https://uneex.org/WordIndex">
+<link rel="Help" href="https://uneex.org/HelpOnFormatting">
+</head>
+
+<body lang="en" dir="ltr">
+<div id="page" lang="ru" dir="ltr">
+
+<ul id="pagelocation">
+<li><a href="https://uneex.org/LecturesCMC">LecturesCMC</a></li><li><a href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject">ArchitectureAssemblerProject</a></li><li><a class="backlink" href="https://uneex.org/LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing?action=fullsearch&amp;context=180&amp;value=linkto%3A%22LecturesCMC%2FArchitectureAssemblerProject%2F04_VarAddressing%22" rel="nofollow" title="Click to do a full-text search for this title">04_VarAddressing</a></li>
+</ul>
+<div dir="ltr" id="content" lang="ru"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1"></span><span class="anchor" id="line-2"></span><p class="line867">
+</p><h1 id=".2BBB8ENQRABDUEPAQ1BD0EPQRLBDk_.2BBEAEMAQ3BDwENQRA_.2BBDoEPgQ8BDAEPQQ0BEs_.2BBDg_.2BBEEEQgQ1BDo-">Переменный размер команды и стек</h1>
+<span class="anchor" id="line-3"></span><p class="line867"><em>Цель</em>: экономия памяти <span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span></p><p class="line867"><em>Задача</em>: система команд, в которых нет неиспользуемых полей <span class="anchor" id="line-6"></span><span class="anchor" id="line-7"></span></p><p class="line867">
+</p><h2 id=".2BBCMEHA_.2BBB8:_.2BBD8ENQRABDUEPAQ1BD0EPQRLBDk_.2BBEAEMAQ3BDwENQRA_.2BBDoEPgQ8BDAEPQQ0BEs-">УМ_П: переменный размер команды</h2>
+<span class="anchor" id="line-8"></span><p class="line867"><em>Решение</em>: ввести <em>переменный</em> размер команды, зависящий от КОП <span class="anchor" id="line-9"></span><span class="anchor" id="line-10"></span></p><ul><li>Сокращение объёма программ <span class="anchor" id="line-11"></span></li><li>Резкое уменьшение размера адресуемой ячейки (до размера самой короткой команды) <span class="anchor" id="line-12"></span><ul><li><p class="line862">=&gt; увеличение поля адреса или сокращение объёма оперативной памяти при том же размере поля <span class="anchor" id="line-13"></span></p></li><li><p class="line862">=&gt; необходимость адресации групп ячеек (например, четырёхбайтовых целых при побайтовой адресации) <span class="anchor" id="line-14"></span></p></li><li><p class="line862">=&gt; вопрос <a class="interwiki" href="https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D1%80%D1%8F%D0%B4%D0%BE%D0%BA_%D0%B1%D0%B0%D0%B9%D1%82%D0%BE%D0%B2" title="RW">порядка байтов</a>: в каком порядке байты идут в машинном слове? <span class="anchor" id="line-15"></span></p></li></ul></li><li>Увеличение
+ такта работы (прочесть КОП, интерпретировать, прочесть  остальную часть
+ команды вместо просто «прочесть инструкцию в РК») <span class="anchor" id="line-16"></span></li><li>Учёт адресов при программировании в кодах стал намного сложнее <span class="anchor" id="line-17"></span></li><li><p class="line862">Возможен ошибочный переход <em>внутрь</em> команды и последующая неверная интерпретация — усложняется отладка (см. пример) <span class="anchor" id="line-18"></span><span class="anchor" id="line-19"></span></p></li></ul><p class="line867"><strong>Пример</strong>:
+ Вычисление факториала для учебной машины  УМ-П. Обратите внимание на 
+минимальный размер команды в один байт  (halt), как следствие — на 
+адресацию в байтах и на то, что целое  занимает 40 битов, как в УМ-2. 
+Кроме того, в УМ-П <span class="anchor" id="line-20"></span><span class="anchor" id="line-21"></span><span class="anchor" id="line-22"></span><span class="anchor" id="line-23"></span><span class="anchor" id="line-24"></span><span class="anchor" id="line-25"></span><span class="anchor" id="line-26"></span><span class="anchor" id="line-27"></span><span class="anchor" id="line-28"></span><span class="anchor" id="line-29"></span><span class="anchor" id="line-30"></span><span class="anchor" id="line-31"></span><span class="anchor" id="line-32"></span><span class="anchor" id="line-33"></span><span class="anchor" id="line-34"></span><span class="anchor" id="line-35"></span><span class="anchor" id="line-36"></span><span class="anchor" id="line-37"></span><span class="anchor" id="line-38"></span></p><pre><span class="anchor" id="line-1"></span>.cpu mm-v
+<span class="anchor" id="line-2"></span>
+<span class="anchor" id="line-3"></span>.input 0x100
+<span class="anchor" id="line-4"></span>.output 0x10A
+<span class="anchor" id="line-5"></span>
+<span class="anchor" id="line-6"></span>.code
+<span class="anchor" id="line-7"></span>      00 0105 0100 ; 00; Заносим N в счётчик
+<span class="anchor" id="line-8"></span>      00 010A 0020 ; 05; Заносим 1 в результат
+<span class="anchor" id="line-9"></span>      05 0105 0020 ; 0A; Сравниваем счётчик и 1
+<span class="anchor" id="line-10"></span>      85 001F      ; 0F; Если ≤, цикл окончен
+<span class="anchor" id="line-11"></span>      03 010A 0105 ; 12; Домножаем результат на счётчик
+<span class="anchor" id="line-12"></span>      02 0105 0020 ; 17; Уменьшаем счётчик на 1
+<span class="anchor" id="line-13"></span>      80 000A      ; 1C; Переход на начало цикла
+<span class="anchor" id="line-14"></span>      99           ; 1F; конец
+<span class="anchor" id="line-15"></span>      00 0000 0001 ; 20; 1
+<span class="anchor" id="line-16"></span>
+<span class="anchor" id="line-17"></span>.enter 6</pre><span class="anchor" id="line-39"></span><span class="anchor" id="line-40"></span><p class="line867"><img alt="FrBrGeorge/MyDict/speech_balloon_question.png" class="attachment" src="mm0_files/speech_balloon_question.png" title="FrBrGeorge/MyDict/speech_balloon_question.png"> Потребление памяти по сравнению с УМ-2 сократилось. Насколько возросло потребление <em>адресов</em> по сравнению с УМ-2 (если считать в адресуемых ячейках, а не в байтах)? <span class="anchor" id="line-41"></span><span class="anchor" id="line-42"></span></p><p class="line867">
+</p><h3 id=".2BBB8EPgRABE8ENAQ.2BBDo_.2BBDEEMAQ5BEIEPgQy-">Порядок байтов</h3>
+<span class="anchor" id="line-43"></span><p class="line874">Целое число состоит из нескольких адресуемых байтов. В каком порядке эти байты располагаются в памяти? <span class="anchor" id="line-44"></span><span class="anchor" id="line-45"></span></p><p class="line867"><strong>Число: 0xA1B2C3D4</strong> <span class="anchor" id="line-46"></span></p><div><table class="clearfix"><tbody><tr>  <td colspan="2" style="text-align:center"><p class="line862">Представление </p></td>
+  <td><p class="line862">D4*0x01 + C3*0x100 + B2*0x10000 + A1*0x1000000 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-47"></span><p class="line862">Порядок от младшего к старшему </p></td>
+  <td><p class="line862">остроконечный (little-endian) </p></td>
+  <td><p class="line862">0xD4, 0xC3, 0xB2, 0xA1 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-48"></span><p class="line862">Порядок от старшего к младшему </p></td>
+  <td><p class="line862">тупоконечный (big-endian) </p></td>
+  <td><p class="line862">0xA1, 0xB2, 0xC3, 0xD4 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-49"></span><p class="line862">Смешанный порядок </p></td>
+  <td><p class="line862">(mixed-endian) </p></td>
+  <td><p class="line862">0xB2, 0xA1, 0xD4, 0xC3 </p></td>
+</tr>
+</tbody></table></div><span class="anchor" id="line-50"></span><span class="anchor" id="line-51"></span><span class="anchor" id="line-52"></span><span class="anchor" id="line-53"></span><span class="anchor" id="line-54"></span><p class="line874">Тупоконечный
+ порядок нагляднее, зато в нём интерпретация значения  целого зависит от
+ размера целого в битах, даже если значение этого  целого мало. 
+Допустим, первые 4 байта памяти равны 03 00 00 00. Тогда по  адресу 0 <span class="anchor" id="line-55"></span><span class="anchor" id="line-56"></span></p><ul><li><p class="line862">Находится <em>байт</em> со значением 0x03 == 3 <span class="anchor" id="line-57"></span></p></li><li><p class="line862">Находится <em>двухбайтное целое</em> со значение 0x0300 == 768 <span class="anchor" id="line-58"></span></p></li><li>Находится четырёхбайтовое целое 0x3000000 == 50331648 <span class="anchor" id="line-59"></span><span class="anchor" id="line-60"></span></li></ul><p class="line874">При остроконечном порядке все три значения равны 3. <span class="anchor" id="line-61"></span><span class="anchor" id="line-62"></span></p><p class="line874">Смешанный
+ порядок возникает, когда размер целого превышает размер  машинного 
+слова. В результате и байты в машинном слове и машинные слова в  целом 
+числе имеют порядок little-endian. <span class="anchor" id="line-63"></span><span class="anchor" id="line-64"></span></p><p class="line874">В УМ-П — сорокаразрядное целое, байты располагаются в порядке адресации (big-endian) <span class="anchor" id="line-65"></span><span class="anchor" id="line-66"></span></p><p class="line867">
+</p><h3 id=".2BBB4ESAQ4BDEEPgRHBD0EMARP_.2BBDgEPQRCBDUEQAQ.2FBEAENQRCBDAERgQ4BE8_.2BBDgEPQRBBEIEQARDBDoERgQ4BDk.">Ошибочная интерпретация инструкций.</h3>
+<span class="anchor" id="line-67"></span><p class="line874">Допустим, в 
+примере выше в результате ошибки безусловный переход был  
+запрограммирован на адрес 0008 вместо 000A. (80 0008). Как бы тогда  
+выполнялась программа? <span class="anchor" id="line-68"></span><span class="anchor" id="line-69"></span></p><ul><li>КОП по адресу 0008 == 00 (пересылка). <span class="anchor" id="line-70"></span></li><li>Следовательно, это двухадресная команда, надо считать два поля операндов — 2005 и 0105 <span class="anchor" id="line-71"></span></li><li>Выполняется пересылка из 0105 в 2005 <span class="anchor" id="line-72"></span></li><li>Следующий КОП находится по адресу 0008+5 = 000D. <span class="anchor" id="line-73"></span></li><li>Это снова 00 — пересылка с операндами 2085 и 001F <span class="anchor" id="line-74"></span></li><li>Следующая команда (по адресу 12) неожиданно начинается в правильном месте, и вычисление продолжается как ни в чём не бывало! <span class="anchor" id="line-75"></span><span class="anchor" id="line-76"></span></li></ul><p class="line874">Отладка таких конструкций представляет известную трудность <span class="anchor" id="line-77"></span><span class="anchor" id="line-78"></span></p><p class="line867">
+</p><h2 id=".2BBCEEQgQ1BDoEPgQyBEsENQ_.2BBDwEMARIBDgEPQRL-">Стековые машины</h2>
+<span class="anchor" id="line-79"></span><p class="line867"><em>Цель</em>: минимизировать обмен с оперативной памятью <span class="anchor" id="line-80"></span><span class="anchor" id="line-81"></span></p><ul><li style="list-style-type:none"><p class="line891"><em>Задача</em>: архитектура, в которой только операции пересылки работают с адресуемой памятью <span class="anchor" id="line-82"></span><span class="anchor" id="line-83"></span></p></li><li class="gap"><p class="line891"><em>решение</em>: несколько (сколько?) <em>регистров общего назначения</em>, в которые загружаются данные, команды работают с регистрами <span class="anchor" id="line-84"></span></p></li><li><p class="line891"><em>решение</em>:
+ команды работают всегда с одними и теми же  ячейками, поэтому адреса 
+нужны только при обращении к другим ячейкам;  чтобы обменов с памятью 
+было меньше, надо аппаратно организовать  «подачу» данных в эти ячейки 
+(например, с помощью быстродействующего  аппаратного <em>стека</em>) <span class="anchor" id="line-85"></span><span class="anchor" id="line-86"></span></p></li></ul><p class="line867"><strong>Аппаратный <a class="interwiki" href="https://ru.wikipedia.org/wiki/%D1%81%D1%82%D0%B5%D0%BA" title="RW">стек</a></strong> — это хранилище данных, в котором предусмотрены две операции <span class="anchor" id="line-87"></span><span class="anchor" id="line-88"></span></p><ul><li>Положить значение на вершину стека <span class="anchor" id="line-89"></span></li><li>Снять значение с вершины стека <span class="anchor" id="line-90"></span><span class="anchor" id="line-91"></span></li></ul><p class="line862">Таким образом стек реализует абстракцию <strong>LIFO</strong> (<strong>L</strong>ast <strong>I</strong>n, <strong>F</strong>irst <strong>O</strong>out). <span class="anchor" id="line-92"></span><span class="anchor" id="line-93"></span></p><p class="line862">В стеке <em>может</em> быть предусмотрена также и адресация <em>относительно его вершины</em>: <span class="anchor" id="line-94"></span><span class="anchor" id="line-95"></span></p><ul><li>Если
+ последовательно положить на стек значения A, B и С, то A окажется со 
+смещением 2 ячейки относительно вершины стека. B ­— со смещением 1, а C —
+  со смещением 0 <span class="anchor" id="line-96"></span></li><li>Если после этого положить на стек ещё два значения, соответствующие смещения станут равными 4, 3 и 2 <span class="anchor" id="line-97"></span><span class="anchor" id="line-98"></span></li></ul><p class="line867">
+</p><h3 id=".2BBCEEQgQ1BDoEPgQyBDAETw_.2BBDwEMARIBDgEPQQw_.2BBCMEHA--.2BBCE-">Стековая машина УМ-С</h3>
+<span class="anchor" id="line-99"></span><p class="line874">Дополним машину УМ-1 аппаратным стеком и ограничим все операции над над данными <span class="anchor" id="line-100"></span><span class="anchor" id="line-101"></span></p><ul><li>Переменный размер команды, побайтовая адресация <span class="anchor" id="line-102"></span></li><li>Трёхбайтовое целое (как в УМ-1) <span class="anchor" id="line-103"></span></li><li>Операции
+ над данными (включая сравнение) — безадресные: со стека  снимается 
+нужное количество операндов, производится операция, результат вычисления
+ помещается в стек <span class="anchor" id="line-104"></span></li><li>Операции работы со стеком <span class="anchor" id="line-105"></span><ul><li>положить на стек 5A АДРЕС <span class="anchor" id="line-106"></span></li><li>снять со стека 5B АДРЕС <span class="anchor" id="line-107"></span></li><li>дублировать вершину стека 5C <span class="anchor" id="line-108"></span></li><li>обмен двух последних элементов стека 5D <span class="anchor" id="line-109"></span><span class="anchor" id="line-110"></span></li></ul></li></ul><p class="line867"><strong>Пример</strong>: вычисление b<sup>2</sup>-4*a*c <span class="anchor" id="line-111"></span><span class="anchor" id="line-112"></span><span class="anchor" id="line-113"></span><span class="anchor" id="line-114"></span><span class="anchor" id="line-115"></span><span class="anchor" id="line-116"></span><span class="anchor" id="line-117"></span><span class="anchor" id="line-118"></span><span class="anchor" id="line-119"></span><span class="anchor" id="line-120"></span><span class="anchor" id="line-121"></span><span class="anchor" id="line-122"></span><span class="anchor" id="line-123"></span><span class="anchor" id="line-124"></span><span class="anchor" id="line-125"></span><span class="anchor" id="line-126"></span><span class="anchor" id="line-127"></span><span class="anchor" id="line-128"></span><span class="anchor" id="line-129"></span><span class="anchor" id="line-130"></span><span class="anchor" id="line-131"></span><span class="anchor" id="line-132"></span><span class="anchor" id="line-133"></span></p><pre><span class="anchor" id="line-1-1"></span>.cpu mm-s
+<span class="anchor" id="line-2-1"></span>
+<span class="anchor" id="line-3-1"></span>.input  0x1006, 0x1000, 0x1009
+<span class="anchor" id="line-4-1"></span>.output 0x100c
+<span class="anchor" id="line-5-1"></span>.code
+<span class="anchor" id="line-6-1"></span>5A 1000 ; загрузить b ; b
+<span class="anchor" id="line-7-1"></span>5C      ; дублировать ; b b
+<span class="anchor" id="line-8-1"></span>03      ; умножить    ; b*b
+<span class="anchor" id="line-9-1"></span>5A 1003 ; загрузить 4 ; b*b 4
+<span class="anchor" id="line-10-1"></span>5A 1006 ; загрузить a ; b*b 4 a
+<span class="anchor" id="line-11-1"></span>5A 1009 ; загрузить c ; b*b 4 a c
+<span class="anchor" id="line-12-1"></span>03      ; умножить    ; b*b 4 a*c
+<span class="anchor" id="line-13-1"></span>03      ; умножить    ; b*b 4*a*c
+<span class="anchor" id="line-14-1"></span>02      ; вычесть     ; b*2-4*a*c
+<span class="anchor" id="line-15-1"></span>5b 100C ; выгрузить d ; b*2-4*a*c
+<span class="anchor" id="line-16-1"></span>99      ; halt
+<span class="anchor" id="line-17-1"></span>
+<span class="anchor" id="line-18"></span>.code 0x1003
+<span class="anchor" id="line-19"></span>00 0004 ; 4
+<span class="anchor" id="line-20"></span>
+<span class="anchor" id="line-21"></span>.enter  3 5 2</pre><span class="anchor" id="line-134"></span><p class="line874">Более сложные алгоритмы требуют более сложных операций над стеком. <span class="anchor" id="line-135"></span><span class="anchor" id="line-136"></span></p><p class="line867"><strong>Пример</strong>: вычисление факториала в УМ-С: сначала стек наполняется значениями от N до 1 с  шагом -1, затем все они перемножаются: <span class="anchor" id="line-137"></span><span class="anchor" id="line-138"></span><span class="anchor" id="line-139"></span><span class="anchor" id="line-140"></span><span class="anchor" id="line-141"></span><span class="anchor" id="line-142"></span><span class="anchor" id="line-143"></span><span class="anchor" id="line-144"></span><span class="anchor" id="line-145"></span><span class="anchor" id="line-146"></span><span class="anchor" id="line-147"></span><span class="anchor" id="line-148"></span><span class="anchor" id="line-149"></span><span class="anchor" id="line-150"></span><span class="anchor" id="line-151"></span><span class="anchor" id="line-152"></span><span class="anchor" id="line-153"></span><span class="anchor" id="line-154"></span><span class="anchor" id="line-155"></span><span class="anchor" id="line-156"></span><span class="anchor" id="line-157"></span><span class="anchor" id="line-158"></span><span class="anchor" id="line-159"></span><span class="anchor" id="line-160"></span><span class="anchor" id="line-161"></span><span class="anchor" id="line-162"></span><span class="anchor" id="line-163"></span><span class="anchor" id="line-164"></span><span class="anchor" id="line-165"></span><span class="anchor" id="line-166"></span></p><pre><span class="anchor" id="line-1-2"></span>.cpu mm-s
+<span class="anchor" id="line-2-2"></span>
+<span class="anchor" id="line-3-2"></span>.input 0x100
+<span class="anchor" id="line-4-2"></span>.output 0x103
+<span class="anchor" id="line-5-2"></span>
+<span class="anchor" id="line-6-2"></span>.code
+<span class="anchor" id="line-7-2"></span>5A 0100 ; 00 ; Заносим N                          ; N
+<span class="anchor" id="line-8-2"></span>5C      ; 03 ; дублируем перед проверкой          ; N … K K
+<span class="anchor" id="line-9-2"></span>5A 0025 ; 04 ; Заносим 1                          ; N … K K 1
+<span class="anchor" id="line-10-2"></span>05      ; 07 ; Сравниваем                         ; N … K
+<span class="anchor" id="line-11-2"></span>85 0013 ; 08 ; Если ≤, цикл окончен → 13          ; N … K
+<span class="anchor" id="line-12-2"></span>5C      ; 0B ; Дублируем                          ; N … K K
+<span class="anchor" id="line-13-2"></span>5A 0025 ; 0C ; Заносим 1                          ; N … K K 1
+<span class="anchor" id="line-14-2"></span>02      ; 0F ; Вычитаем                           ; N … K K-1
+<span class="anchor" id="line-15-2"></span>80 0003 ; 10 ; Продолжаем набивать стек → 03      ; N … K K-1
+<span class="anchor" id="line-16-2"></span>5D      ; 13 ; Посмотрим очередной сомножитель    ; N … Res K
+<span class="anchor" id="line-17-2"></span>5C      ; 14 ; Дублируем для сравнения            ; N … Res K K
+<span class="anchor" id="line-18-1"></span>5A 0100 ; 15 ; Заносим N                          ; N … Res K K N
+<span class="anchor" id="line-19-1"></span>05      ; 18 ; Сравниваем, не конец ли            ; N … Res K
+<span class="anchor" id="line-20-1"></span>81 0020 ; 19 ; Нашли N, готово → 20               ; N … Res K
+<span class="anchor" id="line-21-1"></span>03      ; 1C ; Умножим                            ; N … Res*K
+<span class="anchor" id="line-22"></span>80 0013 ; 1D ; Продолжим умножение → 13           ; N … Res*K
+<span class="anchor" id="line-23"></span>03      ; 20 ; Умножим в последний раз            ; Res N
+<span class="anchor" id="line-24"></span>5B 0103 ; 21 ; Выгрузим                           ; Res
+<span class="anchor" id="line-25"></span>99      ; 24 ; Halt                               ; Res
+<span class="anchor" id="line-26"></span>00 0001 ; 25 ; 1
+<span class="anchor" id="line-27"></span>
+<span class="anchor" id="line-28"></span>.enter 6</pre><span class="anchor" id="line-167"></span><p class="line874">Ещё раз обратим внимание на то, что одно целое занимает три однобайтовых ячейки памяти. <span class="anchor" id="line-168"></span><span class="anchor" id="line-169"></span></p><p class="line867"><span class="anchor" id="MM0"></span> <span class="anchor" id="line-170"></span>
+</p><h2 id=".2BBB0ENQQ.2FBD4EQQRABDUENARBBEIEMgQ1BD0EPQQwBE8_.2BBDg_.2BBD4EQgQ9BD4EQQQ4BEIENQQ7BEwEPQQwBE8_.2BBDAENARABDUEQQQwBEYEOARP-">Непосредственная и относительная адресация</h2>
+<span class="anchor" id="line-171"></span><p class="line874">Попытка 
+реализовать факториал обычным циклом  с умножением на УМ-С приведёт с 
+усиленному использованию операций  обмена с памятью. Причина: 
+невозможность работать с содержимым стека  глубже двух ячеек. <span class="anchor" id="line-172"></span><span class="anchor" id="line-173"></span></p><p class="line867">
+</p><h3 id=".2BBBEENQQ3BDAENARABDUEQQQ9BDAETw_.2BBDwEMARIBDgEPQQw_.2BBCMEHA--0.2A">Безадресная машина УМ-0*</h3>
+<span class="anchor" id="line-174"></span><p class="line862">(<em>не поддерживается <tt class="backtick">modelmachine</tt></em>) <span class="anchor" id="line-175"></span><span class="anchor" id="line-176"></span></p><p class="line867"><strong>TODO</strong> Роль  ввода в эмуляторе может выполнять предварительное заполнение стека, а вывода — выдача стека по окончании работы. <span class="anchor" id="line-177"></span><span class="anchor" id="line-178"></span></p><p class="line862">Рассмотрим архитектуру, <em>единственной</em> памятью для хранения данных которой является стек. <span class="anchor" id="line-179"></span></p><ul><li><p class="line862">Дополнительно
+ появляется команда 40 — заполнение вершины стека  значением, 
+непосредственно указанным в самой команде (т. к. хранить  значения 
+теперь можно только в коде программы). Она имеет формат <tt class="backtick">40&nbsp;NN</tt> и занимает 2 байта. <span class="anchor" id="line-180"></span></p></li><li><p class="line862">Поскольку целое в такой команде занимает место операнда, то есть адреса, такой способ указания значения называется <strong>непосредственной адресацией</strong> <span class="anchor" id="line-181"></span></p></li><li>Дополнительно появляются команды удаления (50), обмена (56),  циклического обмена (55) и дублирования (54) K-й ячейки стека <span class="anchor" id="line-182"></span></li></ul><p class="line874">Фактически получается не-фоннеймановская архитектура: различие памяти для команд и для данных в стеке. <span class="anchor" id="line-183"></span><span class="anchor" id="line-184"></span></p><p class="line862">В командах работы с ячейками стека номер ячейки является, по сути, адресом относительно текущей вершины стека, или <strong>относительным адресом</strong>. В подавляющем большинстве случаев (если не происходит работы с <em>массивами</em>
+  данных произвольного размера) относительный адрес сравнительно невелик
+  (имеет такой же порядок, что и количество различных переменных в  
+формуле). <span class="anchor" id="line-185"></span></p><ul><li>Небольшой размер относительного адреса позволяет сильно сократить количество битов, выделяемых для него в команде. <span class="anchor" id="line-186"></span><span class="anchor" id="line-187"></span><span class="anchor" id="line-188"></span></li></ul><p class="line862">Константы, задаваемые непосредственной адресацией, могут быть отрицательными. Например, <tt class="backtick">40&nbsp;FE</tt> кладёт на вершину стека число <tt class="backtick">-2</tt>.
+ Таким образом, диапазон констант, которые можно использовать в УМ-0, 
+варьируется от -128 до 127. Чтобы задать числа вне этого диапазона 
+(например, 0xfe = 254), пришлось бы ввести дополнительные команды типа 
+«заполнить старший байт вершины стека», но для простоты мы этого делать 
+не станем. <span class="anchor" id="line-189"></span><span class="anchor" id="line-190"></span></p><p class="line862">Подобно
+ операциям со стеком, операции  перехода также крайне редко бывают 
+«дальними»: при организации,  например, цикла его начало скорее всего 
+отстоит от конца не более, чем  на несколько сотен инструкций. Таким 
+образом, введя относительную  адресацию <em>переходов</em> (вперёд и назад), мы можем сократить размер <em>команд перехода</em>
+ (который в машинном коде довольно много). Такое сокращение эффективно 
+на «настоящих» современных архитектурах с длинным полным адресом (как 
+правило, 64 бита). <span class="anchor" id="line-191"></span><span class="anchor" id="line-192"></span></p><p class="line862">Договоримся, что в УМ-0 операнд команды перехода — это <em>смещение относительно адреса текущей команды</em>, то есть относительно содержимого регистра <strong>СК</strong>. <span class="anchor" id="line-193"></span><span class="anchor" id="line-194"></span></p><p class="line867"><img alt="FrBrGeorge/MyDict/speech_balloon_question.png" class="attachment" src="mm0_files/speech_balloon_question.png" title="FrBrGeorge/MyDict/speech_balloon_question.png">
+ Что не так с программным кодом, в котором начала цикла отстоит от его 
+конца на многие тысячи инструкций? Как программисты справляются с такими
+ ситуациями? <span class="anchor" id="line-195"></span><span class="anchor" id="line-196"></span></p><p class="line874">Если повсеместно использовать относительную и непосредственную адресацию, код приобретает два полезных свойства: <span class="anchor" id="line-197"></span></p><ol type="1"><li><p class="line862">Код программы получается <a class="interwiki" href="https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D1%88%D0%B8%D0%BD%D0%BD%D1%8B%D0%B9_%D0%BA%D0%BE%D0%B4#.2BBBAEMQRBBD4EOwROBEIEPQRLBDk_.2BBDg_.2BBD8EPgQ3BDgERgQ4BD4EPQQ9BD4--.2BBD0ENQQ3BDAEMgQ4BEEEOAQ8BEsEOQ_.2BBDoEPgQ0-" title="RW">позиционно-независимым</a>: он может быть загружен и выполнен в <em>произвольном месте</em> оперативной памяти. <span class="anchor" id="line-198"></span></p></li><li>Код
+ программы не зависит также и от представления целого числа: оно может 
+занимать и два байта, то есть совпадать с размером команды, а может, 
+например, и 4 <span class="anchor" id="line-199"></span><span class="anchor" id="line-200"></span></li></ol><p class="line874">Договоримся, что размер целого числа УМ-0 — два байта, хотя это и маловато. Тогда характеристики УМ-0 получаются такими: <span class="anchor" id="line-201"></span></p><ul><li>Размер ячейки оперативной памяти и целого числа: 2 байта <span class="anchor" id="line-202"></span></li><li>Размер адреса: 2 байта <span class="anchor" id="line-203"></span></li><li>Арифметические вычисления производятся с вершиной стека <span class="anchor" id="line-204"></span></li><li>Код команды помещается в одну ячейку оперативной памяти (фиксированный размер команды в 2 байта) <span class="anchor" id="line-205"></span><span class="anchor" id="line-206"></span></li></ul><p class="line874">Напомним,
+ что свойство «Размер ячейки оперативной памяти — 2 байта» означает, что
+ в УМ-0, как в УМ-3 и УМ-2, операнд команды перехода — это количество 
+команд, а не количество байтов. <span class="anchor" id="line-207"></span><span class="anchor" id="line-208"></span></p><p class="line874">Фиксированный
+ размер команд также предполагает, что у арифметических команд, команд 
+сравнения и команд работы со стеком есть операнд — номер ячейки в стеке.
+ В отличие от УМ-С такие команды снимают одно значение с вершины стенка,
+ а второе, указанное в операнде, не трогают. <span class="anchor" id="line-209"></span><span class="anchor" id="line-210"></span></p><div><table><tbody><tr>  <td><p class="line862">Команда</p></td>
+  <td><p class="line862"> Описание </p></td>
+  <td><p class="line862"> Содержимое стека </p></td>
+  <td><p class="line862"> Код </p></td>
+  <td><p class="line862"> Результат </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-211"></span><p class="line862">40 NN </p></td>
+  <td><p class="line862">Положить число NN на вершину стека </p></td>
+  <td><p class="line862"> 4 5 6 7 8 </p></td>
+  <td><p class="line862"> 40 09 </p></td>
+  <td><p class="line862"> 4 5 6 7 8 9 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-212"></span><p class="line862">5B II </p></td>
+  <td><p class="line862">Снять и выбросить II элементов стека </p></td>
+  <td><p class="line862">4 5 6 7 8 9 </p></td>
+  <td><p class="line862">50 04 </p></td>
+  <td><p class="line862">4 6 7 8 9 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-213"></span><p class="line862">5C II </p></td>
+  <td><p class="line862">Дублировать II-й элемент стека на его вершине </p></td>
+  <td><p class="line862">4 5 6 7 8 9 </p></td>
+  <td><p class="line862">54 04 </p></td>
+  <td><p class="line862">4 5 6 7 8 9 5 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-214"></span><p class="line862">5D II </p></td>
+  <td><p class="line862">Обменять местами вершину стека и II-й его элемент </p></td>
+  <td><p class="line862">4 5 6 7 8 9 </p></td>
+  <td><p class="line862">56 04 </p></td>
+  <td><p class="line862">4 9 6 7 8 5 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-215"></span><p class="line862">05 II </p></td>
+  <td><p class="line862">Сравнить (вычесть) вершину стека из II-го элемента, выставить флаги </p></td>
+  <td><p class="line862"> 4 9 6 7 8 5 </p></td>
+  <td><p class="line862">05 04 </p></td>
+  <td><p class="line862"> 4 9 6 7 8 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-216"></span><p class="line862">01 II </p></td>
+  <td><p class="line862">Вычесть вершину стека из II-го элемента </p></td>
+  <td><p class="line862"> 4 9 6 7 8 </p></td>
+  <td><p class="line862"> 01 04 </p></td>
+  <td><p class="line862"> 9 6 7 -4 </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-217"></span><p class="line862">?? II </p></td>
+  <td><p class="line862">(Другая операция ∀) вершину стека из II-го элемента </p></td>
+  <td><p class="line862"> 9 6 7 -4 </p></td>
+  <td><p class="line862"> ?? 02 </p></td>
+  <td><p class="line862"> 9 7 6∀-4</p></td>
+</tr>
+<tr>  <td colspan="5"><span class="anchor" id="line-218"></span><p class="line862"> … </p></td>
+</tr>
+<tr>  <td><span class="anchor" id="line-219"></span><p class="line862">80 AA </p></td>
+  <td><p class="line862">Перейти по смещению AA относительно текущей команды </p></td>
+  <td><p class="line862"> … </p></td>
+  <td><p class="line862"> 80 FB </p></td>
+  <td><p class="line862"> … (на 5 команд назад) </p></td>
+</tr>
+<tr>  <td colspan="5"><span class="anchor" id="line-220"></span><p class="line862"> … (другие команды перехода) </p></td>
+</tr>
+</tbody></table></div><span class="anchor" id="line-221"></span><span class="anchor" id="line-222"></span><span class="anchor" id="line-223"></span><p class="line867"><strong>Пример</strong> вычисления факториала на УМ-0 (исходное число N уже находится на вершине стека, результат также должен оказаться на вершине) <span class="anchor" id="line-224"></span><span class="anchor" id="line-225"></span><span class="anchor" id="line-226"></span><span class="anchor" id="line-227"></span><span class="anchor" id="line-228"></span><span class="anchor" id="line-229"></span><span class="anchor" id="line-230"></span><span class="anchor" id="line-231"></span><span class="anchor" id="line-232"></span><span class="anchor" id="line-233"></span><span class="anchor" id="line-234"></span><span class="anchor" id="line-235"></span><span class="anchor" id="line-236"></span><span class="anchor" id="line-237"></span><span class="anchor" id="line-238"></span></p><pre><span class="anchor" id="line-1-3"></span>40 01   ; 00 ; Будущий результат        ; N Res=1
+<span class="anchor" id="line-2-3"></span>40 01   ; 01 ; Ещё 1 (счётчик)          ; N Res i=1
+<span class="anchor" id="line-3-3"></span>54 00   ; 02 ; Сдублируем счётчик       ; N Res i i
+<span class="anchor" id="line-4-3"></span>05 03   ; 03 ; Сравним с N              ; N Res i
+<span class="anchor" id="line-5-3"></span>84 07   ; 04 ; Если i⩾N,  → +7 (конец)  ; N Res i
+<span class="anchor" id="line-6-3"></span>40 01   ; 05 ; Занесём 1                ; N Res i 1
+<span class="anchor" id="line-7-3"></span>01 01   ; 06 ; Прибавим 1 к i           ; N Res i+1
+<span class="anchor" id="line-8-3"></span>5D 01   ; 07 ; Обменяем местами         ; N i+1 Res
+<span class="anchor" id="line-9-3"></span>03 01   ; 08 ; Умножим                  ; N i+1 Res*(i+1)
+<span class="anchor" id="line-10-3"></span>5D 01   ; 0A ; Вернём на место          ; N Res i
+<span class="anchor" id="line-11-3"></span>80 F8   ; 0B ; Продолжим цикл → -8      ; N Res i
+<span class="anchor" id="line-12-3"></span>5B 01   ; 0C ; Выбросим i               ; N Res
+<span class="anchor" id="line-13-3"></span>99 00   ; 0E ; Конец                    ; N Res</pre><span class="anchor" id="line-239"></span><p class="line867"><strong>TODO</strong> проверить <span class="anchor" id="line-240"></span><span class="anchor" id="line-241"></span></p><p class="line862">В
+ действительности абсолютный адрес необходим только в одном случае: 
+когда при трансляции программы заранее неизвестно (или сложно 
+рассчитать), где именно в памяти окажется адресуемый объект после 
+запуска. Например, если пробовать хранить <em>глобальные</em> данные на дне стека, смещение до них от текущей вершины будет всё время меняться. Много проблема начнётся при использовании <em>подпрограмм</em>. <span class="anchor" id="line-242"></span><span class="anchor" id="line-243"></span></p><p class="line862">Описанным
+ выше путём «заполнения ячейки по частям» можно сформировать в ячейке 
+абсолютный адрес, а затем обратиться к области памяти, <em>находящейся по этому адресу</em>. Такой механизм называется <em>косвенной адресацией</em> — мы рассмотрим его в следующей лекции. <span class="anchor" id="line-244"></span><span class="anchor" id="line-245"></span></p><p class="line867"><span class="anchor" id="line-246"></span></p><p class="line867"><span class="anchor" id="line-247"></span></p><p class="line867"><span class="anchor" id="line-248"></span></p><p class="line867"><span class="anchor" id="line-249"></span></p><p class="line867"><span class="anchor" id="line-250"></span></p><p class="line867"><span class="anchor" id="line-251"></span></p><p class="line867"><span class="anchor" id="line-252"></span></p><p class="line867"><span class="anchor" id="line-253"></span></p><p class="line867"><span class="anchor" id="line-254"></span></p><p class="line867"><span class="anchor" id="line-255"></span></p><p class="line867"><span class="anchor" id="line-256"></span></p><p class="line867"><span class="anchor" id="line-257"></span></p><p class="line867"><span class="anchor" id="line-258"></span></p><p class="line867"><span class="anchor" id="line-259"></span></p><p class="line867"><span class="anchor" id="line-260"></span></p><p class="line867"><span class="anchor" id="line-261"></span></p><p class="line867"><span class="anchor" id="line-262"></span></p><p class="line867"><span class="anchor" id="line-263"></span></p><p class="line867"><span class="anchor" id="line-264"></span></p><p class="line867"><span class="anchor" id="line-265"></span></p><p class="line867"><span class="anchor" id="line-266"></span></p><p class="line867"><span class="anchor" id="line-267"></span></p><p class="line867"><span class="anchor" id="line-268"></span></p><p class="line867"><span class="anchor" id="line-269"></span></p><p class="line867"><span class="anchor" id="line-270"></span></p><p class="line867"><span class="anchor" id="line-271"></span></p><p class="line867"><span class="anchor" id="line-272"></span></p><p class="line867"><span class="anchor" id="line-273"></span></p><p class="line867"><span class="anchor" id="line-274"></span></p><p class="line867"><span class="anchor" id="line-275"></span></p><p class="line867"><span class="anchor" id="line-276"></span></p><p class="line867"><span class="anchor" id="line-277"></span></p><p class="line867"><span class="anchor" id="line-278"></span></p><p class="line867"><span class="anchor" id="line-279"></span></p><p class="line867"><span class="anchor" id="line-280"></span></p><p class="line867"><span class="anchor" id="line-281"></span></p><p class="line867"><span class="anchor" id="line-282"></span></p><p class="line867"><span class="anchor" id="line-283"></span></p><p class="line867"><span class="anchor" id="line-284"></span></p><p class="line867"><span class="anchor" id="line-285"></span></p><p class="line867"><span class="anchor" id="line-286"></span></p><p class="line867"><span class="anchor" id="line-287"></span></p><p class="line867"><span class="anchor" id="line-288"></span></p><p class="line867"><span class="anchor" id="line-289"></span></p><p class="line867"><span class="anchor" id="line-290"></span></p><p class="line867"><span class="anchor" id="line-291"></span></p><p class="line867"><span class="anchor" id="line-292"></span></p><p class="line867"><span class="anchor" id="line-293"></span></p><p class="line867"><span class="anchor" id="line-294"></span></p><p class="line867"><span class="anchor" id="line-295"></span></p><p class="line867"><span class="anchor" id="line-296"></span></p><p class="line867"><span class="anchor" id="line-297"></span></p><p class="line867"><span class="anchor" id="line-298"></span></p><p class="line867"><span class="anchor" id="line-299"></span></p><p class="line867"><span class="anchor" id="line-300"></span></p><p class="line867"><span class="anchor" id="line-301"></span></p><p class="line867"><span class="anchor" id="line-302"></span></p><p class="line867"><span class="anchor" id="line-303"></span></p><p class="line867"><span class="anchor" id="line-304"></span></p><p class="line867"><span class="anchor" id="line-305"></span></p><p class="line867"><span class="anchor" id="line-306"></span></p><p class="line867"><span class="anchor" id="line-307"></span></p><p class="line867"><span class="anchor" id="line-308"></span></p><p class="line867"><span class="anchor" id="line-309"></span></p><p class="line867"><span class="anchor" id="line-310"></span></p><p class="line867"><span class="anchor" id="line-311"></span></p><p class="line867"><span class="anchor" id="line-312"></span></p><p class="line867"><span class="anchor" id="line-313"></span></p><p class="line867"><span class="anchor" id="line-314"></span></p><p class="line867"><span class="anchor" id="line-315"></span></p><p class="line867"><span class="anchor" id="line-316"></span></p><p class="line867"><span class="anchor" id="line-317"></span></p><p class="line867"><span class="anchor" id="line-318"></span></p><p class="line867"><span class="anchor" id="line-319"></span></p><p class="line867"><span class="anchor" id="line-320"></span></p><p class="line867"><span class="anchor" id="line-321"></span></p><p class="line867"><span class="anchor" id="line-322"></span></p><p class="line867"><span class="anchor" id="line-323"></span></p><p class="line867"><span class="anchor" id="line-324"></span></p><p class="line867"><span class="anchor" id="line-325"></span></p><p class="line867"><span class="anchor" id="line-326"></span></p><p class="line867"><span class="anchor" id="line-327"></span></p><p class="line867"><span class="anchor" id="line-328"></span></p><p class="line867"><span class="anchor" id="line-329"></span></p><p class="line867"><span class="anchor" id="line-330"></span></p><p class="line867"><span class="anchor" id="line-331"></span></p><p class="line867"><span class="anchor" id="line-332"></span></p><p class="line867"><span class="anchor" id="line-333"></span></p><p class="line867"><span class="anchor" id="line-334"></span></p><p class="line867"><span class="anchor" id="line-335"></span></p><p class="line867"><span class="anchor" id="line-336"></span></p><p class="line867"><span class="anchor" id="line-337"></span></p><p class="line867"><span class="anchor" id="line-338"></span></p><p class="line867"><span class="anchor" id="line-339"></span></p><p class="line867"><span class="anchor" id="line-340"></span></p><p class="line867"><span class="anchor" id="line-341"></span></p><p class="line867"><span class="anchor" id="line-342"></span></p><p class="line867"><span class="anchor" id="line-343"></span></p><p class="line867"><span class="anchor" id="line-344"></span><span class="anchor" id="bottom"></span></p></div><p id="pageinfo" class="info" lang="en" dir="ltr">LecturesCMC/ArchitectureAssemblerProject/04_VarAddressing  (last edited 2024-09-03 17:19:04 by <span title="FrBrGeorge @ grep.cs.msu.ru[188.44.43.25]"><a href="https://uneex.org/FrBrGeorge" title="FrBrGeorge @ grep.cs.msu.ru[188.44.43.25]">FrBrGeorge</a></span>)</p>
+<div id="pagebottom"></div>
+</div>
+
+
+
+</body></html>
