@@ -83,6 +83,42 @@ class TestControlUnit2:
             assert self.control_unit.status is Status.HALTED
 
     @pytest.mark.parametrize(
+        ("opcode", "bits"),
+        [
+            (Opcode.halt, 0xFFFFFFFF),
+            (Opcode.jump, 0xFFFF0000),
+            (Opcode.jeq, 0xFFFF0000),
+            (Opcode.jneq, 0xFFFF0000),
+            (Opcode.sjl, 0xFFFF0000),
+            (Opcode.sjgeq, 0xFFFF0000),
+            (Opcode.sjleq, 0xFFFF0000),
+            (Opcode.sjg, 0xFFFF0000),
+            (Opcode.ujl, 0xFFFF0000),
+            (Opcode.ujgeq, 0xFFFF0000),
+            (Opcode.ujleq, 0xFFFF0000),
+            (Opcode.ujg, 0xFFFF0000),
+        ],
+    )
+    def test_decode_validate(self, *, opcode: Opcode, bits: int) -> None:
+        opcode_shift = self.OPERAND_BITS - OPCODE_BITS
+        for i in range(opcode_shift):
+            not_zero = 1 << i
+            if bits & not_zero == 0:
+                continue
+
+            self.setup_method()
+            self.ram.put(
+                address=Cell(0, bits=AB),
+                value=Cell(
+                    (int(opcode) << opcode_shift) | not_zero,
+                    bits=self.OPERAND_BITS,
+                ),
+            )
+            self.control_unit._fetch()
+            with pytest.warns(UserWarning, match="Expected zero bits"):
+                self.control_unit._decode()
+
+    @pytest.mark.parametrize(
         ("opcode", "ir_words"),
         [
             (Opcode.move, 1),

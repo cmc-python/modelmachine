@@ -86,14 +86,30 @@ class TestControlUnit0:
             Status.HALTED if halted else Status.RUNNING
         )
 
-    def test_decode_validate(self) -> None:
-        self.ram.put(
-            address=Cell(0, bits=AB),
-            value=Cell((int(Opcode.halt) << RB) | 0xFF, bits=WB),
-        )
-        self.control_unit._fetch()
-        with pytest.warns(UserWarning, match="Expected zero bits"):
-            self.control_unit._decode()
+    @pytest.mark.parametrize(
+        ("opcode", "bits"),
+        [
+            (Opcode.halt, 0xFF),
+        ],
+    )
+    def test_decode_validate(self, *, opcode: Opcode, bits: int) -> None:
+        opcode_shift = self.OPERAND_BITS - OPCODE_BITS
+        for i in range(opcode_shift):
+            not_zero = 1 << i
+            if bits & not_zero == 0:
+                continue
+
+            self.setup_method()
+            self.ram.put(
+                address=Cell(0, bits=AB),
+                value=Cell(
+                    (int(opcode) << opcode_shift) | not_zero,
+                    bits=self.OPERAND_BITS,
+                ),
+            )
+            self.control_unit._fetch()
+            with pytest.warns(UserWarning, match="Expected zero bits"):
+                self.control_unit._decode()
 
     def run_opcode(self, *, opcode: Opcode | int, a: int, s: int) -> None:
         self.ram.put(
