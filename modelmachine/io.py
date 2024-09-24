@@ -7,12 +7,14 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 
 from .cell import Cell
+from .memory.register import RegisterName
 from .prompt.prompt import printf, prompt
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
     from .memory.ram import RandomAccessMemory
+    from .memory.register import RegisterMemory
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 
@@ -20,15 +22,26 @@ ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 class InputOutputUnit:
     """Allow to input and output program and data."""
 
-    ram: Final[RandomAccessMemory]
+    _ram: Final[RandomAccessMemory]
+    _registers: Final[RegisterMemory]
+    _is_stack_io: Final[bool]
     _io_bits: Final[int]
     _min_v: Final[int]
     _max_v: Final[int]
 
-    def __init__(self, *, ram: RandomAccessMemory, io_bits: int):
+    def __init__(
+        self,
+        *,
+        ram: RandomAccessMemory,
+        io_bits: int,
+        is_stack_io: bool,
+        registers: RegisterMemory,
+    ):
         """See help(type(x))."""
         assert ram.word_bits % 4 == 0
-        self.ram = ram
+        self._ram = ram
+        self._registers = registers
+        self._is_stack_io = is_stack_io
         self._io_bits = io_bits
         self._min_v = -(1 << (io_bits - 1))
         self._max_v = 1 << io_bits
@@ -50,17 +63,28 @@ class InputOutputUnit:
         file: TextIO = sys.stdin,
     ) -> None:
         """Data loader (decimal numbers)."""
-        if not 0 <= address < self.ram.memory_size:
+        if not 0 <= address < self._ram.memory_size:
             msg = (
                 f"Unexpected address for input: 0x{address:x}, expected"
-                f" interval is [0, 0x{self.ram.memory_size:x})"
+                f" interval is [0, 0x{self._ram.memory_size:x})"
             )
-            raise ValueError(msg)
+            raise SystemExit(msg)
 
-        addr = Cell(address, bits=self.ram.address_bits)
-        if message is None:
-            message = f"Ram[{addr}]"
+        if self._is_stack_io:
+            for _ in range(address):
+                addr = self._registers[RegisterName.SP] - Cell(
+                    self._io_bits // self._ram.word_bits,
+                    bits=self._ram.address_bits,
+                )
+                self._registers[RegisterName.SP] = addr
+                msg = "To stack" if message is None else message
+                self._input_cell(addr=addr, message=msg, file=file)
+        else:
+            addr = Cell(address, bits=self._ram.address_bits)
+            msg = f"Ram[{addr}]" if message is None else message
+            self._input_cell(addr=addr, message=msg, file=file)
 
+    def _input_cell(self, *, addr: Cell, message: str, file: TextIO) -> None:
         value: int | None = None
         while value is None:
             try:
@@ -73,11 +97,11 @@ class InputOutputUnit:
                 if file.isatty():
                     printf(msg, file=sys.stderr)
                 else:
-                    raise ValueError(msg) from e
+                    raise SystemExit(msg) from e
 
         self._check_word(value)
 
-        self.ram.put(
+        self._ram.put(
             address=addr,
             value=Cell(value, bits=self._io_bits),
             from_cpu=False,
@@ -91,18 +115,39 @@ class InputOutputUnit:
         file: TextIO = sys.stdout,
     ) -> None:
         """Return data by address."""
-        if not 0 <= address < self.ram.memory_size:
+        if not 0 <= address < self._ram.memory_size:
             msg = (
                 f"Unexpected address for output: 0x{address:x}, expected"
-                f" interval is [0, 0x{self.ram.memory_size:x})"
+                f" interval is [0, 0x{self._ram.memory_size:x})"
             )
-            raise ValueError(msg)
+            raise SystemExit(msg)
 
-        addr = Cell(address, bits=self.ram.address_bits)
-        if message is None:
-            message = f"Ram[{addr}]"
+        if self._is_stack_io:
+            for _ in range(address):
+                addr = self._registers[RegisterName.SP]
+                if addr == 0:
+                    msg = "Not enough elements in stack for output"
+                    raise SystemExit(msg)
 
-        value = self.ram.fetch(addr, bits=self._io_bits).signed
+                self._registers[RegisterName.SP] = addr + Cell(
+                    self._io_bits // self._ram.word_bits,
+                    bits=self._ram.address_bits,
+                )
+                msg = "From stack" if message is None else message
+                self._output_cell(addr=addr, message=msg, file=file)
+        else:
+            addr = Cell(address, bits=self._ram.address_bits)
+            msg = f"Ram[{addr}]" if message is None else message
+            self._output_cell(addr=addr, message=msg, file=file)
+
+    def _output_cell(
+        self,
+        *,
+        addr: Cell,
+        message: str,
+        file: TextIO,
+    ) -> None:
+        value = self._ram.fetch(addr, bits=self._io_bits).signed
         if file.isatty():
             printf(f"{message} = {value}", file=file)
         else:
@@ -110,17 +155,17 @@ class InputOutputUnit:
 
     def store_source(self, *, start: int, bits: int) -> str:
         """Save data to string."""
-        assert 0 <= start < self.ram.memory_size
+        assert 0 <= start < self._ram.memory_size
         assert bits > 0
 
-        assert bits % self.ram.word_bits == 0
-        end = start + bits // self.ram.word_bits
-        assert 0 <= end <= self.ram.memory_size
+        assert bits % self._ram.word_bits == 0
+        end = start + bits // self._ram.word_bits
+        assert 0 <= end <= self._ram.memory_size
 
         return " ".join(
-            self.ram.fetch(
-                address=Cell(i, bits=self.ram.address_bits),
-                bits=self.ram.word_bits,
+            self._ram.fetch(
+                address=Cell(i, bits=self._ram.address_bits),
+                bits=self._ram.word_bits,
                 from_cpu=False,
             ).hex()
             for i in range(start, end)
@@ -133,34 +178,34 @@ class InputOutputUnit:
             for c in source:
                 if c not in ACCEPTED_CHARS:
                     msg = f"Unexpected source: {source}, expected hex code"
-                    raise ValueError(msg)
+                    raise SystemExit(msg)
 
-            word_hex = self.ram.word_bits // 4
+            word_hex = self._ram.word_bits // 4
 
             if len(source) % word_hex != 0:
                 msg = (
                     f"Unexpected length of source code: {len(source)}"
                     f" hex should be divided by ram word size={word_hex}"
                 )
-                raise ValueError(msg)
+                raise SystemExit(msg)
 
-            if len(source) // word_hex > self.ram.memory_size:
+            if len(source) // word_hex > self._ram.memory_size:
                 msg = (
                     f"Too long source code: {len(source)}"
-                    f" hex should be less than ram words={self.ram.memory_size}"
+                    f" hex should be less than ram words={self._ram.memory_size}"
                 )
-                raise ValueError(msg)
+                raise SystemExit(msg)
 
             for i in range(0, len(source), word_hex):
                 address = Cell(
-                    load_address + i // word_hex, bits=self.ram.address_bits
+                    load_address + i // word_hex, bits=self._ram.address_bits
                 )
 
-                if self.ram.is_fill(address):
+                if self._ram.is_fill(address):
                     msg = f".code directives overlaps at address {address}"
-                    raise ValueError(msg)
+                    raise SystemExit(msg)
 
-                self.ram.put(
+                self._ram.put(
                     address=address,
                     value=Cell.from_hex(source[i : i + word_hex]),
                     from_cpu=False,

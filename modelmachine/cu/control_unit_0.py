@@ -43,6 +43,7 @@ class ControlUnit0(ControlUnit):
         (RegisterName.SP, ControlUnit.ADDRESS_BITS),
         (RegisterName.A1, RELATIVE_BITS),
     )
+    IS_STACK_IO = True
 
     @property
     def _stack_size(self) -> int:

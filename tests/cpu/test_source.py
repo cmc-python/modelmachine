@@ -64,29 +64,38 @@ def test_repeat_enter() -> None:
 
 def test_wrong_enter() -> None:
     with StringIO("hello\n12100") as fin, pytest.raises(
-        ValueError, match="Cannot parse integer"
+        SystemExit, match="Cannot parse integer"
     ):
         source(example, enter=fin)
 
 
 def test_missed_cpu() -> None:
-    with pytest.raises(ParseException):
+    with pytest.raises(
+        ParseException, match="Expected CaselessKeyword '.cpu'"
+    ):
         source(".code\n99 0000")
 
 
 def test_missed_code() -> None:
-    with pytest.raises(ParseException):
+    with pytest.raises(SystemExit, match="Missed required .code directive"):
         source(".cpu mm-1")
 
 
 def test_double_code() -> None:
-    with pytest.raises(ParseException):
-        source(".cpu mm-1\n.code 99 0000\n.code 99 0000")
+    with pytest.raises(SystemExit, match=".code directives overlaps"):
+        source(".cpu mm-1\n.code\n99 0000\n.code\n99 0000")
+
+
+def test_enter_too_short() -> None:
+    with pytest.raises(SystemExit, match="Not enough elements"):
+        source(
+            ".cpu mm-1\n.input 0x100\n.input 0x101\n.enter 10\n.code\n99 0000"
+        )
 
 
 def test_enter_too_long() -> None:
-    with pytest.raises(ParseException):
-        source(".cpu mm-1\n.input 0x100\n.enter 10 20\n.code 99 0000")
+    with pytest.raises(SystemExit, match="Too many elements in the input"):
+        source(".cpu mm-1\n.input 0x100\n.enter 10 20\n.code\n99 0000")
 
 
 def test_multi_input() -> None:

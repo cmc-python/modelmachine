@@ -104,7 +104,7 @@ def source(
 
     if not source_code:
         msg = "Missed required .code directive"
-        raise pp.ParseException(msg)
+        raise SystemExit(msg)
 
     close_enter = False
     if enter is None:

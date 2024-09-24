@@ -27,6 +27,7 @@ from ..cu.control_unit_v import ControlUnitV
 from ..io import InputOutputUnit
 from ..memory.ram import RandomAccessMemory
 from ..memory.register import RegisterMemory
+from ..prompt.prompt import read_word
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -69,7 +70,10 @@ class Cpu:
             is_protected=protect_memory,
         )
         self._io_unit = InputOutputUnit(
-            ram=self.ram, io_bits=control_unit.IR_BITS
+            ram=self.ram,
+            io_bits=control_unit.IR_BITS,
+            is_stack_io=control_unit.IS_STACK_IO,
+            registers=self.registers,
         )
         self._alu = ArithmeticLogicUnit(
             registers=self.registers,
@@ -96,6 +100,15 @@ class Cpu:
             self._io_unit.input(
                 address=req.address, message=req.message, file=file
             )
+
+        if not file.isatty():
+            try:
+                read_word(file)
+            except SystemExit:
+                pass
+            else:
+                msg = "Too many elements in the input"
+                raise SystemExit(msg)
 
     def print_result(self, file: TextIO = sys.stdout) -> None:
         """Print calculation result."""

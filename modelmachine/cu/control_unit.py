@@ -34,6 +34,7 @@ class ControlUnit:
     ALU_REGISTERS: ClassVar[AluRegisters]
     CU_REGISTERS: ClassVar[Iterable[tuple[RegisterName, int]]] = ()
     PAGE_SIZE: ClassVar = 16
+    IS_STACK_IO: ClassVar = False
     Opcode: ClassVar[TypeAlias] = CommonOpcode
 
     _registers: Final[RegisterMemory]
