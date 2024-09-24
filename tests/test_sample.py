@@ -14,6 +14,7 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
 @pytest.mark.parametrize(
     ("sample", "output"),
     [
+        (samples / "mm-0_sample.mmach", "1849\n"),
         (samples / "mm-1_sample.mmach", "178929\n"),
         (samples / "mm-2_sample.mmach", "178929\n"),
         (samples / "mm-3_sample.mmach", "178929\n"),
@@ -30,7 +31,6 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
         (samples / "mm-m_add_to_array.mmach", "414\n525\n636\n747\n"),
         (samples / "mm-m_sum_of_squares.mmach", "355\n"),
         (samples / "mm-r_max_of_3.mmach", "32\n"),
-        (samples / "mm-s_factorial.mmach", "720\n"),
         (samples / "mm-3_add.mmach", "4466\n"),
         (samples / "mm-3_jump.mmach", "83872\n"),
         (samples / "mm-3_max_of_2.mmach", "21\n"),
@@ -52,6 +52,9 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
         (samples / "mm-1_discr2.mmach", "1\n"),
         (samples / "mm-v_factorial.mmach", "720\n"),
         (samples / "mm-s_discr.mmach", "1\n"),
+        (samples / "mm-s_factorial.mmach", "720\n"),
+        (samples / "mm-0_discr.mmach", "1\n"),
+        (samples / "mm-0_factorial.mmach", "720\n"),
     ],
 )
 def test_sample(sample: Path, output: str) -> None:
