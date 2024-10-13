@@ -14,7 +14,7 @@ from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
 from ..cell import Cell
-from ..cpu.source import kw, posinteger
+from ..cpu.common_parsing import kw, posinteger
 from ..cu.opcode import OPCODE_BITS, CommonOpcode
 from ..cu.status import Status
 from ..memory.register import RegisterName

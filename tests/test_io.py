@@ -5,7 +5,8 @@ import io
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.io import InputOutputUnit
+from modelmachine.io.code_segment import CodeSegment
+from modelmachine.io.io import InputOutputUnit
 from modelmachine.memory.ram import RandomAccessMemory
 from modelmachine.memory.register import RegisterMemory, RegisterName
 
@@ -53,7 +54,7 @@ class TestIODevice:
 
     def test_load_source(self) -> None:
         """Test loading from string."""
-        self.io_unit.load_source([(10, "01020A0a10153264")])
+        self.io_unit.load_source([CodeSegment(10, "01020A0a10153264")])
         assert self.ram.fetch(Cell(10, bits=AB), bits=WB) == 0x0102
         assert self.ram.fetch(Cell(11, bits=AB), bits=WB) == 0x0A0A
         assert self.ram.fetch(Cell(12, bits=AB), bits=WB) == 0x1015
@@ -61,17 +62,19 @@ class TestIODevice:
 
     def test_load_source_parse_error(self) -> None:
         with pytest.raises(SystemExit, match="Unexpected source"):
-            self.io_unit.load_source([(0, "hello")])
+            self.io_unit.load_source([CodeSegment(0, "hello")])
 
         with pytest.raises(
             SystemExit, match="Unexpected length of source code"
         ):
-            self.io_unit.load_source([(0, "01")])
+            self.io_unit.load_source([CodeSegment(0, "01")])
 
-        self.io_unit.load_source([(0, "0102" * (self.ram.memory_size))])
+        self.io_unit.load_source(
+            [CodeSegment(0, "0102" * (self.ram.memory_size))]
+        )
         with pytest.raises(SystemExit, match="Too long source code"):
             self.io_unit.load_source(
-                [(0, "0102" * (self.ram.memory_size + 1))]
+                [CodeSegment(0, "0102" * (self.ram.memory_size + 1))]
             )
 
     def test_load_source_overlaps(self) -> None:
@@ -79,7 +82,10 @@ class TestIODevice:
             SystemExit, match=".code directives overlaps at address 0x1"
         ):
             self.io_unit.load_source(
-                [(0, "01020A0a10153264"), (1, "01020A0a10153264")]
+                [
+                    CodeSegment(0, "01020A0a10153264"),
+                    CodeSegment(1, "01020A0a10153264"),
+                ]
             )
 
     def test_store_source(self) -> None:

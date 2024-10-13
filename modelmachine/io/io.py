@@ -6,15 +6,16 @@ import sys
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
-from .cell import Cell
-from .memory.register import RegisterName
-from .prompt.prompt import printf, prompt
+from ..cell import Cell
+from ..memory.register import RegisterName
+from ..prompt.prompt import printf, prompt
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
-    from .memory.ram import RandomAccessMemory
-    from .memory.register import RegisterMemory
+    from ..memory.ram import RandomAccessMemory
+    from ..memory.register import RegisterMemory
+    from .code_segment import CodeSegment
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 
@@ -171,34 +172,34 @@ class InputOutputUnit:
             for i in range(start, end)
         )
 
-    def load_source(self, source_list: list[tuple[int, str]]) -> None:
+    def load_source(self, code: list[CodeSegment]) -> None:
         """Source code loader."""
 
-        for load_address, source in source_list:
-            for c in source:
+        for seg in code:
+            for c in seg.code:
                 if c not in ACCEPTED_CHARS:
-                    msg = f"Unexpected source: {source}, expected hex code"
+                    msg = f"Unexpected source: {seg.code}, expected hex code"
                     raise SystemExit(msg)
 
             word_hex = self._ram.word_bits // 4
 
-            if len(source) % word_hex != 0:
+            if len(seg.code) % word_hex != 0:
                 msg = (
-                    f"Unexpected length of source code: {len(source)}"
+                    f"Unexpected length of source code: {len(seg.code)}"
                     f" hex should be divided by ram word size={word_hex}"
                 )
                 raise SystemExit(msg)
 
-            if len(source) // word_hex > self._ram.memory_size:
+            if len(seg.code) // word_hex > self._ram.memory_size:
                 msg = (
-                    f"Too long source code: {len(source)}"
+                    f"Too long source code: {len(seg.code)}"
                     f" hex should be less than ram words={self._ram.memory_size}"
                 )
                 raise SystemExit(msg)
 
-            for i in range(0, len(source), word_hex):
+            for i in range(0, len(seg.code), word_hex):
                 address = Cell(
-                    load_address + i // word_hex, bits=self._ram.address_bits
+                    seg.address + i // word_hex, bits=self._ram.address_bits
                 )
 
                 if self._ram.is_fill(address):
@@ -207,6 +208,6 @@ class InputOutputUnit:
 
                 self._ram.put(
                     address=address,
-                    value=Cell.from_hex(source[i : i + word_hex]),
+                    value=Cell.from_hex(seg.code[i : i + word_hex]),
                     from_cpu=False,
                 )

@@ -24,7 +24,7 @@ from ..cu.control_unit_m import ControlUnitM
 from ..cu.control_unit_r import ControlUnitR
 from ..cu.control_unit_s import ControlUnitS
 from ..cu.control_unit_v import ControlUnitV
-from ..io import InputOutputUnit
+from ..io.io import InputOutputUnit
 from ..memory.ram import RandomAccessMemory
 from ..memory.register import RegisterMemory
 from ..prompt.prompt import read_word
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from typing import Final, TextIO
 
     from ..cu.control_unit import ControlUnit
+    from ..io.code_segment import CodeSegment
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,7 @@ class Cpu:
     def load_program(
         self,
         *,
-        code: list[tuple[int, str]],
+        code: list[CodeSegment],
         input_req: Sequence[IOReq],
         output_req: Sequence[IOReq],
         file: TextIO = sys.stdin,
