@@ -1,15 +1,17 @@
 from io import StringIO
 
+import pyparsing as pp
 import pytest
-from pyparsing import ParseException
 
 from modelmachine.cell import Cell
+from modelmachine.cpu.asm import UndefinedLabelError
 from modelmachine.cpu.source import source
 
 AB = 16
 WB = 3 * 8
 
 example = """
+
 .cpu mm-1
 
 .input 0x100 argument a ; input for a
@@ -34,6 +36,20 @@ FFFFEB ; -21
 
 .enter 64 ; default value for b
 """
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        ".cpu Mm-1\n.code\n990000",
+        ".cpu mm-1\n\n.code\n\n990000\n\n",
+        ".cpu mm-1;comment\n\n.code;comment\n; comment\n990000 ; comment\n\n",
+    ],
+)
+def test_nl(code: str) -> None:
+    cpu = source(code)
+    assert cpu.name == "mm-1"
+    assert cpu.ram.fetch(Cell(0x0, bits=AB), bits=WB) == 0x990000
 
 
 def test_source() -> None:
@@ -71,13 +87,13 @@ def test_wrong_enter() -> None:
 
 def test_missed_cpu() -> None:
     with pytest.raises(
-        ParseException, match="Expected CaselessKeyword '.cpu'"
+        pp.ParseSyntaxException, match="Expected CaselessKeyword '.cpu'"
     ):
         source(".code\n99 0000")
 
 
 def test_missed_code() -> None:
-    with pytest.raises(SystemExit, match="Missed required .code directive"):
+    with pytest.raises(SystemExit, match="Missed required .code"):
         source(".cpu mm-1")
 
 
@@ -120,7 +136,15 @@ def test_asm_data() -> None:
     assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 0x30
 
 
-# def test_asm_io() -> None:
-#     cpu = source(".cpu mm-1\n.asm 0x100\na: .word 0\nb: .word 0\n.input a,b")
-#     assert cpu.ram.fetch(Cell(0, bits=AB), bits=WB) == 0x011234
-#     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x021234
+def test_asm_io() -> None:
+    cpu = source(
+        ".cpu mm-1\n.asm 0x100\na: .word 0\nb: .word 0\n.input a,b\n"
+        ".enter 0x011234 0x021234"
+    )
+    assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x011234
+    assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == 0x021234
+
+
+def test_asm_missed_label_io() -> None:
+    with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
+        source(".cpu mm-1\n.asm\na: .word 10\n.input a,b\n")
