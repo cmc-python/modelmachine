@@ -15,27 +15,20 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python:
-          - 3.7
-          - 3.12
-
     steps:
     - uses: actions/checkout@v3
     - name: Install python version
       uses: gabrielfalcao/pyenv-action@v18
       with:
-        default: "${{ matrix.python }}"
+        default: "3.7"
     - name: Install dependencies
       run: |
         pip install -U pip
-        pip install hatch
-        hatch build
-        hatch env create dev
+        pip install hatch~=1.13
+        hatch build # Generate __about__.py
     - name: Run tests
       run: |
-        hatch run dev:pytest
+        hatch test --all
 
   lint:
     runs-on: ubuntu-latest
@@ -45,11 +38,11 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: 3.12
+        python-version: 3.13
     - name: Install dependencies
       run: |
         pip install -U pip
-        pip install hatch~=1.12
+        pip install hatch~=1.13
         hatch build
     - name: Linting
       run: |
