@@ -4,8 +4,8 @@ import pyparsing as pp
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.cpu.asm import UndefinedLabelError
-from modelmachine.cpu.source import source
+from modelmachine.ide.asm import UndefinedLabelError
+from modelmachine.ide.source import source
 
 AB = 16
 WB = 3 * 8

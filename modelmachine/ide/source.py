@@ -7,6 +7,7 @@ from typing import TextIO
 import pyparsing as pp
 from pyparsing import Group as Gr
 
+from ..cpu.cpu import CPU_MAP, Cpu, IOReq
 from ..io.code_segment import CodeSegment
 from .asm import Asm, Label, UndefinedLabelError, asmlang, label
 from .common_parsing import (
@@ -19,7 +20,6 @@ from .common_parsing import (
     posinteger,
     string,
 )
-from .cpu import CPU_MAP, Cpu, IOReq
 
 
 class Directive(Enum):

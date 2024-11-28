@@ -12,8 +12,8 @@ from pyparsing import Group as Gr
 from pyparsing import Word as Wd
 
 from .__about__ import __version__
-from .cpu.source import source
 from .ide.debug import debug as ide_debug
+from .ide.source import source
 from .ide.user_config import user_config
 
 if TYPE_CHECKING:

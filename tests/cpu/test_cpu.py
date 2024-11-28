@@ -4,8 +4,8 @@ from io import StringIO
 
 import pytest
 
-from modelmachine.cpu.source import source
 from modelmachine.cu.status import Status
+from modelmachine.ide.source import source
 
 
 @pytest.mark.parametrize(
