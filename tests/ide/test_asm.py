@@ -1,7 +1,7 @@
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.ide.asm import UndefinedLabelError
+from modelmachine.ide.asm.undefined_label_error import UndefinedLabelError
 from modelmachine.ide.source import source
 
 AB = 16

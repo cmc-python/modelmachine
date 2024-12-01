@@ -9,7 +9,8 @@ from pyparsing import Group as Gr
 
 from ..cpu.cpu import CPU_MAP, Cpu, IOReq
 from ..io.code_segment import CodeSegment
-from .asm import Asm, Label, UndefinedLabelError, asmlang, label
+from .asm.asm import Asm, Label, asmlang, label
+from .asm.undefined_label_error import UndefinedLabelError
 from .common_parsing import (
     hexnums,
     kw,
@@ -154,7 +155,7 @@ def source(
         address = asm_dir[0][0] if asm_dir[0] else 0
         asm.parse(address, asm_dir[1])
 
-    source_code.extend(asm.compile())
+    source_code.extend(asm.link())
 
     for input_dir in over(parsed_program, Directive.input):
         parse_io_dir(inp, input_dir, asm, input_req)

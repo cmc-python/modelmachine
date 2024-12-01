@@ -7,14 +7,16 @@ from typing import TYPE_CHECKING
 import pyparsing as pp
 from pyparsing import Group as Gr
 
-from ..cell import Cell
-from ..io.code_segment import CodeSegment
-from .common_parsing import ch, integer, kw, line_seq
+from ...cell import Cell
+from ...io.code_segment import CodeSegment
+from ..common_parsing import ch, integer, kw, line_seq
+from .segment import Segment
+from .undefined_label_error import UndefinedLabelError
 
 if TYPE_CHECKING:
     from typing import Final, Iterator
 
-    from ..cpu.cpu import Cpu
+    from ...cpu.cpu import Cpu
 
 
 @dataclass(frozen=True)
@@ -38,16 +40,6 @@ label_declare = Gr(label + ch(":"))(Cmd.label.value)[0, ...]
 def asmlang(_cpu_name: str) -> pp.ParserElement:
     line = label_declare + word[0, 1]
     return line_seq(line)
-
-
-@dataclass(frozen=True)
-class Segment:
-    address: int
-    code: list[Cell]
-
-
-class UndefinedLabelError(KeyError):
-    pass
 
 
 class Asm:
@@ -86,6 +78,6 @@ class Asm:
 
         self._segments.append(Segment(address, res))
 
-    def compile(self) -> Iterator[CodeSegment]:
+    def link(self) -> Iterator[CodeSegment]:
         for seg in self._segments:
             yield CodeSegment(seg.address, "".join(c.hex() for c in seg.code))
