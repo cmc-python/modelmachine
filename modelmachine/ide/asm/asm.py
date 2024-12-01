@@ -8,15 +8,40 @@ import pyparsing as pp
 from pyparsing import Group as Gr
 
 from ...cell import Cell
+from ...cu.control_unit_0 import ControlUnit0
+from ...cu.control_unit_1 import ControlUnit1
+from ...cu.control_unit_2 import ControlUnit2
+from ...cu.control_unit_3 import ControlUnit3
+from ...cu.control_unit_m import ControlUnitM
+from ...cu.control_unit_r import ControlUnitR
+from ...cu.control_unit_s import ControlUnitS
+from ...cu.control_unit_v import ControlUnitV
+from ...cu.opcode import OPCODE_BITS
 from ...io.code_segment import CodeSegment
 from ..common_parsing import ch, integer, kw, line_seq
+from .mm3 import MM3_OPCODE_TABLE
 from .segment import Segment
 from .undefined_label_error import UndefinedLabelError
 
 if TYPE_CHECKING:
-    from typing import Final, Iterator
+    from typing import Final, Iterator, Sequence
 
     from ...cpu.cpu import Cpu
+    from ...cu.control_unit import ControlUnit
+    from ...cu.opcode import CommonOpcode
+    from .operand import Operand
+
+
+OPCODE_TABLE: Final = {
+    ControlUnit0: {},
+    ControlUnit1: {},
+    ControlUnit2: {},
+    ControlUnit3: MM3_OPCODE_TABLE,
+    ControlUnitM: {},
+    ControlUnitR: {},
+    ControlUnitS: {},
+    ControlUnitV: {},
+}
 
 
 @dataclass(frozen=True)
@@ -26,6 +51,7 @@ class Label:
 
 class Cmd(Enum):
     label = "label"
+    instruction = "instruction"
     word = ".word"
 
 
@@ -37,8 +63,19 @@ word = Gr(kw(Cmd.word.value) - pp.DelimitedList(integer, ","))(Cmd.word.value)
 label_declare = Gr(label + ch(":"))(Cmd.label.value)[0, ...]
 
 
-def asmlang(_cpu_name: str) -> pp.ParserElement:
-    line = label_declare + word[0, 1]
+def instruction(
+    opcode: CommonOpcode, _operands: Sequence[Operand]
+) -> pp.ParserElement:
+    op = pp.CaselessKeyword(opcode._name_).set_parse_action(lambda: opcode)
+    return Gr(op)(Cmd.instruction.value)
+
+
+def asmlang(control_unit: type[ControlUnit]) -> pp.ParserElement:
+    instr = pp.MatchFirst(
+        instruction(opcode, operands)
+        for opcode, operands in OPCODE_TABLE[control_unit].items()
+    )
+    line = label_declare + (word | instr)[0, 1]
     return line_seq(line)
 
 
@@ -72,6 +109,15 @@ class Asm:
             elif cmd_name == Cmd.label:
                 lbl = cmd[0]
                 self._labels[lbl] = cur_addr
+            elif cmd_name == Cmd.instruction:
+                op = cmd[0]
+                instr_bits = self._cpu.control_unit.instruction_bits(op)
+                res.append(
+                    Cell(
+                        int(op) << (instr_bits - OPCODE_BITS), bits=instr_bits
+                    )
+                )
+                cur_addr += instr_bits // self._cpu.ram.word_bits
             else:
                 msg = f"Unknown asm command: {cmd.get_name()}"
                 raise NotImplementedError(msg)

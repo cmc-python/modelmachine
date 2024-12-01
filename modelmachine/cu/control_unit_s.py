@@ -81,9 +81,10 @@ class ControlUnitS(ControlUnit):
         Opcode.pop,
     }
 
-    def instruction_bits(self, opcode: Opcode) -> int:
-        if opcode in self._OPCODES_WITH_ADDRESS:
-            return OPCODE_BITS + self._ram.address_bits
+    @classmethod
+    def instruction_bits(cls, opcode: Opcode) -> int:
+        if opcode in cls._OPCODES_WITH_ADDRESS:
+            return OPCODE_BITS + cls.ADDRESS_BITS
 
         return OPCODE_BITS
 

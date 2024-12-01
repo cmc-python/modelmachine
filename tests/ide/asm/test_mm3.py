@@ -30,3 +30,23 @@ def test_asm_io() -> None:
 def test_asm_missed_label_io() -> None:
     with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
         source(f".cpu {MODEL}\n.asm\na: .word 10\n.input a,b\n")
+
+
+@pytest.mark.parametrize(
+    ("instruction", "opcode"),
+    [
+        ("halt", 0x99_0000_0000_0000),
+    ],
+)
+def test_asm_halt(instruction: str, opcode: int) -> None:
+    cpu = source(
+        f".cpu {MODEL}\n.asm 0x100\n"
+        "a:.word 0x11223344556677\n"
+        "b:.word 2\n"
+        "c:.word 3\n"
+        f"{instruction}\n"
+    )
+    assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x11223344556677
+    assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == 2
+    assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 3
+    assert cpu.ram.fetch(Cell(0x103, bits=AB), bits=WB) == opcode

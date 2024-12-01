@@ -120,7 +120,7 @@ class Cpu:
             )
 
 
-CPU_MAP = {
+CU_MAP = {
     unit.NAME: unit
     for unit in (
         ControlUnit0,

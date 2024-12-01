@@ -28,7 +28,7 @@ class ControlUnit:
     """Abstract control unit allow to execute two methods: step and run."""
 
     NAME: ClassVar[str]
-    ADDRESS_BITS: ClassVar = 16
+    ADDRESS_BITS: ClassVar[int] = 16
     IR_BITS: ClassVar[int]
     WORD_BITS: ClassVar[int]
     ALU_REGISTERS: ClassVar[AluRegisters]
@@ -147,8 +147,9 @@ class ControlUnit:
         while self.status == Status.RUNNING:
             self.step()
 
-    def instruction_bits(self, opcode: Opcode) -> int:  # noqa: ARG002
-        return self.IR_BITS
+    @classmethod
+    def instruction_bits(cls, opcode: Opcode) -> int:  # noqa: ARG003
+        return cls.IR_BITS
 
     def _fetch(self) -> None:
         """Read instruction and fetch opcode."""

@@ -48,14 +48,15 @@ class ControlUnitV(ControlUnit):
     def _address2(self) -> Cell:
         return self._registers[RegisterName.ADDR]
 
-    def instruction_bits(self, opcode: Opcode) -> int:
-        if opcode == self.Opcode.halt:
+    @classmethod
+    def instruction_bits(cls, opcode: Opcode) -> int:
+        if opcode == cls.Opcode.halt:
             return OPCODE_BITS
 
         if opcode in JUMP_OPCODES:
-            return OPCODE_BITS + self._ram.address_bits
+            return OPCODE_BITS + ControlUnit.ADDRESS_BITS
 
-        return OPCODE_BITS + 2 * self._ram.address_bits
+        return OPCODE_BITS + 2 * ControlUnit.ADDRESS_BITS
 
     def _decode(self) -> None:
         self._registers[RegisterName.A1] = self._ir[

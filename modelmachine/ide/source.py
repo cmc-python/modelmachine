@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from enum import Enum
 from io import StringIO
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
 
 import pyparsing as pp
 from pyparsing import Group as Gr
 
-from ..cpu.cpu import CPU_MAP, Cpu, IOReq
+from ..cpu.cpu import CU_MAP, Cpu, IOReq
 from ..io.code_segment import CodeSegment
 from .asm.asm import Asm, Label, asmlang, label
 from .asm.undefined_label_error import UndefinedLabelError
@@ -21,6 +21,9 @@ from .common_parsing import (
     posinteger,
     string,
 )
+
+if TYPE_CHECKING:
+    from ..cu.control_unit import ControlUnit
 
 
 class Directive(Enum):
@@ -42,7 +45,7 @@ def save_loc(loc: int, res: pp.ParseResults) -> None:
     res["last_nl"] = loc
 
 
-cpu_name = pp.MatchFirst([pp.CaselessKeyword(name) for name in CPU_MAP])
+cpu_name = pp.MatchFirst([pp.CaselessKeyword(name) for name in CU_MAP])
 cpud = (nl[0, ...] - kw(Directive.cpu.value) - cpu_name - last_nl)(
     Directive.cpu.value
 ).ignore(comment)
@@ -73,12 +76,12 @@ coded = ngr(
 one_line_directive = inputd | outputd | enterd
 
 
-def language(cpu_name: str) -> pp.ParserElement:
+def language(control_unit: type[ControlUnit]) -> pp.ParserElement:
     asmd = ngr(
         kw(Directive.asm.value)
         - Gr(posinteger[0, 1])
         - nl
-        - Gr(asmlang(cpu_name)),
+        - Gr(asmlang(control_unit)),
         Directive.asm.value,
     )
     multi_line_directive = coded | asmd
@@ -123,12 +126,13 @@ def source(
     inp += "\n"
     cpu_dir = cpud.parse_string(inp)
     cpu_name = cpu_dir[0]
+    control_unit = CU_MAP[cpu_name]
     inp = (
         "\n" * (inp[: cpu_dir["last_nl"] + 1].count("\n"))
         + inp[cpu_dir["last_nl"] + 1 :]
     )
 
-    parsed_program = language(cpu_name).parse_string(inp, parse_all=True)
+    parsed_program = language(control_unit).parse_string(inp, parse_all=True)
 
     if (Directive.code.value not in parsed_program) and (
         Directive.asm.value not in parsed_program
@@ -139,7 +143,7 @@ def source(
         )
         raise SystemExit(msg)
 
-    cpu = Cpu(control_unit=CPU_MAP[cpu_name], protect_memory=protect_memory)
+    cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
     asm = Asm(cpu)
 
     input_req: list[IOReq] = []

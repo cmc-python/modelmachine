@@ -42,7 +42,7 @@ class ControlUnitR(ControlUnit):
         rudiv = 0x34
 
     IR_BITS = OPCODE_BITS + 2 * REG_NO_BITS + ControlUnit.ADDRESS_BITS
-    WORD_BITS = ControlUnit.ADDRESS_BITS
+    WORD_BITS: ClassVar[int] = ControlUnit.ADDRESS_BITS
     ALU_REGISTERS = AluRegisters(
         S=RegisterName.S,
         RES=RegisterName.S1,
@@ -98,11 +98,12 @@ class ControlUnitR(ControlUnit):
 
     _ONE_WORD_OPCODES: Final = REGISTER_OPCODES | {Opcode.halt}
 
-    def instruction_bits(self, opcode: Opcode) -> int:
-        if opcode in self._ONE_WORD_OPCODES:
-            return self._ram.word_bits
+    @classmethod
+    def instruction_bits(cls, opcode: Opcode) -> int:
+        if opcode in cls._ONE_WORD_OPCODES:
+            return ControlUnitR.WORD_BITS
 
-        return 2 * self._ram.word_bits
+        return 2 * ControlUnitR.WORD_BITS
 
     _EXPECT_ZERO_M: Final = ARITHMETIC_OPCODES | {
         Opcode.comp,
