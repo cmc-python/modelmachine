@@ -8,7 +8,6 @@ import pyparsing as pp
 from pyparsing import Group as Gr
 
 from ..cpu.cpu import CU_MAP, Cpu, IOReq
-from ..io.code_segment import CodeSegment
 from .asm.asm import Asm, Label, asmlang, label
 from .asm.undefined_label_error import UndefinedLabelError
 from .common_parsing import (
@@ -156,7 +155,7 @@ def source(
 
     for code_dir in parsed_program[Directive.code]:
         address = code_dir[0][0] if code_dir[0] else 0
-        cpu._io_unit.load_source(CodeSegment(address, "".join(code_dir[1])))  # noqa: SLF001
+        cpu._io_unit.load_source(address, "".join(code_dir[1]))  # noqa: SLF001
 
     for asm_dir in parsed_program[Directive.asm]:
         address = asm_dir[0][0] if asm_dir[0] else 0

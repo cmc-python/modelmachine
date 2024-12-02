@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 import pyparsing as pp
 from pyparsing import Group as Gr
 
-from ...cell import Cell
-from ...cu.opcode import OPCODE_BITS
+from modelmachine.cell import Cell
+from modelmachine.cu.opcode import OPCODE_BITS
+
 from ..common_parsing import ch, integer, kw, line_seq
 from .opcode_table import OPCODE_TABLE
 from .undefined_label_error import UndefinedLabelError
@@ -16,9 +17,10 @@ from .undefined_label_error import UndefinedLabelError
 if TYPE_CHECKING:
     from typing import Final, Sequence
 
-    from ...cpu.cpu import Cpu
-    from ...cu.control_unit import ControlUnit
-    from ...cu.opcode import CommonOpcode
+    from modelmachine.cpu.cpu import Cpu
+    from modelmachine.cu.control_unit import ControlUnit
+    from modelmachine.cu.opcode import CommonOpcode
+
     from .operand import Operand
 
 
@@ -75,6 +77,7 @@ class Asm:
 
     def parse(self, address: int, code: pp.ParseResults) -> None:
         cur_addr = Cell(address, bits=self._cpu.ram.address_bits)
+
         for cmd in code:
             cmd_name = Cmd(cmd.get_name())
             if cmd_name == Cmd.word:
@@ -89,7 +92,7 @@ class Asm:
             elif cmd_name == Cmd.instruction:
                 op = cmd[0]
                 instr_bits = self._cpu.control_unit.instruction_bits(op)
-                cur_addr += self._cpu.ram.put(
+                cur_addr += self._cpu._io_unit.put_code(  # noqa: SLF001
                     address=cur_addr,
                     value=Cell(
                         int(op) << (instr_bits - OPCODE_BITS), bits=instr_bits

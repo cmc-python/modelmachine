@@ -3,5 +3,5 @@
 set -ex
 
 hatch fmt --check
-hatch test --all
 hatch run dev:mypy --strict .
+hatch test --all

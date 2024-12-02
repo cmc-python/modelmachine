@@ -97,7 +97,7 @@ def test_missed_code() -> None:
 
 
 def test_double_code() -> None:
-    with pytest.raises(SystemExit, match=".code directives overlaps"):
+    with pytest.raises(SystemExit, match="Code sections overlaps"):
         source(".cpu mm-1\n.code\n99 0000\n.code\n99 0000")
 
 

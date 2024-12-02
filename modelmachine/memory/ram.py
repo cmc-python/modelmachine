@@ -198,7 +198,7 @@ class RandomAccessMemory:
         """Put size bits by address.
 
         Size must be divisible by self.word_bits.
-        Returns count of written cells.
+        Returns count of written words.
         """
         assert value.bits % self.word_bits == 0
         words = value.bits // self.word_bits

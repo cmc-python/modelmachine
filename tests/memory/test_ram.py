@@ -103,12 +103,15 @@ class TestRandomAccessMemory:
             Cell(7, bits=WB),
             Cell(8, bits=WB),
         ]
-        self.ram.put(
-            address=Cell(5, bits=AB),
-            value=Cell.decode(
-                value_list,
-                endianess=Endianess.BIG,
-            ),
+        assert (
+            self.ram.put(
+                address=Cell(5, bits=AB),
+                value=Cell.decode(
+                    value_list,
+                    endianess=Endianess.BIG,
+                ),
+            )
+            == 4
         )
         for i, v in enumerate(value_list):
             assert self._get(5 + i) == v

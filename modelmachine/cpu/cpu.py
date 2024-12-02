@@ -24,7 +24,7 @@ from ..cu.control_unit_m import ControlUnitM
 from ..cu.control_unit_r import ControlUnitR
 from ..cu.control_unit_s import ControlUnitS
 from ..cu.control_unit_v import ControlUnitV
-from ..io.io import InputOutputUnit
+from ..io import InputOutputUnit
 from ..memory.ram import RandomAccessMemory
 from ..memory.register import RegisterMemory
 from ..prompt.prompt import read_word

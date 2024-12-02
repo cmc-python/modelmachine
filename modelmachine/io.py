@@ -6,16 +6,15 @@ import sys
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
-from ..cell import Cell
-from ..memory.register import RegisterName
-from ..prompt.prompt import printf, prompt
+from .cell import Cell
+from .memory.register import RegisterName
+from .prompt.prompt import printf, prompt
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
-    from ..memory.ram import RandomAccessMemory
-    from ..memory.register import RegisterMemory
-    from .code_segment import CodeSegment
+    from .memory.ram import RandomAccessMemory
+    from .memory.register import RegisterMemory
 
 ACCEPTED_CHARS = set("0123456789abcdefABCDEF")
 
@@ -172,40 +171,47 @@ class InputOutputUnit:
             for i in range(start, end)
         )
 
-    def load_source(self, seg: CodeSegment) -> None:
+    def load_source(self, address: int, code: str) -> None:
         """Source code loader."""
-        for c in seg.code:
+        for c in code:
             if c not in ACCEPTED_CHARS:
-                msg = f"Unexpected source: {seg.code}, expected hex code"
+                msg = f"Unexpected source: {code}, expected hex code"
                 raise SystemExit(msg)
 
         word_hex = self._ram.word_bits // 4
 
-        if len(seg.code) % word_hex != 0:
+        if len(code) % word_hex != 0:
             msg = (
-                f"Unexpected length of source code: {len(seg.code)}"
+                f"Unexpected length of source code: {len(code)}"
                 f" hex should be divided by ram word size={word_hex}"
             )
             raise SystemExit(msg)
 
-        if len(seg.code) // word_hex > self._ram.memory_size:
+        if len(code) // word_hex > self._ram.memory_size:
             msg = (
-                f"Too long source code: {len(seg.code)}"
+                f"Too long source code: {len(code)}"
                 f" hex should be less than ram words={self._ram.memory_size}"
             )
             raise SystemExit(msg)
 
-        for i in range(0, len(seg.code), word_hex):
-            address = Cell(
-                seg.address + i // word_hex, bits=self._ram.address_bits
-            )
+        for i in range(0, len(code), word_hex):
+            addr = Cell(address + i // word_hex, bits=self._ram.address_bits)
 
-            if self._ram.is_fill(address):
-                msg = f".code directives overlaps at address {address}"
+            if self._ram.is_fill(addr):
+                msg = f"Code sections overlaps at address {addr}"
                 raise SystemExit(msg)
 
             self._ram.put(
-                address=address,
-                value=Cell.from_hex(seg.code[i : i + word_hex]),
+                address=addr,
+                value=Cell.from_hex(code[i : i + word_hex]),
                 from_cpu=False,
             )
+
+    def put_code(self, *, address: Cell, value: Cell) -> Cell:
+        for i in range(value.bits // self._ram.word_bits):
+            addr = address + Cell(i, bits=self._ram.address_bits)
+            if self._ram.is_fill(addr):
+                msg = f"Code sections overlaps at address {addr}"
+                raise SystemExit(msg)
+
+        return self._ram.put(address=address, value=value)
