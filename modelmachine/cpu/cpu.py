@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from typing import Final, TextIO
 
     from ..cu.control_unit import ControlUnit
-    from ..io.code_segment import CodeSegment
 
 
 @dataclass(frozen=True)
@@ -89,12 +88,10 @@ class Cpu:
     def load_program(
         self,
         *,
-        code: list[CodeSegment],
         input_req: Sequence[IOReq],
         output_req: Sequence[IOReq],
         file: TextIO = sys.stdin,
     ) -> None:
-        self._io_unit.load_source(code)
         self._output_req = output_req
 
         for req in input_req:

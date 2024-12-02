@@ -12,12 +12,12 @@ from ..io.code_segment import CodeSegment
 from .asm.asm import Asm, Label, asmlang, label
 from .asm.undefined_label_error import UndefinedLabelError
 from .common_parsing import (
+    group_by_name,
     hexnums,
     kw,
     line_seq,
     ngr,
     nl,
-    over,
     posinteger,
     string,
 )
@@ -132,10 +132,14 @@ def source(
         + inp[cpu_dir["last_nl"] + 1 :]
     )
 
-    parsed_program = language(control_unit).parse_string(inp, parse_all=True)
+    parsed_program = group_by_name(
+        language(control_unit).parse_string(inp, parse_all=True),
+        Directive,
+    )
 
-    if (Directive.code.value not in parsed_program) and (
-        Directive.asm.value not in parsed_program
+    if (
+        not parsed_program[Directive.code]
+        and not parsed_program[Directive.asm]
     ):
         msg = (
             f"Missed required {Directive.code.value} "
@@ -149,32 +153,30 @@ def source(
     input_req: list[IOReq] = []
     output_req: list[IOReq] = []
     enter_text = ""
-    source_code: list[CodeSegment] = []
 
-    for code_dir in over(parsed_program, Directive.code):
+    for code_dir in parsed_program[Directive.code]:
         address = code_dir[0][0] if code_dir[0] else 0
-        source_code.append(CodeSegment(address, "".join(code_dir[1])))
+        cpu._io_unit.load_source(CodeSegment(address, "".join(code_dir[1])))  # noqa: SLF001
 
-    for asm_dir in over(parsed_program, Directive.asm):
+    for asm_dir in parsed_program[Directive.asm]:
         address = asm_dir[0][0] if asm_dir[0] else 0
         asm.parse(address, asm_dir[1])
 
-    source_code.extend(asm.link())
+    asm.link()
 
-    for input_dir in over(parsed_program, Directive.input):
+    for input_dir in parsed_program[Directive.input]:
         parse_io_dir(inp, input_dir, asm, input_req)
 
-    for output_dir in over(parsed_program, Directive.output):
+    for output_dir in parsed_program[Directive.output]:
         parse_io_dir(inp, output_dir, asm, output_req)
 
-    for enter_dir in over(parsed_program, Directive.enter):
+    for enter_dir in parsed_program[Directive.enter]:
         enter_text += f" {remove_comment(enter_dir[0])}"
 
     if enter is None:
         enter = StringIO(enter_text)
 
     cpu.load_program(
-        code=source_code,
         input_req=input_req,
         output_req=output_req,
         file=enter,

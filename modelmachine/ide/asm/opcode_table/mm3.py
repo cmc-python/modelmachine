@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...cu.control_unit_3 import ControlUnit3
-from .operand import Operand
+from modelmachine.cu.control_unit_3 import ControlUnit3
+
+from ..operand import Operand
 
 if TYPE_CHECKING:
-    from typing import Final
+    from typing import Final, Sequence
+
+    from modelmachine.cu.opcode import CommonOpcode
 
 
 Opcode = ControlUnit3.Opcode
@@ -15,7 +18,7 @@ A1 = 8
 A2 = 8 + 2 * 8
 A3 = 8 + 4 * 8
 
-MM3_OPCODE_TABLE: Final = {
+MM3_OPCODE_TABLE: Final[dict[CommonOpcode, Sequence[Operand]]] = {
     Opcode.move: (Operand(A1), Operand(A3)),
     Opcode.add: (Operand(A1), Operand(A2), Operand(A3)),
     Opcode.sub: (Operand(A1), Operand(A2), Operand(A3)),

@@ -38,7 +38,7 @@ def test_asm_missed_label_io() -> None:
         ("halt", 0x99_0000_0000_0000),
     ],
 )
-def test_asm_halt(instruction: str, opcode: int) -> None:
+def test_asm_instruction(instruction: str, opcode: int) -> None:
     cpu = source(
         f".cpu {MODEL}\n.asm 0x100\n"
         "a:.word 0x11223344556677\n"

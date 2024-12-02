@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from enum import Enum
+from typing import TypeVar
 
 import pyparsing as pp
-
-if TYPE_CHECKING:
-    from enum import Enum
-    from typing import Iterator
 
 pp.ParserElement.set_default_whitespace_chars(" \t")
 
@@ -23,10 +20,17 @@ def ngr(expr: pp.ParserElement, name: str) -> pp.ParserElement:
     return pp.Group(expr)(name)
 
 
-def over(parsed: pp.ParseResults, name: Enum) -> Iterator[pp.ParseResults]:
+T = TypeVar("T", bound=Enum)
+
+
+def group_by_name(
+    parsed: pp.ParseResults, groups: type[T]
+) -> dict[T, list[pp.ParseResults]]:
+    res: dict[T, list[pp.ParseResults]] = {gr: [] for gr in groups}
     for e in parsed:
-        if type(name)(e.get_name()) == name:
-            yield e
+        gr = groups(e.get_name())
+        res[gr].append(e)
+    return res
 
 
 def kw(keyword: str) -> pp.ParserElement:

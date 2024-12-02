@@ -172,42 +172,40 @@ class InputOutputUnit:
             for i in range(start, end)
         )
 
-    def load_source(self, code: list[CodeSegment]) -> None:
+    def load_source(self, seg: CodeSegment) -> None:
         """Source code loader."""
-
-        for seg in code:
-            for c in seg.code:
-                if c not in ACCEPTED_CHARS:
-                    msg = f"Unexpected source: {seg.code}, expected hex code"
-                    raise SystemExit(msg)
-
-            word_hex = self._ram.word_bits // 4
-
-            if len(seg.code) % word_hex != 0:
-                msg = (
-                    f"Unexpected length of source code: {len(seg.code)}"
-                    f" hex should be divided by ram word size={word_hex}"
-                )
+        for c in seg.code:
+            if c not in ACCEPTED_CHARS:
+                msg = f"Unexpected source: {seg.code}, expected hex code"
                 raise SystemExit(msg)
 
-            if len(seg.code) // word_hex > self._ram.memory_size:
-                msg = (
-                    f"Too long source code: {len(seg.code)}"
-                    f" hex should be less than ram words={self._ram.memory_size}"
-                )
+        word_hex = self._ram.word_bits // 4
+
+        if len(seg.code) % word_hex != 0:
+            msg = (
+                f"Unexpected length of source code: {len(seg.code)}"
+                f" hex should be divided by ram word size={word_hex}"
+            )
+            raise SystemExit(msg)
+
+        if len(seg.code) // word_hex > self._ram.memory_size:
+            msg = (
+                f"Too long source code: {len(seg.code)}"
+                f" hex should be less than ram words={self._ram.memory_size}"
+            )
+            raise SystemExit(msg)
+
+        for i in range(0, len(seg.code), word_hex):
+            address = Cell(
+                seg.address + i // word_hex, bits=self._ram.address_bits
+            )
+
+            if self._ram.is_fill(address):
+                msg = f".code directives overlaps at address {address}"
                 raise SystemExit(msg)
 
-            for i in range(0, len(seg.code), word_hex):
-                address = Cell(
-                    seg.address + i // word_hex, bits=self._ram.address_bits
-                )
-
-                if self._ram.is_fill(address):
-                    msg = f".code directives overlaps at address {address}"
-                    raise SystemExit(msg)
-
-                self._ram.put(
-                    address=address,
-                    value=Cell.from_hex(seg.code[i : i + word_hex]),
-                    from_cpu=False,
-                )
+            self._ram.put(
+                address=address,
+                value=Cell.from_hex(seg.code[i : i + word_hex]),
+                from_cpu=False,
+            )

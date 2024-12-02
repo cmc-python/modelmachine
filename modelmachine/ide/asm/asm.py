@@ -8,40 +8,18 @@ import pyparsing as pp
 from pyparsing import Group as Gr
 
 from ...cell import Cell
-from ...cu.control_unit_0 import ControlUnit0
-from ...cu.control_unit_1 import ControlUnit1
-from ...cu.control_unit_2 import ControlUnit2
-from ...cu.control_unit_3 import ControlUnit3
-from ...cu.control_unit_m import ControlUnitM
-from ...cu.control_unit_r import ControlUnitR
-from ...cu.control_unit_s import ControlUnitS
-from ...cu.control_unit_v import ControlUnitV
 from ...cu.opcode import OPCODE_BITS
-from ...io.code_segment import CodeSegment
 from ..common_parsing import ch, integer, kw, line_seq
-from .mm3 import MM3_OPCODE_TABLE
-from .segment import Segment
+from .opcode_table import OPCODE_TABLE
 from .undefined_label_error import UndefinedLabelError
 
 if TYPE_CHECKING:
-    from typing import Final, Iterator, Sequence
+    from typing import Final, Sequence
 
     from ...cpu.cpu import Cpu
     from ...cu.control_unit import ControlUnit
     from ...cu.opcode import CommonOpcode
     from .operand import Operand
-
-
-OPCODE_TABLE: Final = {
-    ControlUnit0: {},
-    ControlUnit1: {},
-    ControlUnit2: {},
-    ControlUnit3: MM3_OPCODE_TABLE,
-    ControlUnitM: {},
-    ControlUnitR: {},
-    ControlUnitS: {},
-    ControlUnitV: {},
-}
 
 
 @dataclass(frozen=True)
@@ -81,13 +59,11 @@ def asmlang(control_unit: type[ControlUnit]) -> pp.ParserElement:
 
 class Asm:
     _cpu: Final[Cpu]
-    _labels: dict[Label, int]
-    _segments: list[Segment]
+    _labels: dict[Label, Cell]
 
     def __init__(self, cpu: Cpu):
         self._cpu = cpu
         self._labels = {}
-        self._segments = []
 
     def resolve(self, label: Label) -> int:
         address = self._labels.get(label)
@@ -95,35 +71,33 @@ class Asm:
             msg = f"Undefined label '{label.name}'"
             raise UndefinedLabelError(msg)
 
-        return address
+        return address.unsigned
 
     def parse(self, address: int, code: pp.ParseResults) -> None:
-        cur_addr = address
-        res = []
+        cur_addr = Cell(address, bits=self._cpu.ram.address_bits)
         for cmd in code:
             cmd_name = Cmd(cmd.get_name())
             if cmd_name == Cmd.word:
                 for x in cmd:
-                    res.append(Cell(x, bits=self._cpu.ram.word_bits))
-                    cur_addr += 1
+                    cur_addr += self._cpu.ram.put(
+                        address=cur_addr,
+                        value=Cell(x, bits=self._cpu.ram.word_bits),
+                    )
             elif cmd_name == Cmd.label:
                 lbl = cmd[0]
                 self._labels[lbl] = cur_addr
             elif cmd_name == Cmd.instruction:
                 op = cmd[0]
                 instr_bits = self._cpu.control_unit.instruction_bits(op)
-                res.append(
-                    Cell(
+                cur_addr += self._cpu.ram.put(
+                    address=cur_addr,
+                    value=Cell(
                         int(op) << (instr_bits - OPCODE_BITS), bits=instr_bits
-                    )
+                    ),
                 )
-                cur_addr += instr_bits // self._cpu.ram.word_bits
             else:
                 msg = f"Unknown asm command: {cmd.get_name()}"
                 raise NotImplementedError(msg)
 
-        self._segments.append(Segment(address, res))
-
-    def link(self) -> Iterator[CodeSegment]:
-        for seg in self._segments:
-            yield CodeSegment(seg.address, "".join(c.hex() for c in seg.code))
+    def link(self) -> None:
+        pass

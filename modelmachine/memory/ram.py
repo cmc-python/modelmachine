@@ -194,10 +194,11 @@ class RandomAccessMemory:
 
     def put(
         self, *, address: Cell, value: Cell, from_cpu: bool = True
-    ) -> None:
+    ) -> Cell:
         """Put size bits by address.
 
         Size must be divisible by self.word_bits.
+        Returns count of written cells.
         """
         assert value.bits % self.word_bits == 0
         words = value.bits // self.word_bits
@@ -214,3 +215,5 @@ class RandomAccessMemory:
         enc_value = value.encode(bits=self.word_bits, endianess=self.endianess)
         for i, v in enumerate(enc_value):
             self[address + Cell(i, bits=self.address_bits)] = v
+
+        return Cell(len(enc_value), bits=self.address_bits)
