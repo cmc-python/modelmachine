@@ -38,8 +38,8 @@ comment = pp.Regex(";.*")
 last_nl = pp.Char("\n")
 
 
-@last_nl.set_parse_action
-def save_loc(loc: int, res: pp.ParseResults) -> None:
+@last_nl.add_parse_action
+def save_last_ln(loc: int, res: pp.ParseResults) -> None:
     res.clear()  # type: ignore[no-untyped-call]
     res["last_nl"] = loc
 
@@ -159,7 +159,7 @@ def source(
 
     for asm_dir in parsed_program[Directive.asm]:
         address = asm_dir[0][0] if asm_dir[0] else 0
-        asm.parse(address, asm_dir[1])
+        asm.parse(inp, address, asm_dir[1])
 
     asm.link()
 

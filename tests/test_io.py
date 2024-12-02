@@ -70,6 +70,15 @@ class TestIODevice:
         assert self.ram.fetch(Cell(12, bits=AB), bits=WB) == 0x1015
         assert self.ram.fetch(Cell(13, bits=AB), bits=WB) == 0x3264
 
+    def test_check_word(self) -> None:
+        self.io_unit.check_word((1 << 16) - 1)
+        with pytest.raises(ValueError, match="Input value is too long"):
+            self.io_unit.check_word(1 << 16)
+
+        self.io_unit.check_word(-(1 << 15))
+        with pytest.raises(ValueError, match="Input value is too long"):
+            self.io_unit.check_word(-(1 << 15) - 1)
+
     def test_load_source_parse_error(self) -> None:
         with pytest.raises(SystemExit, match="Unexpected source"):
             self.io_unit.load_source(0, "hello")

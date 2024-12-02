@@ -12,6 +12,7 @@ from pyparsing import Group as Gr
 from pyparsing import Word as Wd
 
 from .__about__ import __version__
+from .ide.common_parsing import ignore
 from .ide.debug import debug as ide_debug
 from .ide.source import source
 from .ide.user_config import user_config
@@ -29,18 +30,13 @@ class Param:
     help: str
 
 
-def ignore() -> list[pp.ParseResults]:
-    return []
-
-
-pp.ParserElement.set_default_whitespace_chars(" \t")
 SKIP_SHORT = 2
 param = (
     Wd(pp.alphas, pp.alphanums + "_")
-    + (Li(", ").set_parse_action(ignore) + Gr("-" + pp.Char(pp.alphas)))[0, 1]
-    + Li("--").set_parse_action(ignore)
+    + (Li(", ").add_parse_action(ignore) + Gr("-" + pp.Char(pp.alphas)))[0, 1]
+    + Li("--").add_parse_action(ignore)
     + Wd(pp.alphanums, pp.printables + " \t")
-).set_parse_action(
+).add_parse_action(
     lambda t: [
         Param(
             name=t[0],

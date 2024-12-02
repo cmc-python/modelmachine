@@ -8,11 +8,16 @@ AB = 16
 WB = 3 * 8
 
 
-def test_asm_data() -> None:
+def test_asm_word() -> None:
     cpu = source(".cpu mm-1\n.asm 0x100\na: .word 10\nb: c: .word -0x20, 0x30")
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 10
     assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == -0x20
     assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 0x30
+
+
+def test_asm_word_too_long() -> None:
+    with pytest.raises(SystemExit, match="Too long literal"):
+        source(".cpu mm-1\n.asm\n.word 0x112233445566778899")
 
 
 def test_asm_io() -> None:

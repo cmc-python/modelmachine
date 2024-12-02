@@ -13,7 +13,7 @@ def ignore() -> list[pp.ParseResults]:
 
 
 def ngr(expr: pp.ParserElement, name: str) -> pp.ParserElement:
-    @expr.set_parse_action
+    @expr.add_parse_action
     def save_loc(loc: int, r: pp.ParseResults) -> None:
         r["loc"] = loc
 
@@ -34,24 +34,24 @@ def group_by_name(
 
 
 def kw(keyword: str) -> pp.ParserElement:
-    return pp.CaselessKeyword(keyword).set_parse_action(ignore)
+    return pp.CaselessKeyword(keyword).add_parse_action(ignore)
 
 
 def ch(c: str) -> pp.ParserElement:
-    return pp.Char(c).set_parse_action(ignore)
+    return pp.Char(c).add_parse_action(ignore)
 
 
 string = pp.Word(pp.printables + " \t")
 hexnums = pp.nums + "abcdefABCDEF"
-nl = pp.Char("\n").set_parse_action(ignore)
+nl = pp.Char("\n").add_parse_action(ignore)
 
 decinteger = pp.Word(pp.nums, "_" + pp.nums)
 hexinteger = "0x" + pp.Word(hexnums, "_" + hexnums)
-posinteger = (decinteger ^ hexinteger).set_parse_action(
+posinteger = (decinteger ^ hexinteger).add_parse_action(
     lambda t: [int("".join(t), 0)]
 )
 
-integer = (pp.Opt("-") + (decinteger ^ hexinteger)).set_parse_action(
+integer = (pp.Opt("-") + (decinteger ^ hexinteger)).add_parse_action(
     lambda t: int("".join(t), 0)
 )
 

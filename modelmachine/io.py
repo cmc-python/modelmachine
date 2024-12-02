@@ -46,7 +46,7 @@ class InputOutputUnit:
         self._min_v = -(1 << (io_bits - 1))
         self._max_v = 1 << io_bits
 
-    def _check_word(self, word: int) -> int:
+    def check_word(self, word: int) -> int:
         if not (self._min_v <= word < self._max_v):
             msg = (
                 f"Input value is too long: {word}; expected interval is"
@@ -89,7 +89,7 @@ class InputOutputUnit:
         while value is None:
             try:
                 value_str = prompt(f"{message} = ", file=file)
-                value = self._check_word(int(value_str, 0))
+                value = self.check_word(int(value_str, 0))
 
             except ValueError as e:
                 print_exc()
@@ -99,7 +99,7 @@ class InputOutputUnit:
                 else:
                     raise SystemExit(msg) from e
 
-        self._check_word(value)
+        self.check_word(value)
 
         self._ram.put(
             address=addr,
