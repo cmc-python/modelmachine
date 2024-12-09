@@ -19,6 +19,6 @@ addr r0, two
 store r0, a
 addr rf, four
 store rf, b
-addr ra, two(rf)
+addr ra, two[rf]
 store ra, c
 halt

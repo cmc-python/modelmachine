@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import pyparsing as pp
 import pytest
 
 from modelmachine.cell import Cell
@@ -36,6 +39,7 @@ def test_asm_missed_label_io() -> None:
     ("instruction", "opcode"),
     [
         ("halt", 0x99_0000_0000_0000),
+        ("add 100, 0x1234, 0x5678", 0x01_0064_1234_5678),
     ],
 )
 def test_asm_instruction(instruction: str, opcode: int) -> None:
@@ -50,3 +54,26 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
     assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == 2
     assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 3
     assert cpu.ram.fetch(Cell(0x103, bits=AB), bits=WB) == opcode
+
+
+@pytest.mark.parametrize(
+    ("instruction", "exception", "match"),
+    [
+        ("add 100, 0x111234, 0x5678", ValueError, "Address is too long"),
+        ("add 100, 0x111234", pp.ParseSyntaxException, r"Expected \(,\)"),
+        ("add 100", pp.ParseSyntaxException, r"Expected \(,\)"),
+        ("halt 100", pp.ParseSyntaxException, r"Expected \(\n\)"),
+    ],
+)
+def test_asm_failed(
+    instruction: str, exception: type[Exception], match: str
+) -> None:
+    with pytest.raises(exception, match=match):
+        source(
+            f".cpu {MODEL}\n.asm 0x100\n"
+            "a:.word 0x11223344556677\n"
+            "b:.word 2\n"
+            "c:.word 3\n"
+            f"{instruction}\n"
+            "halt\n"
+        )

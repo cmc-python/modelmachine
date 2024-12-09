@@ -13,7 +13,7 @@ import pyparsing as pp
 from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
-from ..cell import Cell
+from ..cell import Cell, ceil_div
 from ..cu.opcode import OPCODE_BITS, CommonOpcode
 from ..cu.status import Status
 from ..memory.register import RegisterName
@@ -305,7 +305,7 @@ class Ide:
         for interval in self.cpu.ram.filled_intervals:
             for i in range(
                 interval.start // self.cpu.control_unit.PAGE_SIZE,
-                (interval.stop - 1) // self.cpu.control_unit.PAGE_SIZE + 1,
+                ceil_div(interval.stop, self.cpu.control_unit.PAGE_SIZE),
             ):
                 page_set.add(i)
 

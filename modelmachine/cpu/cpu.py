@@ -43,7 +43,7 @@ class IOReq:
 
 
 class Cpu:
-    """CPU implements load_program, print_result and run_fie."""
+    """CPU implements input, print_result and run_fie."""
 
     name: Final[str]
 
@@ -85,7 +85,7 @@ class Cpu:
             registers=self.registers, ram=self.ram, alu=self._alu
         )
 
-    def load_program(
+    def input(
         self,
         *,
         input_req: Sequence[IOReq],

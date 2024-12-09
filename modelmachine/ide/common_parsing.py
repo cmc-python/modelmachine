@@ -6,6 +6,7 @@ from typing import TypeVar
 import pyparsing as pp
 
 pp.ParserElement.set_default_whitespace_chars(" \t")
+pp.ParserElement.enable_packrat()
 
 
 def ignore() -> list[pp.ParseResults]:

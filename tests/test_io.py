@@ -4,7 +4,7 @@ import io
 
 import pytest
 
-from modelmachine.cell import Cell
+from modelmachine.cell import Cell, Endianess
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory.ram import RandomAccessMemory
 from modelmachine.memory.register import RegisterMemory, RegisterName
@@ -63,12 +63,30 @@ class TestIODevice:
         """Test loading from string."""
         self.io_unit.put_code(
             address=Cell(10, bits=AB),
-            value=Cell(0x01020A0A10153264, bits=4 * WB),
+            value=Cell(0x0123_4567_89AB_CDEF, bits=4 * WB),
         )
-        assert self.ram.fetch(Cell(10, bits=AB), bits=WB) == 0x0102
-        assert self.ram.fetch(Cell(11, bits=AB), bits=WB) == 0x0A0A
-        assert self.ram.fetch(Cell(12, bits=AB), bits=WB) == 0x1015
-        assert self.ram.fetch(Cell(13, bits=AB), bits=WB) == 0x3264
+        assert self.ram.fetch(Cell(10, bits=AB), bits=4 * WB) == Cell(
+            0x0123_4567_89AB_CDEF, bits=4 * WB
+        )
+
+        self.io_unit.override(
+            address=Cell(10, bits=AB),
+            offset_bits=6 * 4,
+            value=Cell(0xA987654, bits=7 * 4),
+        )
+        assert self.ram.fetch(Cell(10, bits=AB), bits=4 * WB) == Cell(
+            0x0123_45A9_8765_4DEF, bits=4 * WB
+        )
+
+        with pytest.raises(NotImplementedError, match="Overriding empty cell"):
+            self.io_unit.override(
+                address=Cell(11, bits=AB),
+                offset_bits=6 * 4,
+                value=Cell(0xA987654, bits=7 * 4),
+            )
+        assert self.ram.fetch(Cell(10, bits=AB), bits=4 * WB) == Cell(
+            0x0123_45A9_8765_4DEF, bits=4 * WB
+        )
 
     def test_check_word(self) -> None:
         self.io_unit.check_word((1 << 16) - 1)
@@ -231,3 +249,42 @@ class TestStackIODevice:
 
         with pytest.raises(SystemExit, match="Unexpected address"):
             self.io_unit.output(address=-1)
+
+
+class TestIOLittleEndian:
+    """Test case for IODevice."""
+
+    ram: RandomAccessMemory
+    io_unit: InputOutputUnit
+
+    def setup_method(self) -> None:
+        """Init state."""
+        self.ram = RandomAccessMemory(
+            address_bits=AB, word_bits=WB, endianess=Endianess.LITTLE
+        )
+        self.registers = RegisterMemory()
+        self.io_unit = InputOutputUnit(
+            ram=self.ram,
+            io_bits=WB,
+            is_stack_io=False,
+            registers=self.registers,
+        )
+
+    def test_put_code(self) -> None:
+        """Test loading from string."""
+        self.io_unit.put_code(
+            address=Cell(10, bits=AB),
+            value=Cell(0x0123_4567_89AB_CDEF, bits=4 * WB),
+        )
+        assert self.ram.fetch(Cell(10, bits=AB), bits=4 * WB) == Cell(
+            0x0123_4567_89AB_CDEF, bits=4 * WB
+        )
+
+        self.io_unit.override(
+            address=Cell(10, bits=AB),
+            offset_bits=6 * 4,
+            value=Cell(0xA987654, bits=7 * 4),
+        )
+        assert self.ram.fetch(Cell(10, bits=AB), bits=4 * WB) == Cell(
+            0x012A_9876_54AB_CDEF, bits=4 * WB
+        )

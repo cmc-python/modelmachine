@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from enum import Enum
 from io import StringIO
-from typing import TYPE_CHECKING, TextIO
+from typing import TextIO
 
 import pyparsing as pp
 from pyparsing import Group as Gr
 
 from ..cpu.cpu import CU_MAP, Cpu, IOReq
-from .asm.asm import Asm, Label, asmlang, label
+from .asm.asm import Asm, Label, label
 from .asm.undefined_label_error import UndefinedLabelError
 from .common_parsing import (
     group_by_name,
@@ -20,9 +20,6 @@ from .common_parsing import (
     posinteger,
     string,
 )
-
-if TYPE_CHECKING:
-    from ..cu.control_unit import ControlUnit
 
 
 class Directive(Enum):
@@ -75,12 +72,9 @@ coded = ngr(
 one_line_directive = inputd | outputd | enterd
 
 
-def language(control_unit: type[ControlUnit]) -> pp.ParserElement:
+def language(asm: Asm) -> pp.ParserElement:
     asmd = ngr(
-        kw(Directive.asm.value)
-        - Gr(posinteger[0, 1])
-        - nl
-        - Gr(asmlang(control_unit)),
+        kw(Directive.asm.value) - Gr(posinteger[0, 1]) - nl - Gr(asm.lang()),
         Directive.asm.value,
     )
     multi_line_directive = coded | asmd
@@ -130,9 +124,14 @@ def source(
         "\n" * (inp[: cpu_dir["last_nl"] + 1].count("\n"))
         + inp[cpu_dir["last_nl"] + 1 :]
     )
+    cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
+    asm = Asm(cpu)
+    input_req: list[IOReq] = []
+    output_req: list[IOReq] = []
+    enter_text = ""
 
     parsed_program = group_by_name(
-        language(control_unit).parse_string(inp, parse_all=True),
+        language(asm).parse_string(inp, parse_all=True),
         Directive,
     )
 
@@ -145,13 +144,6 @@ def source(
             f"or {Directive.asm.value} directive"
         )
         raise SystemExit(msg)
-
-    cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
-    asm = Asm(cpu)
-
-    input_req: list[IOReq] = []
-    output_req: list[IOReq] = []
-    enter_text = ""
 
     for code_dir in parsed_program[Directive.code]:
         address = code_dir[0][0] if code_dir[0] else 0
@@ -175,7 +167,7 @@ def source(
     if enter is None:
         enter = StringIO(enter_text)
 
-    cpu.load_program(
+    cpu.input(
         input_req=input_req,
         output_req=output_req,
         file=enter,

@@ -6,7 +6,7 @@ import sys
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
-from .cell import Cell
+from .cell import Cell, Endianess, ceil_div
 from .memory.register import RegisterName
 from .prompt.prompt import printf, prompt
 
@@ -215,3 +215,35 @@ class InputOutputUnit:
                 raise SystemExit(msg)
 
         return self._ram.put(address=address, value=value)
+
+    def override(
+        self, *, address: Cell, offset_bits: int, value: Cell
+    ) -> None:
+        word_count = ceil_div(offset_bits + value.bits, self._ram.word_bits)
+        val_end = word_count * self._ram.word_bits
+        if self._ram.endianess is Endianess.BIG:
+            end = val_end - offset_bits
+            start = end - value.bits
+        else:
+            start = offset_bits
+            end = start + value.bits
+
+        for i in range(word_count):
+            a = address + Cell(i, bits=self._ram.address_bits)
+            if not self._ram.is_fill(a):
+                msg = (
+                    f"Overriding empty cell at address {a}; "
+                    f"{address=} {offset_bits=} {value=}"
+                )
+                raise NotImplementedError(msg)
+
+        val = self._ram.fetch(address, bits=val_end, from_cpu=False)
+        val = Cell.from_bits(
+            [
+                value[i - start].unsigned
+                if start <= i < end
+                else val[i].unsigned
+                for i in range(val_end)
+            ]
+        )
+        self._ram.put(address=address, value=val, from_cpu=False)

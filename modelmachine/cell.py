@@ -15,6 +15,12 @@ class Endianess(IntEnum):
     LITTLE = 1
 
 
+def ceil_div(a: int, b: int) -> int:
+    assert a >= 0
+    assert b >= 0
+    return (a - 1) // b + 1
+
+
 def div_to_zero(a: int, b: int) -> int:
     """Simplified version of div"""
     res = abs(a) // abs(b)
@@ -148,7 +154,7 @@ class Cell:
         raise NotImplementedError
 
     @classmethod
-    def _from_bits(cls, bits: list[int]) -> Cell:
+    def from_bits(cls, bits: list[int]) -> Cell:
         value = 0
         for i, part in enumerate(bits):
             assert 0 <= part <= 1
