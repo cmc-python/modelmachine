@@ -1,9 +1,9 @@
 from io import StringIO
 
-import pyparsing as pp
 import pytest
 
 from modelmachine.cell import Cell
+from modelmachine.ide.common_parsing import ParsingError
 from modelmachine.ide.source import source
 
 AB = 16
@@ -85,9 +85,7 @@ def test_wrong_enter() -> None:
 
 
 def test_missed_cpu() -> None:
-    with pytest.raises(
-        pp.ParseSyntaxException, match="Expected CaselessKeyword '.cpu'"
-    ):
+    with pytest.raises(ParsingError, match="Expected CaselessKeyword '.cpu'"):
         source(".code\n99 0000")
 
 

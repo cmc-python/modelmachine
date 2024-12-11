@@ -32,6 +32,7 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
         (samples / "mm-m_sum_of_squares.mmach", "355\n"),
         (samples / "mm-r_max_of_3.mmach", "32\n"),
         (samples / "mm-3_add.mmach", "4466\n"),
+        (samples / "mm-3_asm_add.mmach", "4466\n"),
         (samples / "mm-3_jump.mmach", "83872\n"),
         (samples / "mm-3_max_of_2.mmach", "21\n"),
         (samples / "mm-3_denominator.mmach", "0\n"),

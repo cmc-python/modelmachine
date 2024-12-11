@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-import pyparsing as pp
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.ide.asm.undefined_label_error import UndefinedLabelError
+from modelmachine.ide.asm.errors import (
+    DuplicateLabelError,
+    UndefinedLabelError,
+)
+from modelmachine.ide.common_parsing import ParsingError
 from modelmachine.ide.source import source
 
 AB = 16
@@ -38,8 +41,27 @@ def test_asm_missed_label_io() -> None:
 @pytest.mark.parametrize(
     ("instruction", "opcode"),
     [
-        ("halt", 0x99_0000_0000_0000),
         ("add 100, 0x1234, 0x5678", 0x01_0064_1234_5678),
+        ("add 100, 0x1234, c", 0x01_0064_1234_0102),
+        ("move a, b", 0x00_0100_0000_0101),
+        ("add a, b, c", 0x01_0100_0101_0102),
+        ("sub a, b, c", 0x02_0100_0101_0102),
+        ("smul a, b, c", 0x03_0100_0101_0102),
+        ("sdiv a, b, c", 0x04_0100_0101_0102),
+        ("umul a, b, c", 0x13_0100_0101_0102),
+        ("udiv a, b, c", 0x14_0100_0101_0102),
+        ("jump a", 0x80_0000_0000_0100),
+        ("jeq a, b, c", 0x81_0100_0101_0102),
+        ("jneq a, b, c", 0x82_0100_0101_0102),
+        ("sjl a, b, c", 0x83_0100_0101_0102),
+        ("sjgeq a, b, c", 0x84_0100_0101_0102),
+        ("sjleq a, b, c", 0x85_0100_0101_0102),
+        ("sjg a, b, c", 0x86_0100_0101_0102),
+        ("ujl a, b, c", 0x93_0100_0101_0102),
+        ("ujgeq a, b, c", 0x94_0100_0101_0102),
+        ("ujleq a, b, c", 0x95_0100_0101_0102),
+        ("ujg a, b, c", 0x96_0100_0101_0102),
+        ("halt", 0x99_0000_0000_0000),
     ],
 )
 def test_asm_instruction(instruction: str, opcode: int) -> None:
@@ -59,13 +81,17 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
 @pytest.mark.parametrize(
     ("instruction", "exception", "match"),
     [
+        ("a:.word 0", DuplicateLabelError, "Duplicate label"),
+        ("add unk_label, 100, 0x1234", UndefinedLabelError, "Undefined label"),
+        ("add 100, unk_label, 0x1234", UndefinedLabelError, "Undefined label"),
+        ("add 100, 0x1234, unk_label", UndefinedLabelError, "Undefined label"),
         ("add 100, 0x111234, 0x5678", ValueError, "Address is too long"),
-        ("add 100, 0x111234", pp.ParseSyntaxException, r"Expected \(,\)"),
-        ("add 100", pp.ParseSyntaxException, r"Expected \(,\)"),
-        ("halt 100", pp.ParseSyntaxException, r"Expected \(\n\)"),
+        ("add 100, 0x111234", ParsingError, r"Expected \(,\)"),
+        ("add 100", ParsingError, r"Expected \(,\)"),
+        ("halt 100", ParsingError, r"Expected \(end of line\)"),
     ],
 )
-def test_asm_failed(
+def test_asm_fail(
     instruction: str, exception: type[Exception], match: str
 ) -> None:
     with pytest.raises(exception, match=match):

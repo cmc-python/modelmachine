@@ -9,8 +9,9 @@ from pyparsing import Group as Gr
 
 from ..cpu.cpu import CU_MAP, Cpu, IOReq
 from .asm.asm import Asm, Label, label
-from .asm.undefined_label_error import UndefinedLabelError
 from .common_parsing import (
+    ParsingError,
+    ct,
     group_by_name,
     hexnums,
     kw,
@@ -92,22 +93,15 @@ def parse_io_dir(
 
     for address in io_dir[0]:
         msg = message
+        addr = address
         if isinstance(address, Label):
             if msg is None:
                 msg = address.name
 
-            try:
-                address = asm.resolve(address)  # noqa: PLW2901
-            except UndefinedLabelError as e:
-                loc = io_dir["loc"]
-                msg = (
-                    f"Undefined label '{address.name}' in io directive"
-                    f" {pp.lineno(loc, inp)}:{pp.col(loc, inp)} "
-                    f"'{pp.line(loc, inp)}'"
-                )
-                raise UndefinedLabelError(msg) from e
+            loc = io_dir["loc"]
+            addr = asm.resolve(inp, loc, address)
 
-        io_req.append(IOReq(address, message))
+        io_req.append(IOReq(addr, msg))
 
 
 def source(
@@ -117,60 +111,65 @@ def source(
     enter: TextIO | None = None,
 ) -> Cpu:
     inp += "\n"
-    cpu_dir = cpud.parse_string(inp)
-    cpu_name = cpu_dir[0]
-    control_unit = CU_MAP[cpu_name]
-    inp = (
-        "\n" * (inp[: cpu_dir["last_nl"] + 1].count("\n"))
-        + inp[cpu_dir["last_nl"] + 1 :]
-    )
-    cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
-    asm = Asm(cpu)
-    input_req: list[IOReq] = []
-    output_req: list[IOReq] = []
-    enter_text = ""
-
-    parsed_program = group_by_name(
-        language(asm).parse_string(inp, parse_all=True),
-        Directive,
-    )
-
-    if (
-        not parsed_program[Directive.code]
-        and not parsed_program[Directive.asm]
-    ):
-        msg = (
-            f"Missed required {Directive.code.value} "
-            f"or {Directive.asm.value} directive"
+    try:
+        cpu_dir = cpud.parse_string(inp)
+        cpu_name = cpu_dir[0]
+        control_unit = CU_MAP[cpu_name]
+        inp = (
+            "\n" * (inp[: cpu_dir["last_nl"] + 1].count("\n"))
+            + inp[cpu_dir["last_nl"] + 1 :]
         )
-        raise SystemExit(msg)
+        cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
+        asm = Asm(cpu)
+        input_req: list[IOReq] = []
+        output_req: list[IOReq] = []
+        enter_text = ""
 
-    for code_dir in parsed_program[Directive.code]:
-        address = code_dir[0][0] if code_dir[0] else 0
-        cpu._io_unit.load_source(address, "".join(code_dir[1]))  # noqa: SLF001
+        parsed_program = group_by_name(
+            language(asm).parse_string(inp, parse_all=True),
+            Directive,
+        )
 
-    for asm_dir in parsed_program[Directive.asm]:
-        address = asm_dir[0][0] if asm_dir[0] else 0
-        asm.parse(inp, address, asm_dir[1])
+        if (
+            not parsed_program[Directive.code]
+            and not parsed_program[Directive.asm]
+        ):
+            msg = (
+                f"Missed required {Directive.code.value} "
+                f"or {Directive.asm.value} directive"
+            )
+            raise ParsingError(msg)
 
-    asm.link()
+        for code_dir in parsed_program[Directive.code]:
+            address = code_dir[0][0] if code_dir[0] else 0
+            cpu._io_unit.load_source(address, "".join(code_dir[1]))  # noqa: SLF001
 
-    for input_dir in parsed_program[Directive.input]:
-        parse_io_dir(inp, input_dir, asm, input_req)
+        for asm_dir in parsed_program[Directive.asm]:
+            address = asm_dir[0][0] if asm_dir[0] else 0
+            asm.parse(inp, address, asm_dir[1])
 
-    for output_dir in parsed_program[Directive.output]:
-        parse_io_dir(inp, output_dir, asm, output_req)
+        asm.link()
 
-    for enter_dir in parsed_program[Directive.enter]:
-        enter_text += f" {remove_comment(enter_dir[0])}"
+        for input_dir in parsed_program[Directive.input]:
+            parse_io_dir(inp, input_dir, asm, input_req)
 
-    if enter is None:
-        enter = StringIO(enter_text)
+        for output_dir in parsed_program[Directive.output]:
+            parse_io_dir(inp, output_dir, asm, output_req)
 
-    cpu.input(
-        input_req=input_req,
-        output_req=output_req,
-        file=enter,
-    )
+        for enter_dir in parsed_program[Directive.enter]:
+            enter_text += f" {remove_comment(enter_dir[0])}"
 
-    return cpu
+        if enter is None:
+            enter = StringIO(enter_text)
+
+        cpu.input(
+            input_req=input_req,
+            output_req=output_req,
+            file=enter,
+        )
+
+        return cpu  # noqa: TRY300
+    except pp.ParseSyntaxException as exc:
+        msg = exc.msg.replace("\n", r"end of line")
+        msg = f"{msg} {ct(inp, exc.loc)}"
+        raise ParsingError(msg) from exc

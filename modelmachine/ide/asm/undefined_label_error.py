@@ -1,2 +1,0 @@
-class UndefinedLabelError(KeyError):
-    pass

@@ -65,3 +65,14 @@ def line_seq(
     res = ((one_line[0, 1] + nl) | multi_line)[0, ...]
     assert isinstance(res, pp.ParserElement)
     return res
+
+
+def ct(inp: str, loc: int) -> str:
+    return (
+        f" at {pp.lineno(loc, inp)}:{pp.col(loc, inp)}"
+        f" '{pp.line(loc, inp)}'"
+    )
+
+
+class ParsingError(SystemExit):
+    pass
