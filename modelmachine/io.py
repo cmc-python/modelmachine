@@ -233,7 +233,7 @@ class InputOutputUnit:
             if not self._ram.is_fill(a):
                 msg = (
                     f"Overriding empty cell at address {a}; "
-                    f"{address=} {offset_bits=} {value=}"
+                    f"address={address} offset_bits={offset_bits} value={value}"
                 )
                 raise NotImplementedError(msg)
 
