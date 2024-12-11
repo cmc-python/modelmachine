@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from enum import Enum
 from io import StringIO
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
 
 import pyparsing as pp
 from pyparsing import Group as Gr
 
-from ..cpu.cpu import CU_MAP, Cpu, IOReq
-from .asm.asm import Asm, Label, label
+from modelmachine.cpu.cpu import CU_MAP, Cpu, IOReq
+
+from .asm.asm import Asm, Label, asm_lang, label
 from .common_parsing import (
     ParsingError,
     ct,
@@ -21,6 +22,9 @@ from .common_parsing import (
     posinteger,
     string,
 )
+
+if TYPE_CHECKING:
+    from modelmachine.cu.control_unit import ControlUnit
 
 
 class Directive(Enum):
@@ -73,13 +77,16 @@ coded = ngr(
 one_line_directive = inputd | outputd | enterd
 
 
-def language(asm: Asm) -> pp.ParserElement:
+def language(cu: type[ControlUnit]) -> pp.ParserElement:
     asmd = ngr(
-        kw(Directive.asm.value) - Gr(posinteger[0, 1]) - nl - Gr(asm.lang()),
+        kw(Directive.asm.value) - Gr(posinteger[0, 1]) - nl - Gr(asm_lang(cu)),
         Directive.asm.value,
     )
     multi_line_directive = coded | asmd
     return line_seq(one_line_directive, multi_line_directive).ignore(comment)
+
+
+languages = {cu: language(cu) for cu in CU_MAP.values()}
 
 
 def remove_comment(line: str) -> str:
@@ -126,7 +133,7 @@ def source(
         enter_text = ""
 
         parsed_program = group_by_name(
-            language(asm).parse_string(inp, parse_all=True),
+            languages[control_unit].parse_string(inp, parse_all=True),
             Directive,
         )
 

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from typing import Final, Sequence
 
     from modelmachine.cpu.cpu import Cpu
+    from modelmachine.cu.control_unit import ControlUnit
     from modelmachine.cu.opcode import CommonOpcode
     from modelmachine.io import InputOutputUnit
 
@@ -71,6 +72,15 @@ def instruction(
     return ngr(op, Cmd.instruction.value)
 
 
+def asm_lang(cu: type[ControlUnit]) -> pp.ParserElement:
+    instr = pp.MatchFirst(
+        instruction(opcode, operands)
+        for opcode, operands in OPCODE_TABLE[cu].items()
+    )
+    line = label_declare + (word | instr)[0, 1]
+    return line_seq(line)
+
+
 class Asm:
     _opcode_table: Final[dict[CommonOpcode, Sequence[Operand]]]
     _cpu: Final[Cpu]
@@ -86,14 +96,6 @@ class Asm:
         self._labels = {}
         self._refs = []
         self._cur_addr = Cell(0, bits=self._cpu.ram.address_bits)
-
-    def lang(self) -> pp.ParserElement:
-        instr = pp.MatchFirst(
-            instruction(opcode, operands)
-            for opcode, operands in self._opcode_table.items()
-        )
-        line = label_declare + (word | instr)[0, 1]
-        return line_seq(line)
 
     def address(
         self, inp: str, loc: int, _instr_addr: Cell, decl: Operand, arg: int
