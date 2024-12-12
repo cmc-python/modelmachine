@@ -11,6 +11,7 @@ from modelmachine.cli import load_cpu
 samples = Path(__file__).parent.parent.resolve() / "samples"
 
 
+# FIXME: more tests with parameters
 @pytest.mark.parametrize(
     ("sample", "enter", "output"),
     [
@@ -180,7 +181,7 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
 )
 def test_sample(sample: Path, enter: str, output: str) -> None:
     if enter != "":
-        with StringIO(enter) as fin:
+        with StringIO(enter) as fin:  # FIXME: this is aufull
             cpu = load_cpu(str(sample), protect_memory=False, enter=fin)
     else:
         cpu = load_cpu(str(sample), protect_memory=False, enter=None)

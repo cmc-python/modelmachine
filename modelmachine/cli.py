@@ -217,6 +217,7 @@ def debug(
     return ide_debug(cpu=cpu, colors=colors)
 
 
+# FIXME: implement asm command
 # @cli
 # def asm(*, input_file: str, output_file: str) -> int:
 #     """Assemble program.

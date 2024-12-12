@@ -139,7 +139,7 @@ class Asm:
                         label=arg,
                     )
                 )
-            else:
+            else:  # FIXME: forbid inplace const
                 assert isinstance(arg, int)
                 addr = self.address(inp, loc, instr_addr, decl, arg)
                 self._io.override(

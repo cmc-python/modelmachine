@@ -110,6 +110,7 @@ def parse_io_dir(
         io_req.append(IOReq(addr, msg))
 
 
+# FIXME: return meta (io, enter, segments, opcode info) instead of input inplace
 def source(
     inp: str,
     *,
