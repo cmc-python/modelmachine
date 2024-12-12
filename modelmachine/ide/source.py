@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from functools import lru_cache
 from io import StringIO
 from typing import TYPE_CHECKING, TextIO
 
@@ -77,6 +78,7 @@ coded = ngr(
 one_line_directive = inputd | outputd | enterd
 
 
+@lru_cache()
 def language(cu: type[ControlUnit]) -> pp.ParserElement:
     asmd = ngr(
         kw(Directive.asm.value) - Gr(posinteger[0, 1]) - nl - Gr(asm_lang(cu)),
@@ -84,9 +86,6 @@ def language(cu: type[ControlUnit]) -> pp.ParserElement:
     )
     multi_line_directive = coded | asmd
     return line_seq(one_line_directive, multi_line_directive).ignore(comment)
-
-
-languages = {cu: language(cu) for cu in CU_MAP.values()}
 
 
 def remove_comment(line: str) -> str:
@@ -133,7 +132,7 @@ def source(
         enter_text = ""
 
         parsed_program = group_by_name(
-            languages[control_unit].parse_string(inp, parse_all=True),
+            language(control_unit).parse_string(inp, parse_all=True),
             Directive,
         )
 

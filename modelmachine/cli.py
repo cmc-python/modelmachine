@@ -4,6 +4,7 @@ import argparse
 import inspect
 import sys
 from dataclasses import dataclass
+from io import StringIO
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
@@ -140,7 +141,7 @@ cli = Cli(f"Modelmachine {__version__}")
 
 
 def load_cpu(
-    filename: str, *, protect_memory: bool, enter: str | None = None
+    filename: str, *, protect_memory: bool, enter: StringIO | str | None = None
 ) -> Cpu:
     if not protect_memory:
         protect_memory = user_config().get("protect_memory", False)
@@ -152,6 +153,8 @@ def load_cpu(
         with open(filename) as fin:
             source_code = fin.read()
 
+    if isinstance(enter, StringIO):
+        return source(source_code, protect_memory=protect_memory, enter=enter)
     if enter is None:
         return source(source_code, protect_memory=protect_memory)
     if enter == "-":

@@ -1,0 +1,26 @@
+.cpu mm-3
+
+.input a, b, c
+.output max
+
+.asm
+sjg a, b, a_greater_b
+sjg c, b, max_c
+move b, max ; 2 mov 101 103
+halt
+max_c:
+move c, max
+halt
+a_greater_b:
+sjg a, c, max_a
+move c, max
+halt
+max_a:
+move a, max
+halt
+a: .word 0
+b: .word 0
+c: .word 0
+max: .word 0
+
+.enter 123 1234 456
