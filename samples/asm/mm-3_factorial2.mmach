@@ -4,12 +4,12 @@
 .output factorial
 
 .asm
-move const_1, factorial
+move c1, factorial
 move N, M
 begin_loop:
-sjleq M, const_1, exit
+sjleq M, c1, exit
 smul factorial, M, factorial
-sub M, const_1, M
+sub M, c1, M
 jump begin_loop
 exit:
 halt
@@ -17,6 +17,6 @@ halt
 N: .word 0
 factorial: .word 0
 M: .word 0
-const_1: .word 1
+c1: .word 1
 
 .enter 6

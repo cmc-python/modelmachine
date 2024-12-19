@@ -52,6 +52,7 @@ class Cmd(Enum):
     word = ".word"
 
 
+# FIXME: local labels
 label = pp.Word(pp.alphas + "_", pp.alphanums + "_").add_parse_action(
     lambda t: Label(t[0])
 )

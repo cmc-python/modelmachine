@@ -4,13 +4,13 @@
 .output factorial
 
 .asm
-move const_1, factorial
+move c1, factorial
 begin_loop:
 smul factorial, N, factorial
-sub N, const_1, N
-sjg N, const_1, begin_loop
+sub N, c1, N
+sjg N, c1, begin_loop
 halt
-const_1: .word 1
+c1: .word 1
 N: .word 0
 factorial: .word 0
 
