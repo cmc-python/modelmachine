@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from itertools import product
-
 import pytest
 
 from modelmachine.cell import Cell
@@ -41,67 +39,53 @@ def test_asm_missed_label_io() -> None:
 
 
 @pytest.mark.parametrize(
-    ("instruction", "operands", "opcode"),
+    ("instruction", "opcode"),
     [
-        ("move", "a, b", 0x00_0100_0000_0101),
-        ("add", "a, b, c", 0x01_0100_0101_0102),
-        ("sub", "a, b, c", 0x02_0100_0101_0102),
-        ("smul", "a, b, c", 0x03_0100_0101_0102),
-        ("sdiv", "a, b, c", 0x04_0100_0101_0102),
-        ("umul", "a, b, c", 0x13_0100_0101_0102),
-        ("udiv", "a, b, c", 0x14_0100_0101_0102),
-        ("jump", "a", 0x80_0000_0000_0100),
-        ("jeq", "a, b, c", 0x81_0100_0101_0102),
-        ("jneq", "a, b, c", 0x82_0100_0101_0102),
-        ("sjl", "a, b, c", 0x83_0100_0101_0102),
-        ("sjgeq", "a, b, c", 0x84_0100_0101_0102),
-        ("sjleq", "a, b, c", 0x85_0100_0101_0102),
-        ("sjg", "a, b, c", 0x86_0100_0101_0102),
-        ("ujl", "a, b, c", 0x93_0100_0101_0102),
-        ("ujgeq", "a, b, c", 0x94_0100_0101_0102),
-        ("ujleq", "a, b, c", 0x95_0100_0101_0102),
-        ("ujg", "a, b, c", 0x96_0100_0101_0102),
-        ("halt", "", 0x99_0000_0000_0000),
+        ("move a, b", 0x00_0100_0000_0101),
+        ("add a, b, c", 0x01_0100_0101_0102),
+        ("sub a, b, c", 0x02_0100_0101_0102),
+        ("smul a, b, c", 0x03_0100_0101_0102),
+        ("sdiv a, b, c", 0x04_0100_0101_0102),
+        ("umul a, b, c", 0x13_0100_0101_0102),
+        ("udiv a, b, c", 0x14_0100_0101_0102),
+        ("jump a", 0x80_0000_0000_0100),
+        ("jeq a, b, c", 0x81_0100_0101_0102),
+        ("jneq a, b, c", 0x82_0100_0101_0102),
+        ("sjl a, b, c", 0x83_0100_0101_0102),
+        ("sjgeq a, b, c", 0x84_0100_0101_0102),
+        ("sjleq a, b, c", 0x85_0100_0101_0102),
+        ("sjg a, b, c", 0x86_0100_0101_0102),
+        ("ujl a, b, c", 0x93_0100_0101_0102),
+        ("ujgeq a, b, c", 0x94_0100_0101_0102),
+        ("ujleq a, b, c", 0x95_0100_0101_0102),
+        ("ujg a, b, c", 0x96_0100_0101_0102),
+        ("halt", 0x99_0000_0000_0000),
     ],
 )
-def test_asm_instruction(instruction: str, operands: str, opcode: int) -> None:
-    oper_table = {
-        "": (("",),),
-        "a": (("a", "0x100", "0x0100"),),
-        "a, b": (
-            ("a", "0x100", "256"),
-            ("b", "0x101", "257"),
-        ),
-        "a, b, c": (
-            ("a", "0x100"),
-            ("b", "0x101"),
-            ("c", "0x102"),
-        ),
-    }
-    for arg in product(*oper_table[operands]):
-        cpu = source(
-            f".cpu {MODEL}\n.asm 0x100\n"
-            "a:.word 0x11223344556677\n"
-            "b:.word 2\n"
-            "c:.word 3\n"
-            f"{instruction} {','.join(arg)}\n"
-        )
-        assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x11223344556677
-        assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == 2
-        assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 3
-        assert cpu.ram.fetch(Cell(0x103, bits=AB), bits=WB) == opcode
+def test_asm_instruction(instruction: str, opcode: int) -> None:
+    cpu = source(
+        f".cpu {MODEL}\n.asm 0x100\n"
+        "a:.word 0x11223344556677\n"
+        "b:.word 2\n"
+        "c:.word 3\n"
+        f"{instruction}\n"
+    )
+    assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x11223344556677
+    assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == 2
+    assert cpu.ram.fetch(Cell(0x102, bits=AB), bits=WB) == 3
+    assert cpu.ram.fetch(Cell(0x103, bits=AB), bits=WB) == opcode
 
 
 @pytest.mark.parametrize(
     ("instruction", "exception", "match"),
     [
         ("a:.word 0", DuplicateLabelError, "Duplicate label"),
-        ("add unk_label, 100, 0x1234", UndefinedLabelError, "Undefined label"),
-        ("add 100, unk_label, 0x1234", UndefinedLabelError, "Undefined label"),
-        ("add 100, 0x1234, unk_label", UndefinedLabelError, "Undefined label"),
-        ("add 100, 0x111234, 0x5678", ValueError, "Address is too long"),
-        ("add 100, 0x111234", ParsingError, r"Expected \(,\)"),
-        ("add 100", ParsingError, r"Expected \(,\)"),
+        ("add unk_label, b, c", UndefinedLabelError, "Undefined label"),
+        ("add a, unk_label, c", UndefinedLabelError, "Undefined label"),
+        ("add a, b, unk_label", UndefinedLabelError, "Undefined label"),
+        # ("add 100, 0x111234, 0x5678", ValueError, "Address is too long"),
+        ("add a, b", ParsingError, r"Expected \(,\)"),
+        ("add a", ParsingError, r"Expected \(,\)"),
         ("halt 100", ParsingError, r"Expected \(end of line\)"),
     ],
 )

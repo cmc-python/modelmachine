@@ -65,10 +65,14 @@ def instruction(
     opcode: CommonOpcode, operands: Sequence[Operand]
 ) -> pp.ParserElement:
     op = pp.CaselessKeyword(opcode._name_).add_parse_action(lambda: opcode)
-    for i, _decl in enumerate(operands):
+    for i, decl in enumerate(operands):
         if i != 0:
             op -= ch(",")
-        op -= integer | label
+
+        if decl.addressing == Addressing.ABSOLUTE:
+            op -= label
+        else:
+            raise NotImplementedError
     op -= pp.FollowedBy(ch("\n"))
     return ngr(op, Cmd.instruction.value)
 
@@ -140,7 +144,7 @@ class Asm:
                         label=arg,
                     )
                 )
-            else:  # FIXME: forbid inplace const
+            else:
                 assert isinstance(arg, int)
                 addr = self.address(inp, loc, instr_addr, decl, arg)
                 self._io.override(
