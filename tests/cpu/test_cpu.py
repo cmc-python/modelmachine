@@ -5,7 +5,7 @@ from io import StringIO
 import pytest
 
 from modelmachine.cu.status import Status
-from modelmachine.ide.source import source
+from modelmachine.ide.load import load_from_string
 
 
 @pytest.mark.parametrize(
@@ -142,7 +142,7 @@ from modelmachine.ide.source import source
     ],
 )
 def test_smoke(code: str) -> None:
-    cpu = source(code)
+    cpu = load_from_string(code)
 
     cpu.control_unit.run()
     assert cpu.control_unit.status is Status.HALTED

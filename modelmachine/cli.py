@@ -4,7 +4,6 @@ import argparse
 import inspect
 import sys
 from dataclasses import dataclass
-from io import StringIO
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
@@ -15,13 +14,10 @@ from pyparsing import Word as Wd
 from .__about__ import __version__
 from .ide.common_parsing import ignore
 from .ide.debug import debug as ide_debug
-from .ide.source import source
-from .ide.user_config import user_config
+from .ide.load import load_from_file
 
 if TYPE_CHECKING:
     from typing import Callable
-
-    from .cpu.cpu import Cpu
 
 
 @dataclass(frozen=True)
@@ -140,32 +136,6 @@ class Cli:
 cli = Cli(f"Modelmachine {__version__}")
 
 
-def load_cpu(
-    filename: str, *, protect_memory: bool, enter: StringIO | str | None = None
-) -> Cpu:
-    if not protect_memory:
-        protect_memory = user_config().get("protect_memory", False)
-        assert isinstance(protect_memory, bool)
-
-    if filename == "-":
-        source_code = sys.stdin.read()
-    else:
-        with open(filename) as fin:
-            source_code = fin.read()
-
-    if isinstance(enter, StringIO):
-        return source(source_code, protect_memory=protect_memory, enter=enter)
-    if enter is None:
-        return source(source_code, protect_memory=protect_memory)
-    if enter == "-":
-        return source(
-            source_code, protect_memory=protect_memory, enter=sys.stdin
-        )
-
-    with open(enter) as fin:
-        return source(source_code, protect_memory=protect_memory, enter=fin)
-
-
 @cli
 def run(
     *,
@@ -183,7 +153,7 @@ def run(
         msg = "Run cannot set both enter and filename to stdin"
         raise ValueError(msg)
 
-    cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
+    cpu = load_from_file(filename, protect_memory=protect_memory, enter=enter)
     cpu.control_unit.run()
     if cpu.control_unit.failed:
         return 1
@@ -212,7 +182,7 @@ def debug(
         msg = "Debug doesn't support loading source from stdin"
         raise NotImplementedError(msg)
 
-    cpu = load_cpu(filename, protect_memory=protect_memory, enter=enter)
+    cpu = load_from_file(filename, protect_memory=protect_memory, enter=enter)
 
     return ide_debug(cpu=cpu, colors=colors)
 

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import lru_cache
-from io import StringIO
-from typing import TYPE_CHECKING, TextIO
+from typing import TYPE_CHECKING
 
 import pyparsing as pp
 from pyparsing import Group as Gr
@@ -110,12 +109,10 @@ def parse_io_dir(
         io_req.append(IOReq(addr, msg))
 
 
-# FIXME: return meta (io, enter, segments, opcode info) instead of input inplace
 def source(
     inp: str,
     *,
-    protect_memory: bool = True,
-    enter: TextIO | None = None,
+    protect_memory: bool,
 ) -> Cpu:
     inp += "\n"
     try:
@@ -128,9 +125,6 @@ def source(
         )
         cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
         asm = Asm(cpu)
-        input_req: list[IOReq] = []
-        output_req: list[IOReq] = []
-        enter_text = ""
 
         parsed_program = group_by_name(
             language(control_unit).parse_string(inp, parse_all=True),
@@ -158,25 +152,17 @@ def source(
         asm.link()
 
         for input_dir in parsed_program[Directive.input]:
-            parse_io_dir(inp, input_dir, asm, input_req)
+            parse_io_dir(inp, input_dir, asm, cpu.input_req)
 
         for output_dir in parsed_program[Directive.output]:
-            parse_io_dir(inp, output_dir, asm, output_req)
+            parse_io_dir(inp, output_dir, asm, cpu.output_req)
 
         for enter_dir in parsed_program[Directive.enter]:
-            enter_text += f" {remove_comment(enter_dir[0])}"
+            cpu.enter += f" {remove_comment(enter_dir[0])}"
 
-        if enter is None:
-            enter = StringIO(enter_text)
-
-        cpu.input(
-            input_req=input_req,
-            output_req=output_req,
-            file=enter,
-        )
-
-        return cpu  # noqa: TRY300
     except pp.ParseSyntaxException as exc:
         msg = exc.msg.replace("\n", r"end of line")
         msg = f"{msg} {ct(inp, exc.loc)}"
         raise ParsingError(msg) from exc
+
+    return cpu

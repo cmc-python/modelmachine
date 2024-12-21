@@ -4,6 +4,7 @@ import pytest
 
 from modelmachine.cell import Cell
 from modelmachine.ide.common_parsing import ParsingError
+from modelmachine.ide.load import load_from_string
 from modelmachine.ide.source import source
 
 AB = 16
@@ -46,13 +47,13 @@ FFFFEB ; -21
     ],
 )
 def test_nl(code: str) -> None:
-    cpu = source(code)
+    cpu = load_from_string(code)
     assert cpu.name == "mm-1"
     assert cpu.ram.fetch(Cell(0x0, bits=AB), bits=WB) == 0x990000
 
 
-def test_source() -> None:
-    cpu = source(example)
+def test_load() -> None:
+    cpu = load_from_string(example)
     assert cpu.name == "mm-1"
     assert cpu.ram.fetch(address=Cell(0, bits=AB), bits=WB) == 0x000100
     assert cpu.ram.fetch(address=Cell(8, bits=AB), bits=WB) == 0x990000
@@ -61,8 +62,7 @@ def test_source() -> None:
 
 
 def test_enter() -> None:
-    with StringIO("  10 20") as fin:
-        cpu = source(example, enter=fin)
+    cpu = load_from_string(example, enter="  10 20")
 
     assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == 10
     assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 20
@@ -71,48 +71,51 @@ def test_enter() -> None:
 def test_repeat_enter() -> None:
     with StringIO("hello\n10\n20") as fin:
         fin.isatty = lambda: True  # type: ignore[method-assign]
-        cpu = source(example, enter=fin)
+        cpu = source(example, protect_memory=True).input(fin)
 
     assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == 10
     assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 20
 
 
 def test_wrong_enter() -> None:
+    cpu = source(example, protect_memory=True)
     with StringIO("hello\n12100") as fin, pytest.raises(
         SystemExit, match="Cannot parse integer"
     ):
-        source(example, enter=fin)
+        cpu.input(fin)
 
 
 def test_missed_cpu() -> None:
     with pytest.raises(ParsingError, match="Expected CaselessKeyword '.cpu'"):
-        source(".code\n99 0000")
+        load_from_string(".code\n99 0000")
 
 
 def test_missed_code() -> None:
     with pytest.raises(SystemExit, match="Missed required .code"):
-        source(".cpu mm-1")
+        load_from_string(".cpu mm-1")
 
 
 def test_double_code() -> None:
     with pytest.raises(SystemExit, match="Code sections overlaps"):
-        source(".cpu mm-1\n.code\n99 0000\n.code\n99 0000")
+        load_from_string(".cpu mm-1\n.code\n99 0000\n.code\n99 0000")
 
 
 def test_enter_too_short() -> None:
     with pytest.raises(SystemExit, match="Not enough elements"):
-        source(
+        load_from_string(
             ".cpu mm-1\n.input 0x100\n.input 0x101\n.enter 10\n.code\n99 0000"
         )
 
 
 def test_enter_too_long() -> None:
     with pytest.raises(SystemExit, match="Too many elements in the input"):
-        source(".cpu mm-1\n.input 0x100\n.enter 10 20\n.code\n99 0000")
+        load_from_string(
+            ".cpu mm-1\n.input 0x100\n.enter 10 20\n.code\n99 0000"
+        )
 
 
 def test_multi_input() -> None:
-    cpu = source(
+    cpu = load_from_string(
         ".cpu mm-3\n.input 0x100, 0x101, 0x102 Enter some data, please\n.code\n99 0000 0000 0000\n.enter 1 2 3"
     )
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=56) == 1
@@ -121,6 +124,6 @@ def test_multi_input() -> None:
 
 
 def test_several_code() -> None:
-    cpu = source(".cpu mm-1\n.code\n01 1234\n.code 0x100\n02 1234")
+    cpu = load_from_string(".cpu mm-1\n.code\n01 1234\n.code 0x100\n02 1234")
     assert cpu.ram.fetch(Cell(0, bits=AB), bits=WB) == 0x011234
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x021234

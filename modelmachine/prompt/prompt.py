@@ -10,6 +10,10 @@ if TYPE_CHECKING:
     from typing import TextIO
 
 
+class NotEnoughInputError(SystemExit):
+    pass
+
+
 def printf(out: str, *, file: TextIO = sys.stdout) -> None:
     if file.isatty():
         print_formatted_text(ANSI(out), file=file)
@@ -36,7 +40,7 @@ def read_word(file: TextIO) -> str:
 
     if res == "":
         msg = "Not enough elements in the input"
-        raise SystemExit(msg)
+        raise NotEnoughInputError(msg)
 
     return res
 

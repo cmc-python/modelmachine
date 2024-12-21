@@ -8,7 +8,7 @@ from modelmachine.ide.asm.errors import (
     UndefinedLabelError,
 )
 from modelmachine.ide.common_parsing import ParsingError
-from modelmachine.ide.source import source
+from modelmachine.ide.load import load_from_string
 
 AB = 16
 WB = 7 * 8
@@ -16,7 +16,7 @@ MODEL = "mm-3"
 
 
 def test_asm_data() -> None:
-    cpu = source(
+    cpu = load_from_string(
         f".cpu {MODEL}\n.asm 0x100\na: .word 10\nb: c: .word -0x20, 0x30"
     )
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 10
@@ -25,7 +25,7 @@ def test_asm_data() -> None:
 
 
 def test_asm_io() -> None:
-    cpu = source(
+    cpu = load_from_string(
         f".cpu {MODEL}\n.asm 0x100\na: .word 0\nb: .word 0\n.input a,b\n"
         ".enter 0x01020304050607 0x11121314151617"
     )
@@ -35,7 +35,7 @@ def test_asm_io() -> None:
 
 def test_asm_missed_label_io() -> None:
     with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
-        source(f".cpu {MODEL}\n.asm\na: .word 10\n.input a,b\n")
+        load_from_string(f".cpu {MODEL}\n.asm\na: .word 10\n.input a,b\n")
 
 
 @pytest.mark.parametrize(
@@ -63,7 +63,7 @@ def test_asm_missed_label_io() -> None:
     ],
 )
 def test_asm_instruction(instruction: str, opcode: int) -> None:
-    cpu = source(
+    cpu = load_from_string(
         f".cpu {MODEL}\n.asm 0x100\n"
         "a:.word 0x11223344556677\n"
         "b:.word 2\n"
@@ -93,7 +93,7 @@ def test_asm_fail(
     instruction: str, exception: type[Exception], match: str
 ) -> None:
     with pytest.raises(exception, match=match):
-        source(
+        load_from_string(
             f".cpu {MODEL}\n.asm 0x100\n"
             "a:.word 0x11223344556677\n"
             "b:.word 2\n"

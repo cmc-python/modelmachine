@@ -6,12 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from modelmachine.cli import load_cpu
+from modelmachine.cli import run
+from modelmachine.ide.load import load_from_file
+from modelmachine.ide.source import source
 
 samples = Path(__file__).parent.parent.resolve() / "samples"
 
 
-# FIXME: more tests with parameters
 @pytest.mark.parametrize(
     ("sample", "enter", "output"),
     [
@@ -268,11 +269,14 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
     ],
 )
 def test_sample(sample: Path, enter: str, output: str) -> None:
-    if enter != "":
-        with StringIO(enter) as fin:  # FIXME: this is aufull
-            cpu = load_cpu(str(sample), protect_memory=False, enter=fin)
-    else:
-        cpu = load_cpu(str(sample), protect_memory=False, enter=None)
+    with open(sample) as source_code:
+        cpu = source(source_code.read(), protect_memory=False)
+
+    if enter == "":
+        enter = cpu.enter
+
+    with StringIO(enter) as fin:
+        cpu.input(fin)
 
     cpu.control_unit.run()
 
@@ -285,9 +289,9 @@ def test_sample(sample: Path, enter: str, output: str) -> None:
 
 
 def test_fail() -> None:
-    cpu = load_cpu(
+    cpu = load_from_file(
         str(samples / "mm-1_test_debug.mmach"),
-        protect_memory=False,
+        protect_memory=True,
         enter=None,
     )
 
@@ -296,3 +300,8 @@ def test_fail() -> None:
         cpu.control_unit.run()
 
     assert cpu.control_unit.failed
+
+
+def test_cli(capsys: pytest.CaptureFixture[str]) -> None:
+    run(filename=str(samples / "mm-2_sample.mmach"), protect_memory=True)
+    assert capsys.readouterr().out == "178929\n"

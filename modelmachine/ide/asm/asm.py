@@ -117,6 +117,7 @@ class Asm:
 
         raise NotImplementedError
 
+    # FIXME: write meta about instructions
     def put_instruction(
         self,
         inp: str,

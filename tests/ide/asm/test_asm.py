@@ -2,14 +2,14 @@ import pytest
 
 from modelmachine.cell import Cell
 from modelmachine.ide.asm.errors import UndefinedLabelError
-from modelmachine.ide.source import source
+from modelmachine.ide.load import load_from_string
 
 AB = 16
 WB = 3 * 8
 
 
 def test_asm_word() -> None:
-    cpu = source(
+    cpu = load_from_string(
         ".cpu mm-1;c 1\n"
         ".asm 0x100;c 2\n"
         "a: .word 10;c 3\n"
@@ -22,11 +22,11 @@ def test_asm_word() -> None:
 
 def test_asm_word_too_long() -> None:
     with pytest.raises(SystemExit, match="Too long literal"):
-        source(".cpu mm-1\n.asm\n.word 0x112233445566778899")
+        load_from_string(".cpu mm-1\n.asm\n.word 0x112233445566778899")
 
 
 def test_asm_io() -> None:
-    cpu = source(
+    cpu = load_from_string(
         ".cpu mm-1\n.asm 0x100\na: .word 0\nb: .word 0\n.input a,b\n"
         ".enter 0x011234 0x021234"
     )
@@ -36,4 +36,4 @@ def test_asm_io() -> None:
 
 def test_asm_missed_label_io() -> None:
     with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
-        source(".cpu mm-1\n.asm\na: .word 10\n.input a,b\n")
+        load_from_string(".cpu mm-1\n.asm\na: .word 10\n.input a,b\n")

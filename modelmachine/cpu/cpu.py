@@ -27,11 +27,12 @@ from ..cu.control_unit_v import ControlUnitV
 from ..io import InputOutputUnit
 from ..memory.ram import RandomAccessMemory
 from ..memory.register import RegisterMemory
-from ..prompt.prompt import read_word
+from ..prompt.prompt import NotEnoughInputError, read_word
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
     from typing import Final, TextIO
+
+    from typing_extensions import Self
 
     from ..cu.control_unit import ControlUnit
 
@@ -53,7 +54,9 @@ class Cpu:
     _alu: Final[ArithmeticLogicUnit]
     _io_unit: Final[InputOutputUnit]
     _config: dict[str, str]
-    _output_req: Sequence[IOReq] | None
+    input_req: list[IOReq]
+    output_req: list[IOReq]
+    enter: str
 
     def __init__(
         self,
@@ -62,6 +65,9 @@ class Cpu:
         protect_memory: bool = True,
     ):
         self.name = control_unit.NAME
+        self.input_req = []
+        self.output_req = []
+        self.enter = ""
 
         self.registers = RegisterMemory()
         self.ram = RandomAccessMemory(
@@ -85,16 +91,8 @@ class Cpu:
             registers=self.registers, ram=self.ram, alu=self._alu
         )
 
-    def input(
-        self,
-        *,
-        input_req: Sequence[IOReq],
-        output_req: Sequence[IOReq],
-        file: TextIO = sys.stdin,
-    ) -> None:
-        self._output_req = output_req
-
-        for req in input_req:
+    def input(self, file: TextIO) -> Self:
+        for req in self.input_req:
             self._io_unit.input(
                 address=req.address, message=req.message, file=file
             )
@@ -102,16 +100,18 @@ class Cpu:
         if not file.isatty():
             try:
                 read_word(file)
-            except SystemExit:
+            except NotEnoughInputError:
                 pass
             else:
                 msg = "Too many elements in the input"
                 raise SystemExit(msg)
 
+        return self
+
     def print_result(self, file: TextIO = sys.stdout) -> None:
         """Print calculation result."""
-        assert self._output_req is not None
-        for req in self._output_req:
+        assert self.output_req is not None
+        for req in self.output_req:
             self._io_unit.output(
                 address=req.address, message=req.message, file=file
             )
