@@ -4,3 +4,7 @@ class UndefinedLabelError(SystemExit):
 
 class DuplicateLabelError(SystemExit):
     pass
+
+
+class UnexpectedLocalLabelError(SystemExit):
+    pass

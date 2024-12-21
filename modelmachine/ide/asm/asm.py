@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from itertools import chain
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
@@ -10,7 +11,12 @@ from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
 
 from ..common_parsing import ch, ct, integer, kw, line_seq, ngr
-from .errors import DuplicateLabelError, UndefinedLabelError
+from ..directive import Directive
+from .errors import (
+    DuplicateLabelError,
+    UndefinedLabelError,
+    UnexpectedLocalLabelError,
+)
 from .opcode_table import OPCODE_TABLE
 from .operand import Addressing
 
@@ -28,6 +34,10 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class Label:
     name: str
+
+    @property
+    def is_local(self) -> bool:
+        return self.name.startswith(".")
 
 
 @dataclass(frozen=True)
@@ -52,10 +62,13 @@ class Cmd(Enum):
     word = ".word"
 
 
-# FIXME: local labels
-label = pp.Word(pp.alphas + "_", pp.alphanums + "_").add_parse_action(
-    lambda t: Label(t[0])
+directives = pp.MatchFirst(
+    cmd.value for cmd in chain(Cmd, Directive) if cmd.value.startswith(".")
 )
+
+label = ~directives + pp.Word(
+    pp.alphas + "_.", pp.alphanums + "_."
+).add_parse_action(lambda t: Label(t[0]))
 
 word = ngr(kw(Cmd.word.value) - pp.DelimitedList(integer, ","), Cmd.word.value)
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
@@ -82,7 +95,7 @@ def asm_lang(cu: type[ControlUnit]) -> pp.ParserElement:
         instruction(opcode, operands)
         for opcode, operands in OPCODE_TABLE[cu].items()
     )
-    line = label_declare + (word | instr)[0, 1]
+    line = label_declare - (word | instr | pp.empty)
     return line_seq(line)
 
 
@@ -92,6 +105,7 @@ class Asm:
     _io: Final[InputOutputUnit]
     _labels: dict[Label, Link]
     _refs: list[Ref]
+    _cur_func: Label | None
     _cur_addr: Cell
 
     def __init__(self, cpu: Cpu):
@@ -101,6 +115,7 @@ class Asm:
         self._labels = {}
         self._refs = []
         self._cur_addr = Cell(0, bits=self._cpu.ram.address_bits)
+        self._cur_func = None
 
     def address(
         self, inp: str, loc: int, _instr_addr: Cell, decl: Operand, arg: int
@@ -116,6 +131,19 @@ class Asm:
             return Cell(arg, bits=self._cpu.ram.address_bits)
 
         raise NotImplementedError
+
+    def fullname(self, inp: str, loc: int, label: Label) -> Label:
+        if not label.is_local:
+            return label
+
+        if self._cur_func is None:
+            msg = (
+                f"Unexpected local label '{label.name}'; "
+                f"local labels allowed only after regular label {ct(inp, loc)}"
+            )
+            raise UnexpectedLocalLabelError(msg)
+
+        return Label(self._cur_func.name + label.name)
 
     # FIXME: write meta about instructions
     def put_instruction(
@@ -136,13 +164,14 @@ class Asm:
         )
         for decl, arg in zip(self._opcode_table[opcode], arguments):
             if isinstance(arg, Label):
+                label = self.fullname(inp, loc, arg)
                 self._refs.append(
                     Ref(
                         inp=inp,
                         loc=loc,
                         addr=instr_addr,
                         decl=decl,
-                        label=arg,
+                        label=label,
                     )
                 )
             else:
@@ -174,6 +203,10 @@ class Asm:
         return link.addr.unsigned
 
     def store_label(self, inp: str, loc: int, label: Label) -> None:
+        if not label.is_local:
+            self._cur_func = label
+
+        label = self.fullname(inp, loc, label)
         if label in self._labels:
             prev = self._labels[label]
             msg = (
@@ -186,6 +219,7 @@ class Asm:
 
     def parse(self, inp: str, address: int, code: pp.ParseResults) -> None:
         self._cur_addr = Cell(address, bits=self._cpu.ram.address_bits)
+        self._cur_func = None
 
         for cmd in code:
             cmd_name = Cmd(cmd.get_name())

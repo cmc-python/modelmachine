@@ -62,14 +62,14 @@ never = pp.NoMatch()  # type: ignore[no-untyped-call]
 def line_seq(
     one_line: pp.ParserElement, multi_line: pp.ParserElement = never
 ) -> pp.ParserElement:
-    res = ((one_line[0, 1] + nl) | multi_line)[0, ...]
+    res = (((one_line | pp.empty) + nl) | multi_line)[0, ...]
     assert isinstance(res, pp.ParserElement)
     return res
 
 
 def ct(inp: str, loc: int) -> str:
     return (
-        f" at {pp.lineno(loc, inp)}:{pp.col(loc, inp)}"
+        f"at {pp.lineno(loc, inp)}:{pp.col(loc, inp)}"
         f" '{pp.line(loc, inp)}'"
     )
 
