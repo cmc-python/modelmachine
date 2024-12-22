@@ -23,12 +23,12 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
         addr = f" 0x{seg.start:x}" if seg.start != 0 else ""
         fout.write(f"\n.code{addr}\n")
         for i in seg:
-            fout.write(
-                cpu._io_unit.store_source(  # noqa: SLF001
-                    start=i, bits=cpu.ram.word_bits
-                )
-                + "\n"
+            comment = cpu.ram.comment.get(i)
+            comment = " ; " + comment if comment else ""
+            line = cpu._io_unit.store_source(  # noqa: SLF001
+                start=i, bits=cpu.ram.word_bits
             )
+            fout.write(f"{line} ; 0x{i:x}{comment}\n")
 
     if cpu.enter:
         fout.write(f"\n.enter{cpu.enter}\n")

@@ -46,6 +46,7 @@ class RandomAccessMemory:
     _filled_intervals: list[range]
     access_count: int
     write_log: list[dict[int, RamWriteLog]] | None
+    comment: dict[int, str]
 
     @property
     def filled_intervals(self) -> Collection[range]:
@@ -67,6 +68,7 @@ class RandomAccessMemory:
         self.memory_size = 1 << address_bits
         self.endianess = endianess
         self.is_protected = is_protected
+        self.comment = {}
         shape = [0] * self.memory_size
         if word_bits <= 8:  # noqa: PLR2004
             self._table = array("B", shape)

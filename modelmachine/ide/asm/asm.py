@@ -70,7 +70,10 @@ label = ~directives + pp.Word(
     pp.alphas + "_.", pp.alphanums + "_."
 ).add_parse_action(lambda t: Label(t[0]))
 
-word = ngr(kw(Cmd.word.value) - pp.DelimitedList(integer, ","), Cmd.word.value)
+word = ngr(
+    kw(Cmd.word.value) - pp.DelimitedList(pp.original_text_for(integer), ","),
+    Cmd.word.value,
+)
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
 
 
@@ -145,7 +148,6 @@ class Asm:
 
         return Label(self._cur_func.name + label.name)
 
-    # FIXME: write meta about instructions
     def put_instruction(
         self,
         inp: str,
@@ -162,6 +164,7 @@ class Asm:
             address=self._cur_addr,
             value=instr,
         )
+        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = pp.line(loc, inp)
         for decl, arg in zip(self._opcode_table[opcode], arguments):
             if isinstance(arg, Label):
                 label = self.fullname(inp, loc, arg)
@@ -183,7 +186,7 @@ class Asm:
                     value=addr,
                 )
 
-    def put_word(self, inp: str, loc: int, x: int) -> None:
+    def put_word(self, inp: str, loc: int, original: str, x: int) -> None:
         try:
             self._io.check_word(x)
         except ValueError as exc:
@@ -193,6 +196,7 @@ class Asm:
             address=self._cur_addr,
             value=Cell(x, bits=self._cpu.ram.word_bits),
         )
+        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = original
 
     def resolve(self, inp: str, loc: int, label: Label) -> int:
         link = self._labels.get(label)
@@ -226,7 +230,7 @@ class Asm:
             loc: int = cmd["loc"]
             if cmd_name == Cmd.word:
                 for x in cmd:
-                    self.put_word(inp, loc, x)
+                    self.put_word(inp, loc, x, int(x, 0))
             elif cmd_name == Cmd.label:
                 self.store_label(inp, loc, cmd[0])
             elif cmd_name == Cmd.instruction:
