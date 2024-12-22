@@ -14,7 +14,9 @@ from pyparsing import Word as Wd
 from .__about__ import __version__
 from .ide.common_parsing import ignore
 from .ide.debug import debug as ide_debug
+from .ide.dump import dump as ide_dump
 from .ide.load import load_from_file
+from .ide.source import source as ide_source
 
 if TYPE_CHECKING:
     from typing import Callable
@@ -187,12 +189,29 @@ def debug(
     return ide_debug(cpu=cpu, colors=colors)
 
 
-# FIXME: implement asm command
-# @cli
-# def asm(*, input_file: str, output_file: str) -> int:
-#     """Assemble program.
-#
-#     input_file -- asm source, '-' for stdin
-#     output_file -- machine code file, '-' for stdout
-#     """
-#     return 0
+@cli
+def asm(
+    *,
+    source: str,
+    output: str | None = None,
+) -> int:
+    """Assemble program - replace asm directives to code.
+
+    source -- file containing asm code, '-' for stdin
+    output, -o -- machine code output file, default is stdout
+    """
+    if source == "-":
+        source_code = sys.stdin.read()
+    else:
+        with open(source) as fin:
+            source_code = fin.read()
+
+    cpu = ide_source(source_code, protect_memory=True)
+
+    if output is None:
+        ide_dump(cpu, sys.stdout)
+    else:
+        with open(output, "w") as fout:
+            ide_dump(cpu, fout)
+
+    return 0

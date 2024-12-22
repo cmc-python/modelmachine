@@ -241,6 +241,10 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
         (samples / "mm-3_selfmod1.mmach", "1", "1\n0\n0\n0\n0\n0\n"),
         (samples / "mm-3_selfmod1.mmach", "3", "1\n2\n3\n0\n0\n0\n"),
         (samples / "mm-3_selfmod1.mmach", "10", "1\n2\n3\n4\n5\n6\n"),
+        (samples / "asm" / "mm-3_selfmod1.mmach", "", "1\n2\n3\n4\n5\n6\n"),
+        (samples / "asm" / "mm-3_selfmod1.mmach", "1", "1\n0\n0\n0\n0\n0\n"),
+        (samples / "asm" / "mm-3_selfmod1.mmach", "3", "1\n2\n3\n0\n0\n0\n"),
+        (samples / "asm" / "mm-3_selfmod1.mmach", "10", "1\n2\n3\n4\n5\n6\n"),
         (
             samples / "mm-3_selfmod2.mmach",
             "",

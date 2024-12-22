@@ -12,7 +12,7 @@ sjg I, N, exit
 instr:
 move I, arr
 add instr, c1, instr
-add I, 1, I
+add I, c1, I
 jump next
 exit:
 halt
