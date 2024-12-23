@@ -64,13 +64,15 @@ for f in chain(
         sample_list.append(fin.read())
 
 
-@pytest.mark.parametrize("example", sample_list)
-def test_load(example: str) -> None:
-    cpu1 = source(example, protect_memory=True)
+@pytest.mark.parametrize("sample", sample_list)
+def test_load(sample: str) -> None:
+    cpu1 = source(sample, protect_memory=True)
+
     with StringIO() as fout:
         dump(cpu1, fout)
         dumped = fout.getvalue()
     cpu2 = source(dumped, protect_memory=True)
+
     assert cpu1.name == cpu2.name
     assert cpu1.input_req == cpu2.input_req
     assert cpu1.output_req == cpu2.output_req

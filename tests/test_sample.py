@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import warnings
+from copy import deepcopy
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -10,7 +13,16 @@ from modelmachine.cli import run
 from modelmachine.ide.load import load_from_file
 from modelmachine.ide.source import source
 
+if TYPE_CHECKING:
+    from modelmachine.cpu.cpu import Cpu
+
 samples = Path(__file__).parent.parent.resolve() / "samples"
+
+
+@lru_cache()
+def load_sample(sample: Path) -> Cpu:
+    with open(sample) as source_code:
+        return source(source_code.read(), protect_memory=False)
 
 
 @pytest.mark.parametrize(
@@ -40,6 +52,14 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
         (samples / "mm-2_sample.mmach", "-10 0", "100\n"),
         (samples / "mm-2_sample.mmach", "-10 2", "64\n"),
         (samples / "mm-2_sample.mmach", "-10 -2", "144\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "", "178929\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "0 0", "0\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "10 0", "100\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "10 2", "144\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "10 -2", "64\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "-10 0", "100\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "-10 2", "64\n"),
+        (samples / "asm" / "mm-2_sample.mmach", "-10 -2", "144\n"),
         (samples / "mm-3_sample.mmach", "", "178929\n"),
         (samples / "mm-3_sample.mmach", "0 0", "0\n"),
         (samples / "mm-3_sample.mmach", "10 0", "100\n"),
@@ -260,9 +280,60 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
             "",
             "25\n20\n31\n-549755813884\n-549755813886\n1234\n",
         ),
-        (samples / "mm-2_max_of_2.mmach", "", "723\n"),
+        (
+            samples / "asm" / "mm-2_flags.mmach",
+            "",
+            "25\n20\n31\n-549755813884\n-549755813886\n1234\n",
+        ),
+        (samples / "mm-2_max_of_2.mmach", "", "21\n"),
+        (samples / "mm-2_max_of_2.mmach", "10 15", "15\n"),
+        (samples / "mm-2_max_of_2.mmach", "-10 15", "15\n"),
+        (samples / "mm-2_max_of_2.mmach", "10 -15", "10\n"),
+        (samples / "mm-2_max_of_2.mmach", "-10 -15", "-10\n"),
+        (samples / "mm-2_max_of_2.mmach", "15 10", "15\n"),
+        (samples / "mm-2_max_of_2.mmach", "15 -10", "15\n"),
+        (samples / "mm-2_max_of_2.mmach", "-15 10", "10\n"),
+        (samples / "mm-2_max_of_2.mmach", "-15 -10", "-10\n"),
+        (samples / "mm-2_max_of_2.mmach", "15 15", "15\n"),
+        (samples / "mm-2_max_of_2.mmach", "-15 -15", "-15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "", "21\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "10 15", "15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "-10 15", "15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "10 -15", "10\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "-10 -15", "-10\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "15 10", "15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "15 -10", "15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "-15 10", "10\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "-15 -10", "-10\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "15 15", "15\n"),
+        (samples / "asm" / "mm-2_max_of_2.mmach", "-15 -15", "-15\n"),
         (samples / "mm-2_factorial.mmach", "", "720\n"),
-        (samples / "mm-1_max_of_2.mmach", "", "234\n"),
+        (samples / "mm-2_factorial.mmach", "1", "1\n"),
+        (samples / "mm-2_factorial.mmach", "2", "2\n"),
+        (samples / "mm-2_factorial.mmach", "3", "6\n"),
+        (samples / "mm-2_factorial.mmach", "4", "24\n"),
+        (samples / "mm-2_factorial.mmach", "5", "120\n"),
+        (samples / "mm-2_factorial.mmach", "6", "720\n"),
+        (samples / "mm-2_factorial.mmach", "7", "5040\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "", "720\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "1", "1\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "2", "2\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "3", "6\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "4", "24\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "5", "120\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "6", "720\n"),
+        (samples / "asm" / "mm-2_factorial.mmach", "7", "5040\n"),
+        (samples / "mm-1_max_of_2.mmach", "", "21\n"),
+        (samples / "mm-1_max_of_2.mmach", "10 15", "15\n"),
+        (samples / "mm-1_max_of_2.mmach", "-10 15", "15\n"),
+        (samples / "mm-1_max_of_2.mmach", "10 -15", "10\n"),
+        (samples / "mm-1_max_of_2.mmach", "-10 -15", "-10\n"),
+        (samples / "mm-1_max_of_2.mmach", "15 10", "15\n"),
+        (samples / "mm-1_max_of_2.mmach", "15 -10", "15\n"),
+        (samples / "mm-1_max_of_2.mmach", "-15 10", "10\n"),
+        (samples / "mm-1_max_of_2.mmach", "-15 -10", "-10\n"),
+        (samples / "mm-1_max_of_2.mmach", "15 15", "15\n"),
+        (samples / "mm-1_max_of_2.mmach", "-15 -15", "-15\n"),
         (samples / "mm-1_discr1.mmach", "", "1\n"),
         (samples / "mm-1_discr2.mmach", "", "1\n"),
         (samples / "mm-v_factorial.mmach", "", "720\n"),
@@ -273,8 +344,7 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
     ],
 )
 def test_sample(sample: Path, enter: str, output: str) -> None:
-    with open(sample) as source_code:
-        cpu = source(source_code.read(), protect_memory=False)
+    cpu = deepcopy(load_sample(sample))
 
     if enter == "":
         enter = cpu.enter
