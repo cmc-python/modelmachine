@@ -1,0 +1,27 @@
+.cpu mm-s
+
+.input N
+.output factorial
+
+.asm
+        push c1 ; res=1
+loop:   push N  ; res N
+        dup     ; res N N
+        push c1 ; res N N 1
+        comp    ; res N
+        sjleq exit
+        smul    ; res
+        push N  ; res N
+        push c1 ; res N 1
+        sub     ; res N-1
+        pop N
+        jump loop
+exit:
+        pop N   ; res
+        pop factorial
+        halt
+
+c1:     .word 1
+N: factorial:
+        .word 0
+.enter 6

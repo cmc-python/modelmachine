@@ -1,21 +1,23 @@
 .cpu mm-s
 
-.input  0x1006, 0x1000, 0x1009
-.output 0x100c
-.code
-5A 1000 ; загрузить b ; b
-5C      ; дублировать ; b b
-03      ; умножить    ; b*b
-5A 1003 ; загрузить 4 ; b*b 4
-5A 1006 ; загрузить a ; b*b 4 a
-5A 1009 ; загрузить c ; b*b 4 a c
-03      ; умножить    ; b*b 4 a*c
-03      ; умножить    ; b*b 4*a*c
-02      ; вычесть     ; b*2-4*a*c
-5b 100C ; выгрузить d ; b*2-4*a*c
-99      ; halt
+.input  a, b, c
+.output D
 
-.code 0x1003
-00 0004 ; 4
+.asm
+        push b
+        dup
+        smul
+        push c4
+        push a
+        push c
+        smul
+        smul
+        sub
+        pop D
+        halt
+c4:     .word 4
+a:D:    .word 0
+b:      .word 0
+c:      .word 0
 
 .enter  5 8 3

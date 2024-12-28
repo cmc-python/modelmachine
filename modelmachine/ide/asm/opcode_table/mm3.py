@@ -14,28 +14,28 @@ if TYPE_CHECKING:
 
 Opcode = ControlUnit3.Opcode
 
-A1 = 8
-A2 = 8 + 2 * 8
-A3 = 8 + 4 * 8
+A1 = Operand(8)
+A2 = Operand(8 + 2 * 8)
+A3 = Operand(8 + 4 * 8)
 
 MM3_OPCODE_TABLE: Final[dict[CommonOpcode, Sequence[Operand]]] = {
-    Opcode.move: (Operand(A1), Operand(A3)),
-    Opcode.add: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sub: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.smul: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sdiv: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.umul: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.udiv: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.jump: (Operand(A3),),
-    Opcode.jeq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.jneq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sjl: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sjgeq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sjleq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.sjg: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.ujl: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.ujgeq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.ujleq: (Operand(A1), Operand(A2), Operand(A3)),
-    Opcode.ujg: (Operand(A1), Operand(A2), Operand(A3)),
+    Opcode.move: (A1, A3),
+    Opcode.add: (A1, A2, A3),
+    Opcode.sub: (A1, A2, A3),
+    Opcode.smul: (A1, A2, A3),
+    Opcode.sdiv: (A1, A2, A3),
+    Opcode.umul: (A1, A2, A3),
+    Opcode.udiv: (A1, A2, A3),
+    Opcode.jump: (A3,),
+    Opcode.jeq: (A1, A2, A3),
+    Opcode.jneq: (A1, A2, A3),
+    Opcode.sjl: (A1, A2, A3),
+    Opcode.sjgeq: (A1, A2, A3),
+    Opcode.sjleq: (A1, A2, A3),
+    Opcode.sjg: (A1, A2, A3),
+    Opcode.ujl: (A1, A2, A3),
+    Opcode.ujgeq: (A1, A2, A3),
+    Opcode.ujleq: (A1, A2, A3),
+    Opcode.ujg: (A1, A2, A3),
     Opcode.halt: (),
 }

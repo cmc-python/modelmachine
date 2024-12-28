@@ -1,0 +1,25 @@
+.cpu mm-s
+
+.input 0x26 N
+.output 0x26 factorial
+
+.code
+5a0023 ; 0002 ;         push c1 ; res=1
+5a0026 ; 0005 ; loop:   push N  ; res N
+5c     ; 0006 ;         dup     ; res N N
+5a0023 ; 0009 ;         push c1 ; res N N 1
+05     ; 000a ;         comp    ; res N
+85001c ; 000d ;         sjleq exit
+03     ; 000e ;         smul    ; res
+5a0026 ; 0011 ;         push N  ; res N
+5a0023 ; 0014 ;         push c1 ; res N 1
+02     ; 0015 ;         sub     ; res N-1
+5b0026 ; 0018 ;         pop N
+800003 ; 001b ;         jump loop
+5b0026 ; 001e ;         pop N   ; res
+5b0026 ; 0021 ;         pop factorial
+99     ; 0022 ;         halt
+000001 ; 0025 ; 1
+000000 ; 0028 ; 0
+
+.enter 6

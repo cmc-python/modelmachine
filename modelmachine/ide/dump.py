@@ -19,6 +19,7 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
         msg = f" {req.message}" if req.message is not None else ""
         fout.write(f".output 0x{req.address:x}{msg}\n")
 
+    word_hex = cpu._io_unit.io_bits // 4  # noqa: SLF001
     for seg in cpu.ram.filled_intervals:
         addr = f" 0x{seg.start:x}" if seg.start != 0 else ""
         fout.write(f"\n.code{addr}\n")
@@ -30,7 +31,8 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
 
             comment = cpu.ram.comment.get(i)
             if comment is not None:
-                fout.write(f"{line} ; {i:x} ; {comment}\n")
+                line = line.ljust(word_hex)
+                fout.write(f"{line} ; {i:04x} ; {comment}\n")
                 line = ""
 
         assert line == ""

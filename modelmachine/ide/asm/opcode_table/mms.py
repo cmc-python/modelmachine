@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from modelmachine.cu.control_unit_1 import ControlUnit1
+from modelmachine.cu.control_unit_s import ControlUnitS
 
 from ..operand import Operand
 
@@ -12,20 +12,21 @@ if TYPE_CHECKING:
     from modelmachine.cu.opcode import CommonOpcode
 
 
-Opcode = ControlUnit1.Opcode
+Opcode = ControlUnitS.Opcode
 
 A = Operand(8)
 
-MM1_OPCODE_TABLE: Final[dict[CommonOpcode, Sequence[Operand]]] = {
-    Opcode.load: (A,),
-    Opcode.add: (A,),
-    Opcode.sub: (A,),
-    Opcode.smul: (A,),
-    Opcode.sdiv: (A,),
-    Opcode.umul: (A,),
-    Opcode.udiv: (A,),
-    Opcode.comp: (A,),
-    Opcode.store: (A,),
+MMS_OPCODE_TABLE: Final[dict[CommonOpcode, Sequence[Operand]]] = {
+    Opcode.add: (),
+    Opcode.sub: (),
+    Opcode.smul: (),
+    Opcode.sdiv: (),
+    Opcode.umul: (),
+    Opcode.udiv: (),
+    Opcode.comp: (),
+    Opcode.push: (A,),
+    Opcode.pop: (A,),
+    Opcode.dup: (),
     Opcode.swap: (),
     Opcode.jump: (A,),
     Opcode.jeq: (A,),

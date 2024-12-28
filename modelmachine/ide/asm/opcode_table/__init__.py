@@ -14,6 +14,7 @@ from modelmachine.cu.control_unit_v import ControlUnitV
 from .mm1 import MM1_OPCODE_TABLE
 from .mm2 import MM2_OPCODE_TABLE
 from .mm3 import MM3_OPCODE_TABLE
+from .mms import MMS_OPCODE_TABLE
 from .mmv import MMV_OPCODE_TABLE
 
 if TYPE_CHECKING:
@@ -33,6 +34,6 @@ OPCODE_TABLE: Final[
     ControlUnit3: MM3_OPCODE_TABLE,
     ControlUnitM: {},
     ControlUnitR: {},
-    ControlUnitS: {},
+    ControlUnitS: MMS_OPCODE_TABLE,
     ControlUnitV: MMV_OPCODE_TABLE,
 }
