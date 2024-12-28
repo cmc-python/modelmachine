@@ -12,5 +12,5 @@
 02 03 ; b2-4ac       ; b2 c ac b2-4ac
 99 00 ; halt
 
-.enter  3 5 2
+.enter  5 8 3
 

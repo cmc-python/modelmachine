@@ -1,25 +1,23 @@
 .cpu mm-1
 
-.input 0x000B, 0x000C, 0x000D
-.output 0x000E
+.input a, b, c
+.output D
 
-.code
-        00 000C ; <- b
-        03 000C ; *  b
-        10 000F ; -> b²
-        00 0011 ; <- 4
-        03 000B ; *  a
-        03 000D ; *  c
-        10 0010 ; -> 4ac
-        00 000F ; <- b²
-        02 0010 ; -  4ac
-        10 000E ; -> d
-        99 0000 ; halt
-        000000 ; a
-        000000 ; b
-        000000 ; c
-        000000 ; d
-        000000 ; b²
-        000000 ; 4ac
-        000004 ; 4
-.enter 2 5 3
+.asm
+        load b
+        smul b
+        store b2
+        load c4
+        smul a
+        smul c
+        store _4ac
+        load b2
+        sub _4ac
+        store D
+        halt
+D:a:_4ac:
+        .word 0
+b:b2:   .word 0
+c:      .word 0
+c4:     .word 4
+.enter 5 8 3
