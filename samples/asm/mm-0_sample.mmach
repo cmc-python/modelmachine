@@ -1,0 +1,22 @@
+.cpu mm-0
+
+.input 1 a
+.input 1 b
+.output 1 x
+
+.code
+; x = ((a * -21) % 50 - b) ** 2 == 1849
+; stack=[a b]
+40 EB ; push -21 ; [a b -21]
+03 02 ; x = a * -21 ; [a b x]
+40 32 ; push 50 ; [a b x 50]
+04 01 ; y = x / 50, z = x % 50 ; [a b x y z]
+5D 03 ; swap 3 ; [a z x y b]
+02 03 ; u = z - b ; [a z x y u]
+03 00 ; r = u * u ; [a z x y r]
+5D 04 ; swap 4 ; [r z x y a]
+5B 04 ; pop 4 ; [r]
+99 00 ; halt
+
+.enter -12 45
+

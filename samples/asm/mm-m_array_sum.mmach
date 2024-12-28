@@ -1,0 +1,22 @@
+.cpu mm-m
+
+.input 0x100,0x102,0x104,0x106,0x108
+.output 0x10A sum
+
+.code
+; output = sum(input)
+0020 000f ; load R2, SIZE_WORD
+00F0 0011 ; load RF, SIZE_ARRAY
+22AA ; rsub RA, RA
+22CC ; rsub RC, RC
+01AC 0100 ; add RA, array[RC] <- LOOP
+21C2 ; radd RC, R2
+25CF ; rcomp RC, RF
+8200 0006 ; jneq LOOP
+10A0 010A ; store RA, SUM
+9900 ; halt
+; ---------------------
+00000002 ; SIZE_WORD = 2
+0000000A ; SIZE_ARRAY = 5
+
+.enter -1 2 3 4 5

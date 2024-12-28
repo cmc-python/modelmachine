@@ -30,7 +30,7 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
 
             comment = cpu.ram.comment.get(i)
             if comment is not None:
-                fout.write(f"{line} ; 0x{i:x} ; {comment}\n")
+                fout.write(f"{line} ; {i:x} ; {comment}\n")
                 line = ""
 
         assert line == ""
