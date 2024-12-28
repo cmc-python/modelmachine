@@ -4,19 +4,19 @@
 .input 1 b
 .output 1 x
 
-.code
+.asm
 ; x = ((a * -21) % 50 - b) ** 2 == 1849
-; stack=[a b]
-40 EB ; push -21 ; [a b -21]
-03 02 ; x = a * -21 ; [a b x]
-40 32 ; push 50 ; [a b x 50]
-04 01 ; y = x / 50, z = x % 50 ; [a b x y z]
-5D 03 ; swap 3 ; [a z x y b]
-02 03 ; u = z - b ; [a z x y u]
-03 00 ; r = u * u ; [a z x y r]
-5D 04 ; swap 4 ; [r z x y a]
-5B 04 ; pop 4 ; [r]
-99 00 ; halt
+                    ; a b
+        push -21    ; a b -12
+        smul 2      ; a b -12*a
+        push 50     ; a b x=-12*a 50
+        sdiv 1      ; a b x y=(-12*a)/50 (-12*a)%50
+        swap 3      ; a (-12*a)%50 x y b
+        sub 3       ; a z=(-12*a)%50 x y (-12*a)%50-b
+        smul 0      ; a z x y res
+        swap 4      ; res z x y a
+        pop 4       ; res
+        halt
 
 .enter -12 45
 

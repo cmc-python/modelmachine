@@ -11,6 +11,7 @@ from modelmachine.cu.control_unit_r import ControlUnitR
 from modelmachine.cu.control_unit_s import ControlUnitS
 from modelmachine.cu.control_unit_v import ControlUnitV
 
+from .mm0 import MM0_OPCODE_TABLE
 from .mm1 import MM1_OPCODE_TABLE
 from .mm2 import MM2_OPCODE_TABLE
 from .mm3 import MM3_OPCODE_TABLE
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 OPCODE_TABLE: Final[
     dict[type[ControlUnit], dict[CommonOpcode, Sequence[Operand]]]
 ] = {
-    ControlUnit0: {},
+    ControlUnit0: MM0_OPCODE_TABLE,
     ControlUnit1: MM1_OPCODE_TABLE,
     ControlUnit2: MM2_OPCODE_TABLE,
     ControlUnit3: MM3_OPCODE_TABLE,

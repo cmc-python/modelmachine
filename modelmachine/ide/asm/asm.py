@@ -73,10 +73,18 @@ label = ~directives + pp.Word(
 
 word = ngr(
     kw(Cmd.word.value)
-    - pp.DelimitedList(Gr(integer.set_parse_action(identity))),
+    - pp.DelimitedList(Gr(integer.copy().set_parse_action(identity))),
     Cmd.word.value,
 )
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
+
+
+LABEL_ADDRESSING: Final[frozenset[Addressing]] = frozenset(
+    {
+        Addressing.ABSOLUTE,
+        Addressing.PC_RELATIVE,
+    }
+)
 
 
 def instruction(
@@ -87,8 +95,10 @@ def instruction(
         if i != 0:
             op -= ch(",")
 
-        if decl.addressing == Addressing.ABSOLUTE:
+        if decl.addressing in LABEL_ADDRESSING:
             op -= label
+        elif decl.addressing == Addressing.IMMEDIATE:
+            op -= integer
         else:
             raise NotImplementedError
     op -= pp.FollowedBy(ch("\n"))
@@ -123,17 +133,39 @@ class Asm:
         self._cur_func = None
 
     def address(
-        self, inp: str, loc: int, _instr_addr: Cell, decl: Operand, arg: int
+        self, inp: str, loc: int, instr_addr: Cell, decl: Operand, arg: int
     ) -> Cell:
         if decl.addressing == Addressing.ABSOLUTE:
-            max_v = 1 << self._cpu.ram.address_bits
+            assert decl.bits == self._cpu.ram.address_bits
+            max_v = 1 << decl.bits
             if not (0 <= arg < max_v):
                 msg = (
                     f"Address is too long: {arg}; expected interval is"
                     f" [0x0, 0x{max_v:x}) {ct(inp, loc)}"
                 )
                 raise ValueError(msg)
-            return Cell(arg, bits=self._cpu.ram.address_bits)
+            return Cell(arg, bits=decl.bits)
+
+        if decl.addressing == Addressing.IMMEDIATE:
+            max_v = 1 << (decl.bits - 1)
+            if not (-max_v <= arg < max_v):
+                msg = (
+                    f"Immediate value is too long: {arg}; expected interval is"
+                    f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
+                )
+                raise ValueError(msg)
+            return Cell(arg, bits=decl.bits)
+
+        if decl.addressing == Addressing.PC_RELATIVE:
+            arg -= instr_addr.unsigned
+            max_v = 1 << (decl.bits - 1)
+            if not (-max_v <= arg < max_v):
+                msg = (
+                    f"PC relative addr is too long: {arg}; expected interval is"
+                    f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
+                )
+                raise ValueError(msg)
+            return Cell(arg, bits=decl.bits)
 
         raise NotImplementedError
 

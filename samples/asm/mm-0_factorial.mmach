@@ -1,24 +1,24 @@
 .cpu mm-0
 
-.input 1
-.output 1
+.input 1 N
+.output 1 factorial
 
-.code
-40 01   ; 00 ; Будущий результат        ; N Res=1
-40 01   ; 01 ; Ещё 1 (счётчик)          ; N Res i=1
-5C 00   ; 02 ; Сдублируем счётчик       ; N Res i i
-05 03   ; 03 ; Сравним с N              ; N Res i
-85 09   ; 04 ; Если i>=N, -> +9 (конец) ; N Res i
-40 01   ; 05 ; Занесём 1                ; N Res i 1
-01 01   ; 06 ; Прибавим 1 к i           ; N Res i i+1
-5D 02   ; 07 ; Обменяем местами         ; N i+1 i Res
-03 02   ; 08 ; Умножим                  ; N i+1 i Res*(i+1)
-5D 02   ; 0A ; Вернём на место          ; N Res*(i+1) i (i+1)
-5D 01   ; 0B ; Обменяем i и i+1         ; N Res*(i+1) (i+1) i
-5B 01   ; 0C ; Удалить i                ; N Res i
-80 F6   ; 0D ; Продолжим цикл -> -10    ; N Res i
-5B 01   ; 0E ; Выбросим i               ; N Res
-99 00   ; 0F ; Конец                    ; N Res
+.asm
+        push 1  ; N Res=1
+        push 1  ; N Res i=1
+loop:   dup 0   ; N Res i i
+        comp 3  ; N Res i
+        sjleq exit
+        push 1  ; N Res i 1
+        add 1   ; N Res i i+1
+        swap 2  ; N i+1 i Res
+        smul 2  ; N i+1 i Res*(i+1)
+        swap 2  ; N Res*(i+1) i (i+1)
+        swap 1  ; N Res*(i+1) (i+1) i
+        pop 1   ; N Res i
+        jump loop
+exit:   pop 1   ; N Res
+        halt
 
 .enter 6
 

@@ -1,16 +1,19 @@
 .cpu mm-0
 
-.input  3
-.output 1
-.code
-5D 01 ; swap b<->c   ; a c b
-03 00 ; b*b          ; a c b2
-5D 02 ; swap a<->b*b ; b2 c a
-03 01 ; c*a          ; b2 c ac
-40 04 ; push 4       ; b2 c ac 4
-03 01 ; c*a*4        ; b2 c ac 4ac
-02 03 ; b2-4ac       ; b2 c ac b2-4ac
-99 00 ; halt
+.input  1 a
+.input  1 b
+.input  1 c
+.output 1 D
+
+.asm
+        swap 1 ; a c b
+        smul 0 ; a c b2
+        swap 2 ; b2 c a
+        smul 1 ; b2 c ac
+        push 4 ; b2 c ac 4
+        smul 1 ; b2 c ac 4ac
+        sub 3  ; b2 c ac b2-4ac
+        halt
 
 .enter  5 8 3
 
