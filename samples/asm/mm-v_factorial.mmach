@@ -1,0 +1,18 @@
+.cpu mm-v
+
+.input N
+.output factorial
+
+.asm
+loop: comp N, c1
+      sjleq exit
+      smul factorial, N
+      sub N, c1
+      jump loop
+exit: halt
+c1:   .word 1
+N:    .word 0
+factorial:
+      .word 1
+
+.enter 6

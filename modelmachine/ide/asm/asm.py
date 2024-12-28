@@ -6,11 +6,12 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
+from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
 
-from ..common_parsing import ch, ct, integer, kw, line_seq, ngr
+from ..common_parsing import ch, ct, identity, integer, kw, line_seq, ngr
 from ..directive import Directive
 from .errors import (
     DuplicateLabelError,
@@ -71,7 +72,8 @@ label = ~directives + pp.Word(
 ).add_parse_action(lambda t: Label(t[0]))
 
 word = ngr(
-    kw(Cmd.word.value) - pp.DelimitedList(pp.original_text_for(integer), ","),
+    kw(Cmd.word.value)
+    - pp.DelimitedList(Gr(integer.set_parse_action(identity))),
     Cmd.word.value,
 )
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
@@ -186,7 +188,9 @@ class Asm:
                     value=addr,
                 )
 
-    def put_word(self, inp: str, loc: int, original: str, x: int) -> None:
+    def put_word(self, inp: str, loc: int, word: pp.ParseResults) -> None:
+        original = "".join(word)
+        x = int(original, 0)
         try:
             self._io.check_word(x)
         except ValueError as exc:
@@ -194,7 +198,7 @@ class Asm:
             raise SystemExit(msg) from exc
         self._cur_addr += self._cpu.ram.put(
             address=self._cur_addr,
-            value=Cell(x, bits=self._cpu.ram.word_bits),
+            value=Cell(x, bits=self._io.io_bits),
         )
         self._cpu.ram.comment[self._cur_addr.unsigned - 1] = original
 
@@ -230,7 +234,7 @@ class Asm:
             loc: int = cmd["loc"]
             if cmd_name == Cmd.word:
                 for x in cmd:
-                    self.put_word(inp, loc, x, int(x, 0))
+                    self.put_word(inp, loc, x)
             elif cmd_name == Cmd.label:
                 self.store_label(inp, loc, cmd[0])
             elif cmd_name == Cmd.instruction:

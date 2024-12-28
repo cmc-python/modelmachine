@@ -25,7 +25,7 @@ class InputOutputUnit:
     _ram: Final[RandomAccessMemory]
     _registers: Final[RegisterMemory]
     _is_stack_io: Final[bool]
-    _io_bits: Final[int]
+    io_bits: Final[int]
     _min_v: Final[int]
     _max_v: Final[int]
 
@@ -42,7 +42,7 @@ class InputOutputUnit:
         self._ram = ram
         self._registers = registers
         self._is_stack_io = is_stack_io
-        self._io_bits = io_bits
+        self.io_bits = io_bits
         self._min_v = -(1 << (io_bits - 1))
         self._max_v = 1 << io_bits
 
@@ -73,7 +73,7 @@ class InputOutputUnit:
         if self._is_stack_io:
             for _ in range(address):
                 addr = self._registers[RegisterName.SP] - Cell(
-                    self._io_bits // self._ram.word_bits,
+                    self.io_bits // self._ram.word_bits,
                     bits=self._ram.address_bits,
                 )
                 self._registers[RegisterName.SP] = addr
@@ -103,7 +103,7 @@ class InputOutputUnit:
 
         self._ram.put(
             address=addr,
-            value=Cell(value, bits=self._io_bits),
+            value=Cell(value, bits=self.io_bits),
             from_cpu=False,
         )
 
@@ -130,7 +130,7 @@ class InputOutputUnit:
                     raise SystemExit(msg)
 
                 self._registers[RegisterName.SP] = addr + Cell(
-                    self._io_bits // self._ram.word_bits,
+                    self.io_bits // self._ram.word_bits,
                     bits=self._ram.address_bits,
                 )
                 msg = "From stack" if message is None else message
@@ -147,7 +147,7 @@ class InputOutputUnit:
         message: str,
         file: TextIO,
     ) -> None:
-        value = self._ram.fetch(addr, bits=self._io_bits).signed
+        value = self._ram.fetch(addr, bits=self.io_bits).signed
         if file.isatty():
             printf(f"{message} = {value}", file=file)
         else:
@@ -195,7 +195,8 @@ class InputOutputUnit:
             raise SystemExit(msg)
 
         for i in range(0, len(code), word_hex):
-            addr = Cell(address + i // word_hex, bits=self._ram.address_bits)
+            cur_addr = address + i // word_hex
+            addr = Cell(cur_addr, bits=self._ram.address_bits)
 
             if self._ram.is_fill(addr):
                 msg = f"Code sections overlaps at address {addr}"
@@ -206,6 +207,8 @@ class InputOutputUnit:
                 value=Cell.from_hex(code[i : i + word_hex]),
                 from_cpu=False,
             )
+
+            self._ram.comment[cur_addr] = ""
 
     def put_code(self, *, address: Cell, value: Cell) -> Cell:
         for i in range(value.bits // self._ram.word_bits):

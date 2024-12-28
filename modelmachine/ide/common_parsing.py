@@ -74,5 +74,9 @@ def ct(inp: str, loc: int) -> str:
     )
 
 
+def identity(x: pp.ParseResults) -> pp.ParseResults:
+    return x
+
+
 class ParsingError(SystemExit):
     pass
