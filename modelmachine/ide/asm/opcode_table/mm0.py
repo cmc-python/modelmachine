@@ -15,20 +15,21 @@ if TYPE_CHECKING:
 Opcode = ControlUnit0.Opcode
 
 R = Operand(8, bits=8, addressing=Addressing.PC_RELATIVE)
-IM = Operand(8, bits=8, addressing=Addressing.IMMEDIATE)
+SIM = Operand(8, bits=8, addressing=Addressing.IMMEDIATE, signed=True)
+UIM = Operand(8, bits=8, addressing=Addressing.IMMEDIATE, signed=False)
 
 MM0_OPCODE_TABLE: Final[dict[CommonOpcode, Sequence[Operand]]] = {
-    Opcode.add: (IM,),
-    Opcode.sub: (IM,),
-    Opcode.smul: (IM,),
-    Opcode.sdiv: (IM,),
-    Opcode.umul: (IM,),
-    Opcode.udiv: (IM,),
-    Opcode.comp: (IM,),
-    Opcode.push: (IM,),
-    Opcode.pop: (IM,),
-    Opcode.dup: (IM,),
-    Opcode.swap: (IM,),
+    Opcode.add: (UIM,),
+    Opcode.sub: (UIM,),
+    Opcode.smul: (UIM,),
+    Opcode.sdiv: (UIM,),
+    Opcode.umul: (UIM,),
+    Opcode.udiv: (UIM,),
+    Opcode.comp: (UIM,),
+    Opcode.push: (SIM,),
+    Opcode.pop: (UIM,),
+    Opcode.dup: (UIM,),
+    Opcode.swap: (UIM,),
     Opcode.jump: (R,),
     Opcode.jeq: (R,),
     Opcode.jneq: (R,),

@@ -48,12 +48,16 @@ nl = pp.Char("\n").add_parse_action(ignore)
 
 decinteger = pp.Word(pp.nums, "_" + pp.nums)
 hexinteger = "0x" + pp.Word(hexnums, "_" + hexnums)
-posinteger = (decinteger ^ hexinteger).add_parse_action(
-    lambda t: [int("".join(t), 0)]
+posinteger = (
+    (decinteger ^ hexinteger)
+    .set_name("positive integer")
+    .add_parse_action(lambda t: [int("".join(t), 0)])
 )
 
-integer = (pp.Opt("-") + (decinteger ^ hexinteger)).add_parse_action(
-    lambda t: int("".join(t), 0)
+integer = (
+    (pp.Opt("-") + (decinteger ^ hexinteger).set_name("integer"))
+    .set_name("integer")
+    .add_parse_action(lambda t: int("".join(t), 0))
 )
 
 never = pp.NoMatch()  # type: ignore[no-untyped-call]

@@ -83,6 +83,7 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
         ("add a, unk_label", UndefinedLabelError, "Undefined label"),
         ("halt a, b, a", ParsingError, r"Expected \(end of line\)"),
         ("add a", ParsingError, r"Expected \(,\)"),
+        ("add", ParsingError, r"Expected label"),
         ("halt 100", ParsingError, r"Expected \(end of line\)"),
     ],
 )

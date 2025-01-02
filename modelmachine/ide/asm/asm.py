@@ -11,7 +11,16 @@ from pyparsing import Group as Gr
 from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
 
-from ..common_parsing import ch, ct, identity, integer, kw, line_seq, ngr
+from ..common_parsing import (
+    ParsingError,
+    ch,
+    ct,
+    identity,
+    integer,
+    kw,
+    line_seq,
+    ngr,
+)
 from ..directive import Directive
 from .errors import (
     DuplicateLabelError,
@@ -67,8 +76,9 @@ directives = pp.MatchFirst(
     cmd.value for cmd in chain(Cmd, Directive) if cmd.value.startswith(".")
 )
 
-label = ~directives + pp.Word(
-    pp.alphas + "_.", pp.alphanums + "_."
+label = (
+    ~directives
+    + pp.Word(pp.alphas + "_.", pp.alphanums + "_.").set_name("label")
 ).add_parse_action(lambda t: Label(t[0]))
 
 word = ngr(
@@ -98,7 +108,7 @@ def instruction(
         if decl.addressing in LABEL_ADDRESSING:
             op -= label
         elif decl.addressing == Addressing.IMMEDIATE:
-            op -= integer
+            op -= integer.copy()
         else:
             raise NotImplementedError
     op -= pp.FollowedBy(ch("\n"))
@@ -111,6 +121,7 @@ def asm_lang(cu: type[ControlUnit]) -> pp.ParserElement:
         for opcode, operands in OPCODE_TABLE[cu].items()
     )
     line = label_declare - (word | instr | pp.empty)
+
     return line_seq(line)
 
 
@@ -147,13 +158,22 @@ class Asm:
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.IMMEDIATE:
-            max_v = 1 << (decl.bits - 1)
-            if not (-max_v <= arg < max_v):
-                msg = (
-                    f"Immediate value is too long: {arg}; expected interval is"
-                    f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
-                )
-                raise ValueError(msg)
+            if decl.signed:
+                max_v = 1 << (decl.bits - 1)
+                if not (-max_v <= arg < max_v):
+                    msg = (
+                        f"Immediate value is too long: {arg}; expected interval is"
+                        f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
+                    )
+                    raise ParsingError(msg)
+            else:
+                max_v = 1 << decl.bits
+                if not (0 <= arg < max_v):
+                    msg = (
+                        f"Immediate value is too long: {arg}; expected interval is"
+                        f" [0x0, 0x{max_v:x}) {ct(inp, loc)}"
+                    )
+                    raise ParsingError(msg)
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.PC_RELATIVE:
@@ -164,7 +184,7 @@ class Asm:
                     f"PC relative addr is too long: {arg}; expected interval is"
                     f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
                 )
-                raise ValueError(msg)
+                raise ParsingError(msg)
             return Cell(arg, bits=decl.bits)
 
         raise NotImplementedError

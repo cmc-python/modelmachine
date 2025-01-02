@@ -13,3 +13,4 @@ class Operand:
     offset_bits: int
     bits: int = 16
     addressing: Addressing = Addressing.ABSOLUTE
+    signed: bool = False
