@@ -15,6 +15,7 @@ from .common_parsing import (
     ct,
     group_by_name,
     hexnums,
+    ignore,
     kw,
     line_seq,
     ngr,
@@ -79,7 +80,26 @@ def language(cu: type[ControlUnit]) -> pp.ParserElement:
         Directive.asm.value,
     )
     multi_line_directive = coded | asmd
-    return line_seq(one_line_directive, multi_line_directive).ignore(comment)
+    lang = cpud.copy().set_parse_action(ignore) - line_seq(
+        one_line_directive, multi_line_directive
+    ).ignore(comment)
+    assert isinstance(lang, pp.ParserElement)
+
+    @lang.add_parse_action
+    def require_code_or_asm(
+        pstr: str, _loc: int, tokens: pp.ParseResults
+    ) -> pp.ParseResults:
+        for t in tokens:
+            if t.get_name() in {Directive.asm.value, Directive.code.value}:
+                return tokens
+
+        msg = (
+            f"Missed required {Directive.code.value} "
+            f"or {Directive.asm.value} directive"
+        )
+        raise pp.ParseFatalException(pstr=pstr, loc=len(pstr), msg=msg)
+
+    return lang
 
 
 def remove_comment(line: str) -> str:
@@ -117,10 +137,6 @@ def source(
         cpu_dir = cpud.parse_string(inp)
         cpu_name = cpu_dir[0]
         control_unit = CU_MAP[cpu_name]
-        inp = (
-            "\n" * (inp[: cpu_dir["last_nl"] + 1].count("\n"))
-            + inp[cpu_dir["last_nl"] + 1 :]
-        )
         cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
         asm = Asm(cpu)
 
@@ -128,16 +144,6 @@ def source(
             language(control_unit).parse_string(inp, parse_all=True),
             Directive,
         )
-
-        if (
-            not parsed_program[Directive.code]
-            and not parsed_program[Directive.asm]
-        ):
-            msg = (
-                f"Missed required {Directive.code.value} "
-                f"or {Directive.asm.value} directive"
-            )
-            raise ParsingError(msg)
 
         for code_dir in parsed_program[Directive.code]:
             address = code_dir[0][0] if code_dir[0] else 0
@@ -159,8 +165,7 @@ def source(
             cpu.enter += f" {remove_comment(enter_dir[0])}"
 
     except pp.ParseBaseException as exc:
-        msg = exc.msg.replace("\n", r"end of line")
-        msg = f"{msg} {ct(inp, exc.loc)}"
+        msg = exc.explain(depth=0).replace("(\n)", r"(end of line)")
         raise ParsingError(msg) from exc
 
     return cpu
