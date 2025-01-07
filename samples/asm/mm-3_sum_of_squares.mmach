@@ -4,19 +4,17 @@
 .output S
 
 .asm
-next:
-sjg I, B, exit
-smul I, I, Q
-add Q, S, S
-add c1, I, I
-jump next
-exit:
-halt
+next:   sjg I, B, exit
+        smul I, I, Q
+        add Q, S, S
+        add c1, I, I
+        jump next
+exit:   halt
 
-A: I: .word 0
-B: .word 0
-Q: .word 0
-S: .word 0
-c1: .word 1
+A: I:   .word 0
+B:      .word 0
+Q:      .word 0
+S:      .word 0
+c1:     .word 1
 
 .enter 3 10

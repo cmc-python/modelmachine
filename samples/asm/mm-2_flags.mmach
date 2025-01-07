@@ -4,17 +4,17 @@
 .output a, b, c, d, e, f
 
 .asm
-comp a, a
-comp a, b
-comp a, c
-comp d, e
-comp d, f
-halt
-a: .word 0
-b: .word 0
-c: .word 0
-d: .word 0
-e: .word 0
-f: .word 0
+        comp a, a
+        comp a, b
+        comp a, c
+        comp d, e
+        comp d, f
+        halt
+a:      .word 0
+b:      .word 0
+c:      .word 0
+d:      .word 0
+e:      .word 0
+f:      .word 0
 
 .enter 25 20 31 0x8000000004 0x8000000002 1234

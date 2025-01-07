@@ -3,12 +3,10 @@
 .output res
 
 .asm
-add a, b, res
-halt
-
-.asm 0x100
-a: .word 0
-b: .word 0
-res: .word 0
+        add a, b, res
+        halt
+a:      .word 0
+b:      .word 0
+res:    .word 0
 
 .enter 1234 3232

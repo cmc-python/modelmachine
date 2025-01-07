@@ -16,8 +16,7 @@ loop:   push N  ; res N
         sub     ; res N-1
         pop N
         jump loop
-exit:
-        pop N   ; res
+exit:   pop N   ; res
         pop factorial
         halt
 

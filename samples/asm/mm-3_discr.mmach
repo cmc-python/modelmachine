@@ -3,17 +3,16 @@
 .output D
 
 .asm
-smul b, b, b2
-smul a, c, ac
-smul ac, const_4, _4ac
-sub b2, _4ac, D
-halt
-
-.asm 0x100
-const_4: .word 4
-_4ac: ac: a: .word 0
-b2: b: .word 0
-c: .word 0
-D: .word 0
+        smul b, b, b2
+        smul a, c, ac
+        smul ac, c4, _4ac
+        sub b2, _4ac, D
+        halt
+c4:     .word 4
+_4ac: ac: a:
+        .word 0
+b2: b:  .word 0
+c:      .word 0
+D:      .word 0
 
 .enter 5 8 3

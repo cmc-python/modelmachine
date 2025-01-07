@@ -3,10 +3,6 @@ from __future__ import annotations
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.ide.asm.errors import (
-    DuplicateLabelError,
-    UndefinedLabelError,
-)
 from modelmachine.ide.common_parsing import ParsingError
 from modelmachine.ide.load import load_from_string
 
@@ -34,7 +30,7 @@ def test_asm_io() -> None:
 
 
 def test_asm_missed_label_io() -> None:
-    with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
+    with pytest.raises(ParsingError, match="Undefined label 'b'"):
         load_from_string(f".cpu {MODEL}\n.asm\na: .word 10\n.input a,b\n")
 
 
@@ -78,9 +74,9 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
 @pytest.mark.parametrize(
     ("instruction", "exception", "match"),
     [
-        ("a:.word 0", DuplicateLabelError, "Duplicate label"),
-        ("add unk_label, b", UndefinedLabelError, "Undefined label"),
-        ("add a, unk_label", UndefinedLabelError, "Undefined label"),
+        ("a:.word 0", ParsingError, "Duplicate label"),
+        ("add unk_label, b", ParsingError, "Undefined label"),
+        ("add a, unk_label", ParsingError, "Undefined label"),
         ("halt a, b, a", ParsingError, r"Expected \(end of line\)"),
         ("add a", ParsingError, r"Expected \(,\)"),
         ("add", ParsingError, r"Expected label"),

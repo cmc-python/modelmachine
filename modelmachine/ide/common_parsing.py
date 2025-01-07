@@ -71,13 +71,6 @@ def line_seq(
     return res
 
 
-def ct(inp: str, loc: int) -> str:
-    return (
-        f"at {pp.lineno(loc, inp)}:{pp.col(loc, inp)}"
-        f" '{pp.line(loc, inp)}'"
-    )
-
-
 def identity(x: pp.ParseResults) -> pp.ParseResults:
     return x
 

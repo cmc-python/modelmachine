@@ -1,9 +1,9 @@
 .cpu mm-3
 .output a
+
 .asm
-jump sum
-a: .word 0x147ad
-b: .word -13
-sum:
-add a, b, a
-halt
+        jump sum
+a:      .word 0x147ad
+b:      .word -13
+sum:    add a, b, a
+        halt

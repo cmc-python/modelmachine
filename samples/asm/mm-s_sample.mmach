@@ -1,24 +1,26 @@
 .cpu mm-s
 
-.input 0x100 a
-.input 0x103 b
-.output 0x106 x
+.input a
+.input b
+.output x
 
-.code
+.asm
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
-5A 0100 ; a
-5A 0015 ; a, -21
-03 ; x = a * -21
-5A 0018 ; x, 50
-04 ; y = x / 50, z = x % 50
-5A 0103 ; y, z, b
-02 ; y, u = z - b
-5C ; y, u, u
-03 ; y, c = u * u
-5B 0106 ; y, [106] := c
-99
-; ---------------------
-FFFFEB ; -21
-000032 ; 50
+        push a ; a
+        push cm21 ; a -21
+        smul ; -21a
+        push c50 ; -21a 50
+        sdiv ; y=-21a/50 -21a%50
+        push b ; y -21a%50 b
+        sub ; y -21a%50-b
+        dup
+        smul ; y res
+        pop x
+        halt
+
+cm21:   .word -21
+c50:    .word 50
+a:x:    .word 0
+b:      .word 0
 
 .enter -123 456

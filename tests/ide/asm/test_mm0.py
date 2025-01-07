@@ -3,10 +3,6 @@ from __future__ import annotations
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.ide.asm.errors import (
-    DuplicateLabelError,
-    UndefinedLabelError,
-)
 from modelmachine.ide.common_parsing import ParsingError
 from modelmachine.ide.load import load_from_string
 
@@ -33,7 +29,7 @@ def test_asm_io() -> None:
 
 
 def test_asm_missed_label_io() -> None:
-    with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
+    with pytest.raises(ParsingError, match="Undefined label 'b'"):
         load_from_string(f".cpu {MODEL}\n.asm\na: .word 10\n.input a,b\n")
 
 
@@ -96,16 +92,45 @@ def test_alu_instruction(instruction: str, opcode: int) -> None:
 @pytest.mark.parametrize(
     ("instruction", "exception", "match"),
     [
-        ("a:.word 0", DuplicateLabelError, "Duplicate label"),
-        ("jump unk_label", UndefinedLabelError, "Undefined label"),
+        ("a:.word 0", ParsingError, "Duplicate label"),
+        ("jump unk_label", ParsingError, "Undefined label"),
         ("jump", ParsingError, r"Expected label"),
-        ("add 256", ParsingError, r"Immediate value is too long"),
         ("push 128", ParsingError, r"Immediate value is too long"),
-        ("add a", ParsingError, r"Expected integer"),
-        ("add a, a", ParsingError, r"Expected integer"),
-        ("add a, a, a", ParsingError, r"Expected integer"),
+        ("push -129", ParsingError, r"Immediate value is too long"),
+        ("add -1", ParsingError, r"Expected positive integer"),
+        ("add 256", ParsingError, r"Immediate value is too long"),
+        ("sub -1", ParsingError, r"Expected positive integer"),
+        ("sub 256", ParsingError, r"Immediate value is too long"),
+        ("smul -1", ParsingError, r"Expected positive integer"),
+        ("smul 256", ParsingError, r"Immediate value is too long"),
+        ("sdiv -1", ParsingError, r"Expected positive integer"),
+        ("sdiv 256", ParsingError, r"Immediate value is too long"),
+        ("umul -1", ParsingError, r"Expected positive integer"),
+        ("umul 256", ParsingError, r"Immediate value is too long"),
+        ("udiv -1", ParsingError, r"Expected positive integer"),
+        ("udiv 256", ParsingError, r"Immediate value is too long"),
+        ("comp -1", ParsingError, r"Expected positive integer"),
+        ("comp 256", ParsingError, r"Immediate value is too long"),
+        ("pop -1", ParsingError, r"Expected positive integer"),
+        ("pop 256", ParsingError, r"Immediate value is too long"),
+        ("dup -1", ParsingError, r"Expected positive integer"),
+        ("dup 256", ParsingError, r"Immediate value is too long"),
+        ("swap -1", ParsingError, r"Expected positive integer"),
+        ("swap 256", ParsingError, r"Immediate value is too long"),
+        ("add a", ParsingError, r"Expected positive integer"),
+        ("add a, a", ParsingError, r"Expected positive integer"),
+        ("add a, a, a", ParsingError, r"Expected positive integer"),
         ("halt a, b, a", ParsingError, r"Expected \(end of line\)"),
         ("halt 100", ParsingError, r"Expected \(end of line\)"),
+        ("jump a", ParsingError, r"Jump is too long"),
+        ("sjl a", ParsingError, r"Jump is too long"),
+        ("sjleq a", ParsingError, r"Jump is too long"),
+        ("sjgeq a", ParsingError, r"Jump is too long"),
+        ("sjg a", ParsingError, r"Jump is too long"),
+        ("ujl a", ParsingError, r"Jump is too long"),
+        ("ujleq a", ParsingError, r"Jump is too long"),
+        ("ujgeq a", ParsingError, r"Jump is too long"),
+        ("ujg a", ParsingError, r"Jump is too long"),
     ],
 )
 def test_asm_fail(
@@ -116,6 +141,7 @@ def test_asm_fail(
             f".cpu {MODEL}\n.asm 0x100\n"
             "a:.word 0x1122\n"
             "b:.word 2\n"
+            ".asm 0x200\n"
             f"{instruction}\n"
             "halt\n"
         )

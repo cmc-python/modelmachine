@@ -12,7 +12,6 @@ from .asm.asm import Asm, Label, asm_lang, label
 from .asm.errors import UnexpectedLocalLabelError
 from .common_parsing import (
     ParsingError,
-    ct,
     group_by_name,
     hexnums,
     ignore,
@@ -107,7 +106,7 @@ def remove_comment(line: str) -> str:
 
 
 def parse_io_dir(
-    inp: str, io_dir: pp.ParseResults, asm: Asm, io_req: list[IOReq]
+    io_dir: pp.ParseResults, asm: Asm, io_req: list[IOReq]
 ) -> None:
     message = io_dir[1] if len(io_dir) > 1 else None
 
@@ -115,33 +114,34 @@ def parse_io_dir(
         msg = message
         addr = address
         if isinstance(address, Label):
-            loc = io_dir["loc"]
             if address.is_local:
-                msg = f"Local labels in io directive are unsupported {ct(inp, loc)}"
-                raise UnexpectedLocalLabelError(msg)
+                msg = "Local labels in io directive are unsupported"
+                raise UnexpectedLocalLabelError(
+                    pstr=address.pstr, loc=address.loc, msg=msg
+                )
             if msg is None:
                 msg = address.name
 
-            addr = asm.resolve(inp, loc, address)
+            addr = asm.resolve(address)
 
         io_req.append(IOReq(addr, msg))
 
 
 def source(
-    inp: str,
+    pstr: str,
     *,
     protect_memory: bool,
 ) -> Cpu:
-    inp += "\n"
+    pstr += "\n"
     try:
-        cpu_dir = cpud.parse_string(inp)
+        cpu_dir = cpud.parse_string(pstr)
         cpu_name = cpu_dir[0]
         control_unit = CU_MAP[cpu_name]
         cpu = Cpu(control_unit=control_unit, protect_memory=protect_memory)
         asm = Asm(cpu)
 
         parsed_program = group_by_name(
-            language(control_unit).parse_string(inp, parse_all=True),
+            language(control_unit).parse_string(pstr, parse_all=True),
             Directive,
         )
 
@@ -151,15 +151,15 @@ def source(
 
         for asm_dir in parsed_program[Directive.asm]:
             address = asm_dir[0][0] if asm_dir[0] else 0
-            asm.parse(inp, address, asm_dir[1])
+            asm.parse(pstr, address, asm_dir[1])
 
         asm.link()
 
         for input_dir in parsed_program[Directive.input]:
-            parse_io_dir(inp, input_dir, asm, cpu.input_req)
+            parse_io_dir(input_dir, asm, cpu.input_req)
 
         for output_dir in parsed_program[Directive.output]:
-            parse_io_dir(inp, output_dir, asm, cpu.output_req)
+            parse_io_dir(output_dir, asm, cpu.output_req)
 
         for enter_dir in parsed_program[Directive.enter]:
             cpu.enter += f" {remove_comment(enter_dir[0])}"

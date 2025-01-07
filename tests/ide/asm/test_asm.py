@@ -1,11 +1,7 @@
 import pytest
 
 from modelmachine.cell import Cell
-from modelmachine.ide.asm.errors import (
-    DuplicateLabelError,
-    UndefinedLabelError,
-    UnexpectedLocalLabelError,
-)
+from modelmachine.ide.common_parsing import ParsingError
 from modelmachine.ide.load import load_from_string
 
 AB = 16
@@ -39,26 +35,24 @@ def test_asm_io() -> None:
 
 
 def test_asm_missed_label_io() -> None:
-    with pytest.raises(UndefinedLabelError, match="Undefined label 'b'"):
+    with pytest.raises(ParsingError, match="Undefined label 'b'"):
         load_from_string(".cpu mm-1\n.asm\na: .word 10\n.input a,b\n")
 
 
 def test_asm_duplicate_label() -> None:
-    with pytest.raises(DuplicateLabelError, match="Duplicate label 'a'"):
+    with pytest.raises(ParsingError, match="Duplicate label 'a'"):
         load_from_string(".cpu mm-1\n.asm\na: a: .word 10\n")
 
-    with pytest.raises(DuplicateLabelError, match="Duplicate label 'a.x'"):
+    with pytest.raises(ParsingError, match="Duplicate label 'a.x'"):
         load_from_string(".cpu mm-1\n.asm\na: .x: .x: .word 10\n")
 
 
 def test_asm_unexpected_local() -> None:
-    with pytest.raises(
-        UnexpectedLocalLabelError, match=r"Unexpected local label '\.a'"
-    ):
+    with pytest.raises(ParsingError, match=r"Unexpected local label '\.a'"):
         load_from_string(".cpu mm-1\n.asm\n.a: .word 10\n")
 
     with pytest.raises(
-        UnexpectedLocalLabelError,
+        ParsingError,
         match="Local labels in io directive are unsupported",
     ):
         load_from_string(".cpu mm-1\n.asm\n.input .a\n")

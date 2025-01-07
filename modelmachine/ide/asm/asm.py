@@ -12,18 +12,20 @@ from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
 
 from ..common_parsing import (
-    ParsingError,
     ch,
-    ct,
     identity,
     integer,
     kw,
     line_seq,
     ngr,
+    posinteger,
 )
 from ..directive import Directive
 from .errors import (
     DuplicateLabelError,
+    TooLongImmediateError,
+    TooLongJumpError,
+    TooLongWordError,
     UndefinedLabelError,
     UnexpectedLocalLabelError,
 )
@@ -44,6 +46,8 @@ if TYPE_CHECKING:
 @dataclass(frozen=True)
 class Label:
     name: str
+    pstr: str
+    loc: int
 
     @property
     def is_local(self) -> bool:
@@ -52,15 +56,12 @@ class Label:
 
 @dataclass(frozen=True)
 class Link:
-    inp: str
-    loc: int
+    label: Label
     addr: Cell
 
 
 @dataclass(frozen=True)
 class Ref:
-    inp: str
-    loc: int
     addr: Cell
     decl: Operand
     label: Label
@@ -79,7 +80,7 @@ directives = pp.MatchFirst(
 label = (
     ~directives
     + pp.Word(pp.alphas + "_.", pp.alphanums + "_.").set_name("label")
-).add_parse_action(lambda t: Label(t[0]))
+).add_parse_action(lambda pstr, loc, t: Label(t[0], pstr=pstr, loc=loc))
 
 word = ngr(
     kw(Cmd.word.value)
@@ -97,6 +98,45 @@ LABEL_ADDRESSING: Final[frozenset[Addressing]] = frozenset(
 )
 
 
+def immediate(decl: Operand) -> pp.ParserElement:
+    if decl.signed:
+        p = integer.copy()
+
+        @p.add_parse_action
+        def signed_length(
+            pstr: str, loc: int, tokens: pp.ParseResults
+        ) -> pp.ParseResults:
+            arg = tokens[0]
+            max_v = 1 << (decl.bits - 1)
+            if not (-max_v <= arg < max_v):
+                msg = (
+                    f"Immediate value is too long: {arg}; expected interval is"
+                    f" [-0x{max_v:x}, 0x{max_v:x})"
+                )
+                raise TooLongImmediateError(pstr=pstr, loc=loc, msg=msg)
+            return tokens
+
+        return p
+
+    p = posinteger.copy()
+
+    @p.add_parse_action
+    def unsigned_length(
+        pstr: str, loc: int, tokens: pp.ParseResults
+    ) -> pp.ParseResults:
+        arg = tokens[0]
+        max_v = 1 << decl.bits
+        if not (0 <= arg < max_v):
+            msg = (
+                f"Immediate value is too long: {arg}; expected interval is"
+                f" [0x0, 0x{max_v:x})"
+            )
+            raise TooLongImmediateError(pstr=pstr, loc=loc, msg=msg)
+        return tokens
+
+    return p
+
+
 def instruction(
     opcode: CommonOpcode, operands: Sequence[Operand]
 ) -> pp.ParserElement:
@@ -108,7 +148,7 @@ def instruction(
         if decl.addressing in LABEL_ADDRESSING:
             op -= label
         elif decl.addressing == Addressing.IMMEDIATE:
-            op -= integer.copy()
+            op -= immediate(decl)
         else:
             raise NotImplementedError
     op -= pp.FollowedBy(ch("\n"))
@@ -129,7 +169,7 @@ class Asm:
     _opcode_table: Final[dict[CommonOpcode, Sequence[Operand]]]
     _cpu: Final[Cpu]
     _io: Final[InputOutputUnit]
-    _labels: dict[Label, Link]
+    _labels: dict[str, Link]
     _refs: list[Ref]
     _cur_func: Label | None
     _cur_addr: Cell
@@ -144,36 +184,13 @@ class Asm:
         self._cur_func = None
 
     def address(
-        self, inp: str, loc: int, instr_addr: Cell, decl: Operand, arg: int
+        self, pstr: str, loc: int, instr_addr: Cell, decl: Operand, arg: int
     ) -> Cell:
         if decl.addressing == Addressing.ABSOLUTE:
             assert decl.bits == self._cpu.ram.address_bits
-            max_v = 1 << decl.bits
-            if not (0 <= arg < max_v):
-                msg = (
-                    f"Address is too long: {arg}; expected interval is"
-                    f" [0x0, 0x{max_v:x}) {ct(inp, loc)}"
-                )
-                raise ValueError(msg)
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.IMMEDIATE:
-            if decl.signed:
-                max_v = 1 << (decl.bits - 1)
-                if not (-max_v <= arg < max_v):
-                    msg = (
-                        f"Immediate value is too long: {arg}; expected interval is"
-                        f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
-                    )
-                    raise ParsingError(msg)
-            else:
-                max_v = 1 << decl.bits
-                if not (0 <= arg < max_v):
-                    msg = (
-                        f"Immediate value is too long: {arg}; expected interval is"
-                        f" [0x0, 0x{max_v:x}) {ct(inp, loc)}"
-                    )
-                    raise ParsingError(msg)
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.PC_RELATIVE:
@@ -181,30 +198,34 @@ class Asm:
             max_v = 1 << (decl.bits - 1)
             if not (-max_v <= arg < max_v):
                 msg = (
-                    f"PC relative addr is too long: {arg}; expected interval is"
-                    f" [-0x{max_v:x}, 0x{max_v:x}) {ct(inp, loc)}"
+                    f"Jump is too long: {arg}; allowed jump interval is"
+                    f" [-0x{max_v:x}, 0x{max_v:x})"
                 )
-                raise ParsingError(msg)
+                raise TooLongJumpError(pstr=pstr, loc=loc, msg=msg)
             return Cell(arg, bits=decl.bits)
 
         raise NotImplementedError
 
-    def fullname(self, inp: str, loc: int, label: Label) -> Label:
+    def fullname(self, label: Label) -> Label:
         if not label.is_local:
             return label
 
         if self._cur_func is None:
             msg = (
                 f"Unexpected local label '{label.name}'; "
-                f"local labels allowed only after regular label {ct(inp, loc)}"
+                f"local labels allowed only after regular label"
             )
-            raise UnexpectedLocalLabelError(msg)
+            raise UnexpectedLocalLabelError(
+                pstr=label.pstr, loc=label.loc, msg=msg
+            )
 
-        return Label(self._cur_func.name + label.name)
+        return Label(
+            self._cur_func.name + label.name, pstr=label.pstr, loc=label.loc
+        )
 
     def put_instruction(
         self,
-        inp: str,
+        pstr: str,
         loc: int,
         opcode: CommonOpcode,
         arguments: pp.ParseResults,
@@ -218,14 +239,12 @@ class Asm:
             address=self._cur_addr,
             value=instr,
         )
-        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = pp.line(loc, inp)
+        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = pp.line(loc, pstr)
         for decl, arg in zip(self._opcode_table[opcode], arguments):
             if isinstance(arg, Label):
-                label = self.fullname(inp, loc, arg)
+                label = self.fullname(arg)
                 self._refs.append(
                     Ref(
-                        inp=inp,
-                        loc=loc,
                         addr=instr_addr,
                         decl=decl,
                         label=label,
@@ -233,51 +252,55 @@ class Asm:
                 )
             else:
                 assert isinstance(arg, int)
-                addr = self.address(inp, loc, instr_addr, decl, arg)
+                addr = self.address(pstr, loc, instr_addr, decl, arg)
                 self._io.override(
                     address=instr_addr,
                     offset_bits=decl.offset_bits,
                     value=addr,
                 )
 
-    def put_word(self, inp: str, loc: int, word: pp.ParseResults) -> None:
+    def put_word(self, pstr: str, loc: int, word: pp.ParseResults) -> None:
         original = "".join(word)
         x = int(original, 0)
         try:
             self._io.check_word(x)
         except ValueError as exc:
-            msg = f"Too long literal '{x}' in .word directive {ct(inp, loc)}"
-            raise SystemExit(msg) from exc
+            msg = f"Too long literal '{x}' in .word directive"
+            raise TooLongWordError(pstr=pstr, loc=loc, msg=msg) from exc
         self._cur_addr += self._cpu.ram.put(
             address=self._cur_addr,
             value=Cell(x, bits=self._io.io_bits),
         )
         self._cpu.ram.comment[self._cur_addr.unsigned - 1] = original
 
-    def resolve(self, inp: str, loc: int, label: Label) -> int:
-        link = self._labels.get(label)
+    def resolve(self, label: Label) -> int:
+        link = self._labels.get(label.name)
         if link is None:
-            msg = f"Undefined label '{label.name}' {ct(inp, loc)}"
-            raise UndefinedLabelError(msg)
+            msg = f"Undefined label '{label.name}'"
+            raise UndefinedLabelError(pstr=label.pstr, loc=label.loc, msg=msg)
 
         return link.addr.unsigned
 
-    def store_label(self, inp: str, loc: int, label: Label) -> None:
+    def store_label(self, label: Label) -> None:
         if not label.is_local:
             self._cur_func = label
 
-        label = self.fullname(inp, loc, label)
-        if label in self._labels:
-            prev = self._labels[label]
+        label = self.fullname(label)
+        if label.name in self._labels:
+            prev = self._labels[label.name].label
+            pcol = pp.col(prev.loc, prev.pstr)
+            plineno = pp.lineno(prev.loc, prev.pstr)
             msg = (
-                f"Duplicate label '{label.name}' {ct(inp, loc)}"
-                f" ; previous declaration {ct(prev.inp, prev.loc)}"
+                f"Duplicate label '{label.name}'\n\n"
+                f"previous declaration (at char {prev.loc}), (line:{plineno}, col:{pcol}):\n"
+                f"{pp.line(prev.loc, prev.pstr)}\n"
+                f"{' ' * (pcol - 1)}^\n"
             )
-            raise DuplicateLabelError(msg)
+            raise DuplicateLabelError(pstr=label.pstr, loc=label.loc, msg=msg)
 
-        self._labels[label] = Link(inp=inp, loc=loc, addr=self._cur_addr)
+        self._labels[label.name] = Link(label=label, addr=self._cur_addr)
 
-    def parse(self, inp: str, address: int, code: pp.ParseResults) -> None:
+    def parse(self, pstr: str, address: int, code: pp.ParseResults) -> None:
         self._cur_addr = Cell(address, bits=self._cpu.ram.address_bits)
         self._cur_func = None
 
@@ -286,19 +309,21 @@ class Asm:
             loc: int = cmd["loc"]
             if cmd_name == Cmd.word:
                 for x in cmd:
-                    self.put_word(inp, loc, x)
+                    self.put_word(pstr, loc, x)
             elif cmd_name == Cmd.label:
-                self.store_label(inp, loc, cmd[0])
+                self.store_label(cmd[0])
             elif cmd_name == Cmd.instruction:
-                self.put_instruction(inp, loc, cmd[0], cmd[1:])
+                self.put_instruction(pstr, loc, cmd[0], cmd[1:])
             else:
                 msg = f"Unknown asm command: {cmd.get_name()}"
                 raise NotImplementedError(msg)
 
     def link(self) -> None:
         for ref in self._refs:
-            int_addr = self.resolve(ref.inp, ref.loc, ref.label)
-            addr = self.address(ref.inp, ref.loc, ref.addr, ref.decl, int_addr)
+            int_addr = self.resolve(ref.label)
+            addr = self.address(
+                ref.label.pstr, ref.label.loc, ref.addr, ref.decl, int_addr
+            )
             self._io.override(
                 address=ref.addr,
                 offset_bits=ref.decl.offset_bits,

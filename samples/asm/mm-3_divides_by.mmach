@@ -4,22 +4,22 @@
 .output a_divides_by_b
 
 .asm
-sdiv a, b, a_div_b
-jeq a_divides_by_b, const_0, result_1
-move const_0, a_divides_by_b
-halt
+        sdiv a, b, adivb
+        jeq a_divides_by_b, c0, res1
+        move c0, a_divides_by_b
+        halt
 
-result_1:
-move const_1, a_divides_by_b
-halt
+res1:
+        move c1, a_divides_by_b
+        halt
 
-const_0: .word 0
-const_1: .word 1
+c0:     .word 0
+c1:     .word 1
 
-.asm 0x100
-a: .word 0
-b: .word 0
-a_div_b: .word 0
-a_divides_by_b: .word 0
+a:      .word 0
+b:      .word 0
+adivb:  .word 0
+a_divides_by_b:
+        .word 0
 
 .enter 10 3

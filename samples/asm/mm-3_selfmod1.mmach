@@ -7,19 +7,16 @@
 
 
 .asm
-next:
-sjg I, N, exit
-instr:
-move I, arr
-add instr, c1, instr
-add I, c1, I
-jump next
-exit:
-halt
+next:   sjg I, N, exit
+instr:  move I, arr
+        add instr, c1, instr
+        add I, c1, I
+        jump next
+exit:   halt
 
-c1: .word 1
-I: .word 1
-N: .word 0
+c1:     .word 1
+I:      .word 1
+N:      .word 0
 
 .asm 0x1000
 arr: .word 0

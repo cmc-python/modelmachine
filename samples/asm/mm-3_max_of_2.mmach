@@ -4,12 +4,11 @@
 .output max
 
 .asm
-sjl a, b, store
-halt
-store:
-move b, a
-halt
+        sjl a, b, store
+        halt
+store:  move b, a
+        halt
 max: a: .word 0
-b: .word 0
+b:      .word 0
 
 .enter 12 21

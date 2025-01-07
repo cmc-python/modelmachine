@@ -7,22 +7,19 @@
 .output  0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009
 
 .asm
-next:
-sjg  I, c10, exit
-instr:
-smul input, c2, output
-add I, c1, I
-add instr, op1, instr
-sub instr, c1, instr
-jump next
-exit:
-halt
+next:   sjg  I, c10, exit
+instr:  smul input, c2, output
+        add I, c1, I
+        add instr, op1, instr
+        sub instr, c1, instr
+        jump next
+exit:   halt
 
-c1: .word 1
-c2: .word 2
-c10: .word 10
-I: .word 1
-op1: .word 0x1_0000_0000
+c1:     .word 1
+c2:     .word 2
+c10:    .word 10
+I:      .word 1
+op1:    .word 0x1_0000_0000
 
 .asm 0x1000
 input: .word 0
