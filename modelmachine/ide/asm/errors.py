@@ -1,12 +1,8 @@
-from functools import cached_property
-
 import pyparsing as pp
 
 
 class NoFoundException(pp.ParseFatalException):
-    @cached_property
-    def found(self) -> str:
-        return ""
+    found = ""
 
 
 class UndefinedLabelError(NoFoundException):
