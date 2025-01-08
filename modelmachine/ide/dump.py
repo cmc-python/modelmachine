@@ -25,6 +25,9 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
         fout.write(f"\n.code{addr}\n")
         line = ""
         for i in seg:
+            if not line:
+                line_start = i
+
             line += cpu._io_unit.store_source(  # noqa: SLF001
                 start=i, bits=cpu.ram.word_bits
             )
@@ -32,7 +35,7 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
             comment = cpu.ram.comment.get(i)
             if comment is not None:
                 line = line.ljust(word_hex)
-                fout.write(f"{line} ; {i:04x} ; {comment}\n")
+                fout.write(f"{line} ; {line_start:04x} ; {comment}\n")
                 line = ""
 
         assert line == ""

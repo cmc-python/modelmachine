@@ -33,7 +33,7 @@ from .opcode_table import OPCODE_TABLE
 from .operand import Addressing
 
 if TYPE_CHECKING:
-    from typing import Final, Sequence
+    from typing import Callable, Final, Sequence
 
     from modelmachine.cpu.cpu import Cpu
     from modelmachine.cu.control_unit import ControlUnit
@@ -41,6 +41,8 @@ if TYPE_CHECKING:
     from modelmachine.io import InputOutputUnit
 
     from .operand import Operand
+
+REG_BITS = 4
 
 
 @dataclass(frozen=True)
@@ -137,6 +139,18 @@ def immediate(decl: Operand) -> pp.ParserElement:
     return p
 
 
+def always(x: int) -> Callable[[], int]:
+    return lambda: x
+
+
+def register(decl: Operand) -> pp.ParserElement:
+    assert decl.bits == REG_BITS
+    return pp.MatchFirst(
+        pp.CaselessKeyword(f"r{i:x}").add_parse_action(always(i))
+        for i in range(1 << decl.bits)
+    )
+
+
 def instruction(
     opcode: CommonOpcode, operands: Sequence[Operand]
 ) -> pp.ParserElement:
@@ -149,6 +163,8 @@ def instruction(
             op -= label
         elif decl.addressing == Addressing.IMMEDIATE:
             op -= immediate(decl)
+        elif decl.addressing == Addressing.REGISTER:
+            op -= register(decl)
         else:
             raise NotImplementedError
     op -= pp.FollowedBy(ch("\n"))
@@ -156,6 +172,10 @@ def instruction(
 
 
 def asm_lang(cu: type[ControlUnit]) -> pp.ParserElement:
+    if OPCODE_TABLE[cu]:
+        for opcode in cu.Opcode._members_.values():
+            assert opcode in OPCODE_TABLE[cu], f"Missed opcode {opcode} in asm"
+
     instr = pp.MatchFirst(
         instruction(opcode, operands)
         for opcode, operands in OPCODE_TABLE[cu].items()
@@ -188,6 +208,10 @@ class Asm:
     ) -> Cell:
         if decl.addressing == Addressing.ABSOLUTE:
             assert decl.bits == self._cpu.ram.address_bits
+            return Cell(arg, bits=decl.bits)
+
+        if decl.addressing == Addressing.REGISTER:
+            assert decl.bits == REG_BITS
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.IMMEDIATE:

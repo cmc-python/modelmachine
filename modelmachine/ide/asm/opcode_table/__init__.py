@@ -15,6 +15,7 @@ from .mm0 import MM0_OPCODE_TABLE
 from .mm1 import MM1_OPCODE_TABLE
 from .mm2 import MM2_OPCODE_TABLE
 from .mm3 import MM3_OPCODE_TABLE
+from .mmr import MMR_OPCODE_TABLE
 from .mms import MMS_OPCODE_TABLE
 from .mmv import MMV_OPCODE_TABLE
 
@@ -34,7 +35,7 @@ OPCODE_TABLE: Final[
     ControlUnit2: MM2_OPCODE_TABLE,
     ControlUnit3: MM3_OPCODE_TABLE,
     ControlUnitM: {},
-    ControlUnitR: {},
+    ControlUnitR: MMR_OPCODE_TABLE,
     ControlUnitS: MMS_OPCODE_TABLE,
     ControlUnitV: MMV_OPCODE_TABLE,
 }

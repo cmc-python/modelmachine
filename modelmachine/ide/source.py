@@ -62,7 +62,7 @@ coded = ngr(
     kw(Directive.code.value)
     - Gr(posinteger | pp.empty)
     - nl
-    - Gr(pp.Word(hexnums)[1, ...].ignore(nl)),
+    - Gr(pp.Word(hexnums).set_name("hex number")[1, ...].ignore(nl)),
     Directive.code.value,
 )
 

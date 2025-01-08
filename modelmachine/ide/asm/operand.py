@@ -6,6 +6,7 @@ class Addressing(IntEnum):
     ABSOLUTE = auto()
     IMMEDIATE = auto()
     PC_RELATIVE = auto()
+    REGISTER = auto()
 
 
 @dataclass(frozen=True)
