@@ -146,9 +146,11 @@ def always(x: int) -> Callable[[], int]:
 def register(decl: Operand) -> pp.ParserElement:
     assert decl.bits == REG_BITS
     return pp.MatchFirst(
-        pp.CaselessKeyword(f"r{i:x}").add_parse_action(always(i))
+        pp.CaselessKeyword(f"r{i:x}")
+        .set_name("register")
+        .add_parse_action(always(i))
         for i in range(1 << decl.bits)
-    )
+    ).set_name("register")
 
 
 def instruction(
