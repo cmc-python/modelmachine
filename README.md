@@ -675,6 +675,7 @@ Model machine emulator
 ## See also
 
 - [Config](docs/config.md)
+- [Assembler](docs/assembler.md)
 - [Implementation](docs/implementation.md)
 - [Development](docs/development.md)
 - [Road map](docs/todo.md)

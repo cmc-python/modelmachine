@@ -29,17 +29,8 @@ if TYPE_CHECKING:
 
 
 comment = pp.Regex(";.*")
-last_nl = pp.Char("\n")
-
-
-@last_nl.add_parse_action
-def save_last_ln(loc: int, res: pp.ParseResults) -> None:
-    res.clear()  # type: ignore[no-untyped-call]
-    res["last_nl"] = loc
-
-
 cpu_name = pp.MatchFirst([pp.CaselessKeyword(name) for name in CU_MAP])
-cpud = (nl[0, ...] - kw(Directive.cpu.value) - cpu_name - last_nl)(
+cpud = (nl[0, ...] - kw(Directive.cpu.value) - cpu_name - nl)(
     Directive.cpu.value
 ).ignore(comment)
 

@@ -27,7 +27,7 @@ def test_asm_word_too_long() -> None:
 
 def test_asm_io() -> None:
     cpu = load_from_string(
-        ".cpu mm-1\n.asm 0x100\na: .word 0\nb: .word 0\n.input a,b\n"
+        ".cpu mm-1\n.asm 0x100\na: .word 0\nb: .word 0\n.input A,b\n"
         ".enter 0x011234 0x021234"
     )
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x011234

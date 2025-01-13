@@ -83,7 +83,9 @@ directives = pp.MatchFirst(
 label = (
     ~directives
     + pp.Word(pp.alphas + "_.", pp.alphanums + "_.").set_name("label")
-).add_parse_action(lambda pstr, loc, t: Label(t[0], pstr=pstr, loc=loc))
+).add_parse_action(
+    lambda pstr, loc, t: Label(t[0].lower(), pstr=pstr, loc=loc)
+)
 
 word = ngr(
     kw(Cmd.word.value)
