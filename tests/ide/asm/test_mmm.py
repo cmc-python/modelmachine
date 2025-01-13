@@ -42,6 +42,11 @@ def test_asm_missed_label_io() -> None:
         ("store r2, a", 0x10_20_0100),
         ("store r2, a[r3]", 0x10_23_0100),
         ("rmove r2, r3", 0x20_23),
+        ("addr r2, a", 0x11_20_0100),
+        ("addr r2, a[r3]", 0x11_23_0100),
+        ("addr r2, .imm(0x10)", 0x11_20_0010),
+        ("addr r2, .imm(0x10)[r3]", 0x11_23_0010),
+        ("addr r2, .imm(0xffff)", 0x11_20_FFFF),
         ("add r2, a", 0x01_20_0100),
         ("add r2, a[r3]", 0x01_23_0100),
         ("sub r2, a", 0x02_20_0100),
@@ -101,6 +106,12 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
         ("add r1", ParsingError, r"Expected \(,\)"),
         ("add", ParsingError, r"Expected register"),
         ("halt 100", ParsingError, r"Expected \(end of line\)"),
+        (
+            "addr r2, .imm(0x10000)",
+            ParsingError,
+            r"Immediate value is too long",
+        ),
+        ("addr r2, .imm(-2)", ParsingError, r"Expected positive integer"),
     ],
 )
 def test_asm_fail(

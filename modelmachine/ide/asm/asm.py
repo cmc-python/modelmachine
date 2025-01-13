@@ -14,7 +14,6 @@ from modelmachine.cu.opcode import OPCODE_BITS
 from ..common_parsing import (
     ch,
     identity,
-    ignore,
     integer,
     kw,
     line_seq,
@@ -24,6 +23,7 @@ from ..common_parsing import (
 from ..directive import Directive
 from .errors import (
     DuplicateLabelError,
+    ExpectedPositiveIntegerError,
     TooLongImmediateError,
     TooLongJumpError,
     TooLongWordError,
@@ -31,7 +31,7 @@ from .errors import (
     UnexpectedLocalLabelError,
 )
 from .opcode_table import OPCODE_TABLE
-from .operand import Addressing
+from .operand import Addressing, Operand
 
 if TYPE_CHECKING:
     from typing import Callable, Final, Iterator, Sequence
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
     from modelmachine.cu.opcode import CommonOpcode
     from modelmachine.io import InputOutputUnit
 
-    from .operand import Operand
 
 REG_BITS = 4
 
@@ -74,6 +73,7 @@ class Cmd(Enum):
     label = "label"
     instruction = "instruction"
     word = ".word"
+    imm = ".imm"
 
 
 directives = pp.MatchFirst(
@@ -93,24 +93,17 @@ word = ngr(
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
 
 
-LABEL_ADDRESSING: Final[frozenset[Addressing]] = frozenset(
-    {
-        Addressing.ABSOLUTE,
-        Addressing.PC_RELATIVE,
-    }
-)
-
-
-def immediate(decl: Operand) -> pp.ParserElement:
+def check_immediate(
+    decl: Operand,
+) -> Callable[[str, int, pp.ParseResults], pp.ParseResults]:
     if decl.signed:
-        p = integer.copy()
+        max_v = 1 << (decl.bits - 1)
 
-        @p.add_parse_action
-        def signed_length(
+        def parse_signed(
             pstr: str, loc: int, tokens: pp.ParseResults
         ) -> pp.ParseResults:
+            assert len(tokens) == 1
             arg = tokens[0]
-            max_v = 1 << (decl.bits - 1)
             if not (-max_v <= arg < max_v):
                 msg = (
                     f"Immediate value is too long: {arg}; expected interval is"
@@ -119,17 +112,20 @@ def immediate(decl: Operand) -> pp.ParserElement:
                 raise TooLongImmediateError(pstr=pstr, loc=loc, msg=msg)
             return tokens
 
-        return p
+        return parse_signed
 
-    p = posinteger.copy()
+    max_v = 1 << decl.bits
 
-    @p.add_parse_action
-    def unsigned_length(
+    def parse_unsigned(
         pstr: str, loc: int, tokens: pp.ParseResults
     ) -> pp.ParseResults:
+        assert len(tokens) == 1
         arg = tokens[0]
-        max_v = 1 << decl.bits
-        if not (0 <= arg < max_v):
+        if arg < 0:
+            msg = f"Expected positive integer: {arg}"
+            raise ExpectedPositiveIntegerError(pstr=pstr, loc=loc, msg=msg)
+
+        if arg >= max_v:
             msg = (
                 f"Immediate value is too long: {arg}; expected interval is"
                 f" [0x0, 0x{max_v:x})"
@@ -137,7 +133,13 @@ def immediate(decl: Operand) -> pp.ParserElement:
             raise TooLongImmediateError(pstr=pstr, loc=loc, msg=msg)
         return tokens
 
-    return p
+    return parse_unsigned
+
+
+def immediate(decl: Operand) -> pp.ParserElement:
+    if decl.signed:
+        return integer.copy().add_parse_action(check_immediate(decl))
+    return posinteger.copy().add_parse_action(check_immediate(decl))
 
 
 def always(x: int) -> Callable[[], int]:
@@ -154,9 +156,19 @@ def register(decl: Operand) -> pp.ParserElement:
     ).set_name("register")
 
 
+def operand_label(decl: Operand) -> pp.ParserElement:
+    if decl.addressing is Addressing.PC_RELATIVE:
+        decl = Operand(**{**decl.__dict__, "signed": True})
+    int_literal = integer if decl.signed else posinteger
+    imm = kw(Cmd.imm.value) - ch("(") - int_literal - ch(")")
+    return (imm.add_parse_action(check_immediate(decl)) | label).set_name(
+        "label"
+    )
+
+
 def operand(decl: Operand) -> pp.ParserElement:
-    if decl.addressing in LABEL_ADDRESSING:
-        op = label
+    if decl.addressing in {Addressing.ABSOLUTE, Addressing.PC_RELATIVE}:
+        op = operand_label(decl)
     elif decl.addressing == Addressing.IMMEDIATE:
         op = immediate(decl)
     elif decl.addressing == Addressing.REGISTER:
@@ -166,9 +178,7 @@ def operand(decl: Operand) -> pp.ParserElement:
 
     if decl.modifier is not None:
         op -= pp.Opt(
-            pp.Char("[").add_parse_action(ignore)
-            - operand(decl.modifier)
-            - pp.Char("]").add_parse_action(ignore),
+            ch("[") - operand(decl.modifier) - ch("]"),
             default=None,
         )
 
@@ -229,7 +239,14 @@ class Asm:
         self._cur_func = None
 
     def address(
-        self, pstr: str, loc: int, instr_addr: Cell, decl: Operand, arg: int
+        self,
+        pstr: str,
+        loc: int,
+        instr_addr: Cell,
+        decl: Operand,
+        arg: int,
+        *,
+        immediate: bool = False,
     ) -> Cell:
         if decl.addressing == Addressing.ABSOLUTE:
             assert decl.bits == self._cpu.ram.address_bits
@@ -243,7 +260,8 @@ class Asm:
             return Cell(arg, bits=decl.bits)
 
         if decl.addressing == Addressing.PC_RELATIVE:
-            arg -= instr_addr.unsigned
+            if not immediate:
+                arg -= instr_addr.unsigned
             max_v = 1 << (decl.bits - 1)
             if not (-max_v <= arg < max_v):
                 msg = (
@@ -300,7 +318,9 @@ class Asm:
                     )
                 )
             elif isinstance(arg, int):
-                addr = self.address(pstr, loc, instr_addr, decl, arg)
+                addr = self.address(
+                    pstr, loc, instr_addr, decl, arg, immediate=True
+                )
                 self._io.override(
                     address=instr_addr,
                     offset_bits=decl.offset_bits,

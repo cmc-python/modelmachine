@@ -44,17 +44,6 @@ def test_asm_missed_label_io() -> None:
         ("pop 5", 0x5B_05),
         ("dup 5", 0x5C_05),
         ("swap 5", 0x5D_05),
-        ("jump a", 0x80_FF),
-        ("jeq a", 0x81_FF),
-        ("jneq a", 0x82_FF),
-        ("sjl a", 0x83_FF),
-        ("sjgeq a", 0x84_FF),
-        ("sjleq a", 0x85_FF),
-        ("sjg a", 0x86_FF),
-        ("ujl a", 0x93_FF),
-        ("ujgeq a", 0x94_FF),
-        ("ujleq a", 0x95_FF),
-        ("ujg a", 0x96_FF),
         ("halt", 0x99_00),
     ],
 )
@@ -64,6 +53,38 @@ def test_asm_instruction(instruction: str, opcode: int) -> None:
     )
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x1122
     assert cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == opcode
+
+
+@pytest.mark.parametrize(
+    ("instruction", "opcode"),
+    [
+        ("jump", 0x80),
+        ("jeq", 0x81),
+        ("jneq", 0x82),
+        ("sjl", 0x83),
+        ("sjgeq", 0x84),
+        ("sjleq", 0x85),
+        ("sjg", 0x86),
+        ("ujl", 0x93),
+        ("ujgeq", 0x94),
+        ("ujleq", 0x95),
+        ("ujg", 0x96),
+    ],
+)
+def test_jump(instruction: str, opcode: int) -> None:
+    for x, res in (
+        ("a", 0xFF),
+        (".imm(0)", 0),
+        (".imm(2)", 2),
+        (".imm(-2)", 0xFE),
+    ):
+        cpu = load_from_string(
+            f".cpu {MODEL}\n.asm 0x100\na:.word 0x1122\n{instruction} {x}\n"
+        )
+        assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=WB) == 0x1122
+        assert (
+            cpu.ram.fetch(Cell(0x101, bits=AB), bits=WB) == (opcode << 8) | res
+        )
 
 
 @pytest.mark.parametrize(
@@ -123,6 +144,8 @@ def test_alu_instruction(instruction: str, opcode: int) -> None:
         ("halt a, b, a", ParsingError, r"Expected \(end of line\)"),
         ("halt 100", ParsingError, r"Expected \(end of line\)"),
         ("jump a", ParsingError, r"Jump is too long"),
+        ("jump .imm(0x100)", ParsingError, r"Immediate value is too long"),
+        ("jump .imm(0xff)", ParsingError, r"Immediate value is too long"),
         ("sjl a", ParsingError, r"Jump is too long"),
         ("sjleq a", ParsingError, r"Jump is too long"),
         ("sjgeq a", ParsingError, r"Jump is too long"),

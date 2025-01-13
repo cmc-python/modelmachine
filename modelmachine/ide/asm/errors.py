@@ -17,6 +17,10 @@ class UnexpectedLocalLabelError(NoFoundException):
     pass
 
 
+class ExpectedPositiveIntegerError(NoFoundException):
+    pass
+
+
 class TooLongJumpError(NoFoundException):
     pass
 

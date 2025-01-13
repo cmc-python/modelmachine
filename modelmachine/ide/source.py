@@ -127,11 +127,7 @@ def parse_io_dir(
         io_req.append(IOReq(addr, msg))
 
 
-def source(
-    pstr: str,
-    *,
-    protect_memory: bool,
-) -> Cpu:
+def source(pstr: str, *, protect_memory: bool) -> Cpu:
     pstr += "\n"
     try:
         cpu_dir = cpud.parse_string(pstr)

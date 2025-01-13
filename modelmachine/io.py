@@ -50,7 +50,7 @@ class InputOutputUnit:
         if not (self._min_v <= word < self._max_v):
             msg = (
                 f"Input value is too long: {word}; expected interval is"
-                f" [{self._min_v}, {self._max_v})"
+                f" [-0x{abs(self._min_v):x}, 0x{self._max_v:x})"
             )
             raise ValueError(msg)
         return word
