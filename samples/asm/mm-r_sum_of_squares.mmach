@@ -1,4 +1,4 @@
-.cpu mm-m
+.cpu mm-r
 
 .input M, N
 .output S

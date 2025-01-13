@@ -1,15 +1,15 @@
 .cpu mm-m
 
-.output 0x100
-.output 0x102
-.output 0x104
+.output a, b, c
 
-.code
-; output = sum(input)
-1100 0002 ; R0 := 2
-1000 0100 ; print 0
-11F0 0004 ; RF := 4
-10F0 0102 ; print 4
-11AF 0002 ; RA := RF + 2 = 4 + 2 = 6
-10A0 0104 ; print 6
-9900
+.asm
+        addr r0, a2     ; R0 := 2
+a2:     store r0, a     ; print 2
+a4:     addr rf, a4     ; RF := 4
+        store rf, b     ; print 4
+        addr ra, a2[rf] ; RA := RF + 2 = 4 + 2 = 6
+        store ra, c     ; print 6
+        halt
+a:      .word 0
+b:      .word 0
+c:      .word 0

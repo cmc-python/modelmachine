@@ -14,6 +14,7 @@ from modelmachine.cu.opcode import OPCODE_BITS
 from ..common_parsing import (
     ch,
     identity,
+    ignore,
     integer,
     kw,
     line_seq,
@@ -33,7 +34,7 @@ from .opcode_table import OPCODE_TABLE
 from .operand import Addressing
 
 if TYPE_CHECKING:
-    from typing import Callable, Final, Sequence
+    from typing import Callable, Final, Iterator, Sequence
 
     from modelmachine.cpu.cpu import Cpu
     from modelmachine.cu.control_unit import ControlUnit
@@ -153,6 +154,27 @@ def register(decl: Operand) -> pp.ParserElement:
     ).set_name("register")
 
 
+def operand(decl: Operand) -> pp.ParserElement:
+    if decl.addressing in LABEL_ADDRESSING:
+        op = label
+    elif decl.addressing == Addressing.IMMEDIATE:
+        op = immediate(decl)
+    elif decl.addressing == Addressing.REGISTER:
+        op = register(decl)
+    else:
+        raise NotImplementedError
+
+    if decl.modifier is not None:
+        op -= pp.Opt(
+            pp.Char("[").add_parse_action(ignore)
+            - operand(decl.modifier)
+            - pp.Char("]").add_parse_action(ignore),
+            default=None,
+        )
+
+    return op
+
+
 def instruction(
     opcode: CommonOpcode, operands: Sequence[Operand]
 ) -> pp.ParserElement:
@@ -161,14 +183,8 @@ def instruction(
         if i != 0:
             op -= ch(",")
 
-        if decl.addressing in LABEL_ADDRESSING:
-            op -= label
-        elif decl.addressing == Addressing.IMMEDIATE:
-            op -= immediate(decl)
-        elif decl.addressing == Addressing.REGISTER:
-            op -= register(decl)
-        else:
-            raise NotImplementedError
+        op -= operand(decl)
+
     op -= pp.FollowedBy(ch("\n"))
     return ngr(op, Cmd.instruction.value)
 
@@ -185,6 +201,13 @@ def asm_lang(cu: type[ControlUnit]) -> pp.ParserElement:
     line = label_declare - (word | instr | pp.empty)
 
     return line_seq(line)
+
+
+def enroll(operands: Sequence[Operand]) -> Iterator[Operand]:
+    for op in operands:
+        yield op
+        if op.modifier is not None:
+            yield from enroll((op.modifier,))
 
 
 class Asm:
@@ -266,7 +289,7 @@ class Asm:
             value=instr,
         )
         self._cpu.ram.comment[self._cur_addr.unsigned - 1] = pp.line(loc, pstr)
-        for decl, arg in zip(self._opcode_table[opcode], arguments):
+        for decl, arg in zip(enroll(self._opcode_table[opcode]), arguments):
             if isinstance(arg, Label):
                 label = self.fullname(arg)
                 self._refs.append(
@@ -276,14 +299,15 @@ class Asm:
                         label=label,
                     )
                 )
-            else:
-                assert isinstance(arg, int)
+            elif isinstance(arg, int):
                 addr = self.address(pstr, loc, instr_addr, decl, arg)
                 self._io.override(
                     address=instr_addr,
                     offset_bits=decl.offset_bits,
                     value=addr,
                 )
+            else:
+                assert arg is None
 
     def put_word(self, pstr: str, loc: int, word: pp.ParseResults) -> None:
         original = "".join(word)

@@ -1,22 +1,29 @@
 .cpu mm-m
 
-.input 0x100,0x102,0x104,0x106,0x108
-.output 0x10A sum
+.input a0, a1, a2, a3, a4
+.output sum
 
-.code
-; output = sum(input)
-0020 000f ; load R2, SIZE_WORD
-00F0 0011 ; load RF, SIZE_ARRAY
-22AA ; rsub RA, RA
-22CC ; rsub RC, RC
-01AC 0100 ; add RA, array[RC] <- LOOP
-21C2 ; radd RC, R2
-25CF ; rcomp RC, RF
-8200 0006 ; jneq LOOP
-10A0 010A ; store RA, SUM
-9900 ; halt
-; ---------------------
-00000002 ; SIZE_WORD = 2
-0000000A ; SIZE_ARRAY = 5
+.asm
+        ; output = sum(input)
+        load r2, SIZE_WORD
+        load rf, SIZE_ARRAY
+        rsub ra, ra
+        rsub rc, rc
+loop:   add ra, array[rc]
+        radd rc, r2
+        rcomp rc, rf
+        jneq loop
+        store ra, sum
+        halt
+
+SIZE_WORD:  .word 2
+SIZE_ARRAY: .word 10 ; 5 * 2
+a0:array:   .word 0
+a1:         .word 0
+a2:         .word 0
+a3:         .word 0
+a4:         .word 0
+sum:        .word 0
+
 
 .enter -1 2 3 4 5

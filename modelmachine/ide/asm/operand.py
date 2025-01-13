@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import IntEnum, auto
 
@@ -15,3 +17,4 @@ class Operand:
     bits: int = 16
     addressing: Addressing = Addressing.ABSOLUTE
     signed: bool = False
+    modifier: Operand | None = None

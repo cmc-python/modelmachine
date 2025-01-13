@@ -1,4 +1,4 @@
-.cpu mm-r
+.cpu mm-m
 
 .input a, b, c
 .output max

@@ -1,20 +1,22 @@
 .cpu mm-m
 
-.input 0x100 a
-.input 0x102 b
-.output 0x104 x
+.input a
+.input b
+.output x
 
-.code
+.asm
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
-00 1 0 0100 ; R1 := a
-03 1 0 000C ; R1 := a * -21
-04 1 0 000E ; R1 := (a * -21) / 50, R2 := x = (a * -21) % 50
-02 2 0 0102 ; R2 := x - b
-23 2 2 ; R2 := R2 * R2
-10 2 0 0104 ; [0104] := R2
-99 0 0 ; halt
-; ---------------------
-FFFFFFEB ; -21
-00000032 ; 50
+        load r1, a
+        smul r1, cm21
+        sdiv r1, c50
+        sub r2, b
+        rsmul r2, r2
+        store r2, x
+        halt
+
+cm21:   .word -21
+c50:    .word 50
+a:x:    .word 0
+b:      .word 0
 
 .enter -123 456
