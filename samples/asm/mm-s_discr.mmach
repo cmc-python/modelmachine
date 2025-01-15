@@ -15,9 +15,12 @@
         sub
         pop D
         halt
+
 c4:     .word 4
-a:D:    .word 0
+
+a:      .word 0
 b:      .word 0
 c:      .word 0
+D:      .word 0
 
 .enter  5 8 3

@@ -4,9 +4,9 @@
 .output max
 
 .asm
-        sjl a, b, store
+        sjl a, b, max_b
         halt
-store:  move b, a
+max_b:  move b, max
         halt
 max: a: .word 0
 b:      .word 0

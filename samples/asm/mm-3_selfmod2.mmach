@@ -22,7 +22,7 @@ I:      .word 1
 op1:    .word 0x1_0000_0000
 
 .asm 0x1000
-input: .word 0
+input:  .word 0
 .asm 0x2009
 output: .word 0
 

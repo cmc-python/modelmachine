@@ -6,14 +6,17 @@
 .asm
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
         smul a, cm21, x
-        sdiv x, c50, s
+        sdiv x, c50, divres ; x = mod
         sub x, b, x
         smul x, x, x
         halt
+
 cm21:   .word -21
 c50:    .word 50
+
+a:      .word 0
 b:      .word 0
-s:      .word 0
-a: x:   .word 0
+divres: .word 0
+x:      .word 0
 
 .enter -123 456

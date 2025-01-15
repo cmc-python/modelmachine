@@ -16,6 +16,7 @@ loop:   load r2, array[r4]
 cx123:  .word 0x123
 c2:     .word 2
 size:   .word 6
+
 a0:array:.word 0
 a1:     .word 0
 a2:     .word 0

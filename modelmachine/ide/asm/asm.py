@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from itertools import chain
 from typing import TYPE_CHECKING
 
@@ -95,6 +96,7 @@ word = ngr(
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
 
 
+@lru_cache
 def check_immediate(
     decl: Operand,
 ) -> Callable[[str, int, pp.ParseResults], pp.ParseResults]:
@@ -138,16 +140,19 @@ def check_immediate(
     return parse_unsigned
 
 
+@lru_cache
 def immediate(decl: Operand) -> pp.ParserElement:
     if decl.signed:
         return integer.copy().add_parse_action(check_immediate(decl))
     return posinteger.copy().add_parse_action(check_immediate(decl))
 
 
+@lru_cache
 def always(x: int) -> Callable[[], int]:
     return lambda: x
 
 
+@lru_cache
 def register(decl: Operand) -> pp.ParserElement:
     assert decl.bits == REG_BITS
     return pp.MatchFirst(
@@ -158,6 +163,7 @@ def register(decl: Operand) -> pp.ParserElement:
     ).set_name("register")
 
 
+@lru_cache
 def operand_label(decl: Operand) -> pp.ParserElement:
     if decl.addressing is Addressing.PC_RELATIVE:
         decl = Operand(**{**decl.__dict__, "signed": True})
@@ -168,6 +174,7 @@ def operand_label(decl: Operand) -> pp.ParserElement:
     )
 
 
+@lru_cache
 def operand(decl: Operand) -> pp.ParserElement:
     if decl.addressing in {Addressing.ABSOLUTE, Addressing.PC_RELATIVE}:
         op = operand_label(decl)

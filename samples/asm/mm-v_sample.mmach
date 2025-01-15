@@ -6,7 +6,7 @@
 .asm
 ; x = ((a * -21) % 50 - b) ** 2 == 178929
         smul a, cm21
-        sdiv a, c50
+        sdiv a, c50 ; x = mod
         sub x, b
         smul x, x
         halt

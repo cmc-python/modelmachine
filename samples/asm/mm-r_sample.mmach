@@ -16,7 +16,9 @@
 
 cm21:   .word -21
 c50:    .word 50
-a:x:    .word 0
+
+a:      .word 0
 b:      .word 0
+x:      .word 0
 
 .enter -123 456

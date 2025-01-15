@@ -1,33 +1,29 @@
-import pyparsing as pp
+from ..common_parsing import ParsingError
 
 
-class NoFoundException(pp.ParseFatalException):
-    found = ""
-
-
-class UndefinedLabelError(NoFoundException):
+class UndefinedLabelError(ParsingError):
     pass
 
 
-class DuplicateLabelError(NoFoundException):
+class DuplicateLabelError(ParsingError):
     pass
 
 
-class UnexpectedLocalLabelError(NoFoundException):
+class UnexpectedLocalLabelError(ParsingError):
     pass
 
 
-class ExpectedPositiveIntegerError(NoFoundException):
+class ExpectedPositiveIntegerError(ParsingError):
     pass
 
 
-class TooLongJumpError(NoFoundException):
+class TooLongJumpError(ParsingError):
     pass
 
 
-class TooLongImmediateError(NoFoundException):
+class TooLongImmediateError(ParsingError):
     pass
 
 
-class TooLongWordError(NoFoundException):
+class TooLongWordError(ParsingError):
     pass

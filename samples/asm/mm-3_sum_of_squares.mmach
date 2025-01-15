@@ -11,10 +11,11 @@ next:   sjg I, B, exit
         jump next
 exit:   halt
 
+c1:     .word 1
+
 A: I:   .word 0
 B:      .word 0
 Q:      .word 0
 S:      .word 0
-c1:     .word 1
 
 .enter 3 10

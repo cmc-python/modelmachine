@@ -16,8 +16,9 @@ agrb:   load r2, c
 exit:   store r1, max
         halt
 
-a:max:  .word 0
+a:      .word 0
 b:      .word 0
 c:      .word 0
+max:    .word 0
 
 .enter 123 1234 456

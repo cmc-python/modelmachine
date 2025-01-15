@@ -75,5 +75,12 @@ def identity(x: pp.ParseResults) -> pp.ParseResults:
     return x
 
 
+class NoFoundException(pp.ParseFatalException):
+    found = ""
+
+
 class ParsingError(SystemExit):
-    pass
+    def __init__(self, *, pstr: str, loc: int, msg: str):
+        exc = NoFoundException(pstr=pstr, loc=loc, msg=msg)
+        msg = exc.explain(depth=0).replace("(\n)", r"(end of line)")
+        super().__init__(msg)

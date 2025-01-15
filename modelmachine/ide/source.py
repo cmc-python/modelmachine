@@ -152,7 +152,6 @@ def source(pstr: str, *, protect_memory: bool) -> Cpu:
             cpu.enter += f" {remove_comment(enter_dir[0])}"
 
     except pp.ParseBaseException as exc:
-        msg = exc.explain(depth=0).replace("(\n)", r"(end of line)")
-        raise ParsingError(msg) from exc
+        raise ParsingError(msg=exc.msg, loc=exc.loc, pstr=exc.pstr) from exc
 
     return cpu

@@ -18,6 +18,7 @@ loop:   add ra, array[rc]
 
 SIZE_WORD:  .word 2
 SIZE_ARRAY: .word 10 ; 5 * 2
+
 a0:array:   .word 0
 a1:         .word 0
 a2:         .word 0

@@ -17,7 +17,9 @@ loop:   rcomp r1, r2
         jump loop
 exit:   store r3, S
         halt
+
 c1:     .word 1
+
 M:      .word 0
 N:      .word 0
 S:      .word 0

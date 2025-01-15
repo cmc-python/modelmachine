@@ -27,6 +27,8 @@ exit:
         halt
 
 c1:     .word 1
-N: factorial:
-        .word 0
+
+N:      .word 0
+factorial:.word 0
+
 .enter 6
