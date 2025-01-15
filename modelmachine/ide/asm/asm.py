@@ -237,6 +237,7 @@ class Asm:
     _labels: dict[str, Link]
     _refs: list[Ref]
     _cur_func: Label | None
+    _cur_labels: list[str]
     _cur_addr: Cell
 
     def __init__(self, cpu: Cpu):
@@ -247,6 +248,7 @@ class Asm:
         self._refs = []
         self._cur_addr = Cell(0, bits=self._cpu.ram.address_bits)
         self._cur_func = None
+        self._cur_labels = []
 
     def address(
         self,
@@ -317,9 +319,14 @@ class Asm:
             value=instr,
         )
         self._cur_addr += instr_len
+        com = pp.line(loc, pstr)
+        for lbl in self._cur_labels:
+            if lbl not in com:
+                com = lbl + com
         self._cpu.ram.comment[instr_addr.unsigned] = Comment(
-            instr_len.unsigned, pp.line(loc, pstr)
+            instr_len.unsigned, com
         )
+        self._cur_labels = []
         for decl, arg in zip(enroll(self._opcode_table[opcode]), arguments):
             if isinstance(arg, Label):
                 label = self.fullname(arg)
@@ -356,9 +363,11 @@ class Asm:
             value=Cell(x, bits=self._io.io_bits),
         )
         self._cur_addr += word_len
+        com = "".join(self._cur_labels).ljust(8) + original
         self._cpu.ram.comment[word_addr.unsigned] = Comment(
-            word_len.unsigned, original
+            word_len.unsigned, com
         )
+        self._cur_labels = []
 
     def resolve(self, label: Label) -> int:
         link = self._labels.get(label.name)
@@ -386,6 +395,7 @@ class Asm:
             raise DuplicateLabelError(pstr=label.pstr, loc=label.loc, msg=msg)
 
         self._labels[label.name] = Link(label=label, addr=self._cur_addr)
+        self._cur_labels.append(f"{label.name}:")
 
     def parse(self, pstr: str, address: int, code: pp.ParseResults) -> None:
         self._cur_addr = Cell(address, bits=self._cpu.ram.address_bits)
