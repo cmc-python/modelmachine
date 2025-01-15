@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from modelmachine.memory.ram import Comment
+
 if TYPE_CHECKING:
     from typing import TextIO
 
@@ -19,26 +21,26 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
         msg = f" {req.message}" if req.message is not None else ""
         fout.write(f".output 0x{req.address:x}{msg}\n")
 
-    word_hex = cpu._io_unit.io_bits // 4  # noqa: SLF001
+    io_bits = cpu._io_unit.io_bits  # noqa: SLF001
+    code_width = io_bits // 4 + io_bits // cpu.ram.word_bits - 1
+
     for seg in cpu.ram.filled_intervals:
         addr = f" 0x{seg.start:x}" if seg.start != 0 else ""
         fout.write(f"\n.code{addr}\n")
-        line = ""
-        for i in seg:
-            if not line:
-                line_start = i
+        i = seg.start
+        while i < seg.stop:
+            comment = cpu.ram.comment.get(i)
+            if comment is None:
+                comment = Comment(1, "")
 
-            line += cpu._io_unit.store_source(  # noqa: SLF001
-                start=i, bits=cpu.ram.word_bits
+            line = cpu._io_unit.store_source(  # noqa: SLF001
+                start=i, bits=comment.len * cpu.ram.word_bits
             )
 
-            comment = cpu.ram.comment.get(i)
-            if comment is not None:
-                line = line.ljust(word_hex)
-                fout.write(f"{line} ; {line_start:04x} ; {comment}\n")
-                line = ""
+            line = line.ljust(code_width)
+            fout.write(f"{line} ; {i:04x} ; {comment.text}\n")
 
-        assert line == ""
+            i += comment.len
 
     if cpu.enter:
         fout.write(f"\n.enter{cpu.enter}\n")

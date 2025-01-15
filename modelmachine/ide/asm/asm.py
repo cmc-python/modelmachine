@@ -11,6 +11,7 @@ from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
+from modelmachine.memory.ram import Comment
 
 from ..common_parsing import (
     ch,
@@ -311,11 +312,14 @@ class Asm:
             int(opcode) << (instr_bits - OPCODE_BITS), bits=instr_bits
         )
         instr_addr = self._cur_addr
-        self._cur_addr += self._io.put_code(
+        instr_len = self._io.put_code(
             address=self._cur_addr,
             value=instr,
         )
-        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = pp.line(loc, pstr)
+        self._cur_addr += instr_len
+        self._cpu.ram.comment[instr_addr.unsigned] = Comment(
+            instr_len.unsigned, pp.line(loc, pstr)
+        )
         for decl, arg in zip(enroll(self._opcode_table[opcode]), arguments):
             if isinstance(arg, Label):
                 label = self.fullname(arg)
@@ -346,11 +350,15 @@ class Asm:
         except ValueError as exc:
             msg = f"Too long literal '{x}' in .word directive"
             raise TooLongWordError(pstr=pstr, loc=loc, msg=msg) from exc
-        self._cur_addr += self._cpu.ram.put(
+        word_addr = self._cur_addr
+        word_len = self._cpu.ram.put(
             address=self._cur_addr,
             value=Cell(x, bits=self._io.io_bits),
         )
-        self._cpu.ram.comment[self._cur_addr.unsigned - 1] = original
+        self._cur_addr += word_len
+        self._cpu.ram.comment[word_addr.unsigned] = Comment(
+            word_len.unsigned, original
+        )
 
     def resolve(self, label: Label) -> int:
         link = self._labels.get(label.name)

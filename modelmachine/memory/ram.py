@@ -22,6 +22,12 @@ class RamAccessError(KeyError, HaltError):
 
 
 @dataclass(frozen=True)
+class Comment:
+    len: int
+    text: str
+
+
+@dataclass(frozen=True)
 class RamWriteLog:
     old: int
     new: int
@@ -46,7 +52,7 @@ class RandomAccessMemory:
     _filled_intervals: list[range]
     access_count: int
     write_log: list[dict[int, RamWriteLog]] | None
-    comment: dict[int, str]
+    comment: dict[int, Comment]
 
     @property
     def filled_intervals(self) -> Collection[range]:

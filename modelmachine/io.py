@@ -208,8 +208,6 @@ class InputOutputUnit:
                 from_cpu=False,
             )
 
-            self._ram.comment[cur_addr] = ""
-
     def put_code(self, *, address: Cell, value: Cell) -> Cell:
         for i in range(value.bits // self._ram.word_bits):
             addr = address + Cell(i, bits=self._ram.address_bits)
