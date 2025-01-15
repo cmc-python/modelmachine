@@ -27,3 +27,7 @@ class TooLongImmediateError(ParsingError):
 
 class TooLongWordError(ParsingError):
     pass
+
+
+class MissedCodeError(ParsingError):
+    pass

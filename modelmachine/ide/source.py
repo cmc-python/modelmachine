@@ -9,7 +9,7 @@ from pyparsing import Group as Gr
 from modelmachine.cpu.cpu import CU_MAP, Cpu, IOReq
 
 from .asm.asm import Asm, Label, asm_lang, label
-from .asm.errors import UnexpectedLocalLabelError
+from .asm.errors import MissedCodeError, UnexpectedLocalLabelError
 from .common_parsing import (
     ParsingError,
     group_by_name,
@@ -87,7 +87,7 @@ def language(cu: type[ControlUnit]) -> pp.ParserElement:
             f"Missed required {Directive.code.value} "
             f"or {Directive.asm.value} directive"
         )
-        raise pp.ParseFatalException(pstr=pstr, loc=len(pstr), msg=msg)
+        raise MissedCodeError(pstr=pstr, loc=len(pstr), msg=msg)
 
     return lang
 
