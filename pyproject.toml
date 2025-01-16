@@ -56,7 +56,6 @@ include = [
 python = "3.13"
 dependencies = [
     "mypy>=1.13",
-    "typing_extensions>=4.12", # For mypy
     "tomli~=2.0", # For mypy
     "pytest>=8.3",
     "ruff==0.4.10", # Sync with hatch

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 samples = Path(__file__).parent.parent.resolve() / "samples"
 
 
-@lru_cache()
+@lru_cache(maxsize=None)
 def load_sample(sample: Path) -> Cpu:
     with open(sample) as source_code:
         return source(source_code.read(), protect_memory=False)

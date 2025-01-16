@@ -71,7 +71,8 @@ def test_enter() -> None:
 def test_repeat_enter() -> None:
     with StringIO("hello\n10\n20") as fin:
         fin.isatty = lambda: True  # type: ignore[method-assign]
-        cpu = source(example, protect_memory=True).input(fin)
+        cpu = source(example, protect_memory=True)
+        cpu.input(fin)
 
     assert cpu.ram.fetch(address=Cell(0x100, bits=AB), bits=WB) == 10
     assert cpu.ram.fetch(address=Cell(0x105, bits=AB), bits=WB) == 20

@@ -97,7 +97,7 @@ word = ngr(
 label_declare = ngr(label + ch(":"), Cmd.label.value)[0, ...]
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def check_immediate(
     decl: Operand,
 ) -> Callable[[str, int, pp.ParseResults], pp.ParseResults]:
@@ -141,19 +141,19 @@ def check_immediate(
     return parse_unsigned
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def immediate(decl: Operand) -> pp.ParserElement:
     if decl.signed:
         return integer.copy().add_parse_action(check_immediate(decl))
     return posinteger.copy().add_parse_action(check_immediate(decl))
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def always(x: int) -> Callable[[], int]:
     return lambda: x
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def register(decl: Operand) -> pp.ParserElement:
     assert decl.bits == REG_BITS
     return pp.MatchFirst(
@@ -164,7 +164,7 @@ def register(decl: Operand) -> pp.ParserElement:
     ).set_name("register")
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def operand_label(decl: Operand) -> pp.ParserElement:
     if decl.addressing is Addressing.PC_RELATIVE:
         decl = Operand(**{**decl.__dict__, "signed": True})
@@ -175,7 +175,7 @@ def operand_label(decl: Operand) -> pp.ParserElement:
     )
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def operand(decl: Operand) -> pp.ParserElement:
     if decl.addressing in {Addressing.ABSOLUTE, Addressing.PC_RELATIVE}:
         op = operand_label(decl)

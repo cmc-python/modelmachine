@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from typing import Callable, Final, Iterator
 
     from ..cpu.cpu import Cpu
+    from ..memory.ram import Comment
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
 rstepc = Gr((kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1])(
@@ -63,6 +64,9 @@ class Ide:
     _running: bool
     _breakpoints: set[Cell]
     c: Final[Colors]
+    _page_size: int
+    _cell_width: int
+    _page_overflow: int
 
     def __init__(self, *, cpu: Cpu, colors: bool):
         self.cpu = cpu
@@ -77,6 +81,11 @@ class Ide:
         self._running = False
         self._breakpoints = set()
         self.c = Colors(enabled=colors)
+        self._page_size = self.cpu.control_unit.PAGE_SIZE
+        self._cell_width = self.cpu.ram.word_bits // 4 + 1
+        self._page_overflow = (
+            self.cpu.control_unit.IR_BITS // self.cpu.ram.word_bits - 1
+        )
 
     @contextmanager
     def running(self) -> Iterator[None]:
@@ -263,14 +272,12 @@ class Ide:
             // self.cpu.ram.word_bits,
         )
 
-    def format_page(self, page: int, current_cmd: range) -> str:
-        page_addr = Cell(
-            page * self.cpu.control_unit.PAGE_SIZE,
-            bits=self.cpu.ram.address_bits,
-        )
-        line = f"{page_addr}:"
-        for col in range(self.cpu.control_unit.PAGE_SIZE):
-            cell_addr = page_addr + Cell(col, bits=self.cpu.ram.address_bits)
+    def _format_range(self, mem_range: range, current_cmd: range) -> str:
+        assert mem_range.step == 1
+        line = ""
+
+        for col in mem_range:
+            cell_addr = Cell(col, bits=self.cpu.ram.address_bits)
             cell = self.cpu.ram.fetch(
                 address=cell_addr,
                 bits=self.cpu.ram.word_bits,
@@ -300,26 +307,111 @@ class Ide:
 
         return line
 
+    def _before_space(self, start: int) -> str:
+        return (
+            (start - start // self._page_size * self._page_size)
+            * self._cell_width
+            * " "
+        )
+
+    def _after_space(self, start: int, stop: int) -> str:
+        return (
+            max(
+                (start // self._page_size + 1) * self._page_size
+                + self._page_overflow
+                - stop,
+                0,
+            )
+            * self._cell_width
+            + 1
+        ) * " "
+
+    def _format_line(
+        self, cell_addr: int, comment: Comment, current_cmd: range
+    ) -> str:
+        page_addr = Cell(cell_addr, bits=self.cpu.ram.address_bits)
+        line = range(cell_addr, cell_addr + comment.len)
+        line_str = self._format_range(line, current_cmd)
+        before = self._before_space(line.start)
+        after = self._after_space(line.start, line.stop)
+        cmt = self.c.comment(f"; {comment.text}")
+        return f"{page_addr}:{before}{line_str}{after}{cmt}\n"
+
+    def _format_page_part(self, page_part: range, current_cmd: range) -> str:
+        assert page_part.step == 1
+        if page_part.start >= page_part.stop:
+            return ""
+
+        page_addr = Cell(page_part.start, bits=self.cpu.ram.address_bits)
+
+        before = self._before_space(page_part.start)
+        return f"{page_addr}:{before}{self._format_range(page_part,current_cmd)}\n"
+
+    def _format_page(
+        self,
+        page: int,
+        current_cmd: range,
+        *,
+        has_printed_prev: bool,
+        visible: range | None = None,
+    ) -> str:
+        start = page * self._page_size
+        stop = (page + 1) * self._page_size
+
+        if visible is not None:
+            assert visible.step == 1
+            start = max(start, visible.start)
+            stop = min(stop, visible.stop)
+
+        for i in range(start - self._page_overflow - 1, start):
+            comment = self.cpu.ram.comment.get(i)
+            if comment is not None:
+                if has_printed_prev:
+                    start = max(start, i + comment.len)
+                else:
+                    start = min(start, i + comment.len)
+
+        res = ""
+        col = start
+        while col < stop:
+            comment = self.cpu.ram.comment.get(col)
+            if comment is not None:
+                res += self._format_page_part(range(start, col), current_cmd)
+                res += self._format_line(col, comment, current_cmd)
+                col += comment.len
+                start = col
+            else:
+                col += 1
+        res += self._format_page_part(range(start, col), current_cmd)
+
+        return res
+
     def dump_full_memory(self) -> None:
         page_set: set[int] = set()
         for interval in self.cpu.ram.filled_intervals:
             for i in range(
-                interval.start // self.cpu.control_unit.PAGE_SIZE,
-                ceil_div(interval.stop, self.cpu.control_unit.PAGE_SIZE),
+                interval.start // self._page_size,
+                ceil_div(interval.stop, self._page_size),
             ):
                 page_set.add(i)
 
         page_list = sorted(page_set)
         current_cmd = self.current_cmd
         for i, page in enumerate(page_list):
-            if i > 0 and page_list[i - 1] != page - 1:
+            has_printed_prev = i > 0 and page_list[i - 1] == page - 1
+            if i > 0 and not has_printed_prev:
                 printf(self.c.dirty_memory("... dirty memory ..."))
-            printf(self.format_page(page, current_cmd))
+            printf(
+                self._format_page(
+                    page, current_cmd, has_printed_prev=has_printed_prev
+                ),
+                end="",
+            )
 
     def memory(self, begin: int = -1, end: int = -1) -> None:
         """Print contents of RAM."""
 
-        assert self.cpu.ram.memory_size % self.cpu.control_unit.PAGE_SIZE == 0
+        assert self.cpu.ram.memory_size % self._page_size == 0
 
         if begin == -1:
             assert end == -1
@@ -330,10 +422,19 @@ class Ide:
 
         current_cmd = range(begin, end + 1)
         for page in range(
-            begin // self.cpu.control_unit.PAGE_SIZE,
-            end // self.cpu.control_unit.PAGE_SIZE + 1,
+            begin // self._page_size,
+            end // self._page_size + 1,
         ):
-            printf(self.format_page(page, current_cmd))
+            has_printed_prev = page > begin // self._page_size
+            printf(
+                self._format_page(
+                    page,
+                    current_cmd,
+                    has_printed_prev=has_printed_prev,
+                    visible=current_cmd,
+                ),
+                end="",
+            )
 
     def breakpoint(self, addr: int = -1) -> None:
         if addr == -1:
@@ -420,6 +521,7 @@ class Ide:
                         ),
                         (self.c.next_command, cell.hex(), "next command"),
                         (self.c.breakpoint, cell.hex(), "breakpoint"),
+                        (self.c.comment, "; code", "asm"),
                     ]
                 )
                 + "\n"

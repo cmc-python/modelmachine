@@ -32,8 +32,6 @@ from ..prompt.prompt import NotEnoughInputError, read_word
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
-    from typing_extensions import Self
-
     from ..cu.control_unit import ControlUnit
 
 
@@ -91,7 +89,7 @@ class Cpu:
             registers=self.registers, ram=self.ram, alu=self._alu
         )
 
-    def input(self, file: TextIO) -> Self:
+    def input(self, file: TextIO) -> None:
         for req in self.input_req:
             self._io_unit.input(
                 address=req.address, message=req.message, file=file
@@ -106,7 +104,7 @@ class Cpu:
                 msg = "Too many elements in the input"
                 raise SystemExit(msg)
 
-        return self
+        self.ram.access_count = 0
 
     def print_result(self, file: TextIO = sys.stdout) -> None:
         """Print calculation result."""

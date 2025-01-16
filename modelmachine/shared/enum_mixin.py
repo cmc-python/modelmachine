@@ -11,13 +11,12 @@ except ImportError:
     HAVE_MYPY = False
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, ClassVar, Final
+    from typing import Any, Callable, ClassVar, Final, Self
 
     from mypy.checker import TypeChecker
     from mypy.plugin import AttributeContext
     from mypy.types import Instance
     from mypy.types import Type as MypyType
-    from typing_extensions import Self
 
 
 class EnumMixinType(type):

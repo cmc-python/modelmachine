@@ -58,6 +58,7 @@ class StyleScheme:
     hl: Style = Style(foreground=Color.red)  # noqa: RUF009
     error: Style = Style(foreground=Color.red)  # noqa: RUF009
     info: Style = Style(foreground=Color.cyan)  # noqa: RUF009
+    comment: Style = Style(foreground=Color.blue)  # noqa: RUF009
     next_command: Style = Style(underline=True)  # noqa: RUF009
     just_updated: Style = Style(foreground=Color.green)  # noqa: RUF009
     dirty_memory: Style = Style(foreground=Color.cyan)  # noqa: RUF009

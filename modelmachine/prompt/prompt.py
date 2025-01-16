@@ -14,11 +14,11 @@ class NotEnoughInputError(SystemExit):
     pass
 
 
-def printf(out: str, *, file: TextIO = sys.stdout) -> None:
+def printf(out: str, *, end: str = "\n", file: TextIO = sys.stdout) -> None:
     if file.isatty():
-        print_formatted_text(ANSI(out), file=file)
+        print_formatted_text(ANSI(out), end=end, file=file)
     else:
-        print(out, file=file)
+        print(out, end=end, file=file)
 
 
 def read_word(file: TextIO) -> str:

@@ -60,7 +60,7 @@ coded = ngr(
 one_line_directive = inputd | outputd | enterd
 
 
-@lru_cache()
+@lru_cache(maxsize=None)
 def language(cu: type[ControlUnit]) -> pp.ParserElement:
     asmd = ngr(
         kw(Directive.asm.value)
