@@ -320,11 +320,11 @@ class Asm:
         )
         self._cur_addr += instr_len
         com = pp.line(loc, pstr)
-        for lbl in self._cur_labels:
+        for lbl in self._cur_labels[::-1]:
             if lbl not in com:
                 com = lbl + com
         self._cpu.ram.comment[instr_addr.unsigned] = Comment(
-            instr_len.unsigned, com
+            instr_len.unsigned, com, is_instruction=True
         )
         self._cur_labels = []
         for decl, arg in zip(enroll(self._opcode_table[opcode]), arguments):

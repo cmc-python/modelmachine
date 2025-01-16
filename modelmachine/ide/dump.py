@@ -22,7 +22,7 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
         fout.write(f".output 0x{req.address:x}{msg}\n")
 
     io_bits = cpu._io_unit.io_bits  # noqa: SLF001
-    code_width = io_bits // 4 + io_bits // cpu.ram.word_bits - 1
+    code_width = io_bits // 4 + io_bits // cpu.ram.word_bits
 
     for seg in cpu.ram.filled_intervals:
         addr = f" 0x{seg.start:x}" if seg.start != 0 else ""
@@ -36,6 +36,8 @@ def dump(cpu: Cpu, fout: TextIO) -> None:
             line = cpu._io_unit.store_source(  # noqa: SLF001
                 start=i, bits=comment.len * cpu.ram.word_bits
             )
+            if comment.is_instruction and cpu.ram.word_bits > 8:  # noqa: PLR2004
+                line = line[:2] + " " + line[2:]
 
             line = line.ljust(code_width)
             fout.write(f"{line} ; {i:04x} ; {comment.text}\n")

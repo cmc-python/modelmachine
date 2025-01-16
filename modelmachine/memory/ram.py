@@ -25,6 +25,7 @@ class RamAccessError(KeyError, HaltError):
 class Comment:
     len: int
     text: str
+    is_instruction: bool = False
 
 
 @dataclass(frozen=True)
