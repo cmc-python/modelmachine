@@ -350,8 +350,8 @@ class Ide:
     def _format_page(
         self,
         page: int,
-        current_cmd: range,
         *,
+        current_cmd: range = range(0),
         has_printed_prev: bool,
         visible: range | None = None,
     ) -> str:
@@ -403,7 +403,9 @@ class Ide:
                 printf(self.c.dirty_memory("... dirty memory ..."))
             printf(
                 self._format_page(
-                    page, current_cmd, has_printed_prev=has_printed_prev
+                    page,
+                    current_cmd=current_cmd,
+                    has_printed_prev=has_printed_prev,
                 ),
                 end="",
             )
@@ -420,7 +422,7 @@ class Ide:
         if end == -1:
             end = begin
 
-        current_cmd = range(begin, end + 1)
+        visible = range(begin, end + 1)
         for page in range(
             begin // self._page_size,
             end // self._page_size + 1,
@@ -429,9 +431,8 @@ class Ide:
             printf(
                 self._format_page(
                     page,
-                    current_cmd,
                     has_printed_prev=has_printed_prev,
-                    visible=current_cmd,
+                    visible=visible,
                 ),
                 end="",
             )
