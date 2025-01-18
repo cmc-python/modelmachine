@@ -134,7 +134,7 @@ def source(pstr: str, *, protect_memory: bool) -> Cpu:
 
         for code_dir in parsed_program[Directive.code]:
             address = code_dir[0][0] if code_dir[0] else 0
-            cpu._io_unit.load_source(address, "".join(code_dir[1]))  # noqa: SLF001
+            cpu.io_unit.load_source(address, "".join(code_dir[1]))
 
         for asm_dir in parsed_program[Directive.asm]:
             address = asm_dir[0][0] if asm_dir[0] else 0

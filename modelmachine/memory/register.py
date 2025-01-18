@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import TYPE_CHECKING
 
-from ..cell import Cell
-from ..memory.ram import MAX_WORD_BITS
+from modelmachine.cell import Cell
+from modelmachine.memory.ram import MAX_WORD_BITS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -118,3 +118,8 @@ class RegisterMemory:
             if val is not None:
                 res[reg] = val
         return res
+
+    def debug_reverse_step(self) -> None:
+        assert self.write_log is not None
+        for reg, modm in self.write_log.pop().items():
+            self._table[reg] = modm.old

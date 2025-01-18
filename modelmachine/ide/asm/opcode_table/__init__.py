@@ -25,8 +25,7 @@ if TYPE_CHECKING:
 
     from modelmachine.cu.control_unit import ControlUnit
     from modelmachine.cu.opcode import CommonOpcode
-
-    from ..operand import Operand
+    from modelmachine.ide.asm.operand import Operand
 
 OPCODE_TABLE: Final[
     dict[type[ControlUnit], dict[CommonOpcode, Sequence[Operand]]]

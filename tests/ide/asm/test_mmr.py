@@ -70,7 +70,7 @@ def test_asm_missed_label_io() -> None:
 )
 def test_asm_instruction(instruction: str, opcode: int) -> None:
     cpu = load_from_string(
-        f".cpu {MODEL}\n.asm 0x100\n" "a:.word 0x11223344\n" f"{instruction}\n"
+        f".cpu {MODEL}\n.asm 0x100\na:.word 0x11223344\n{instruction}\n"
     )
     assert cpu.ram.fetch(Cell(0x100, bits=AB), bits=2 * WB) == 0x11223344
     if opcode > 0xFFFF:

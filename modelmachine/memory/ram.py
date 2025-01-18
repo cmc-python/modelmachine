@@ -5,9 +5,9 @@ from array import array
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ..cell import Cell, Endianess
-from ..cu.halt_error import HaltError
-from ..shared.insort_range import insort_range
+from modelmachine.cell import Cell, Endianess
+from modelmachine.cu.halt_error import HaltError
+from modelmachine.shared.insort_range import insort_range
 
 if TYPE_CHECKING:
     from collections.abc import Collection
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 MAX_ADDRESS_BITS = 16
 MAX_WORD_BITS = 8 * 8
+BYTE_BITS = 8
 
 
 class RamAccessError(KeyError, HaltError):
@@ -77,11 +78,11 @@ class RandomAccessMemory:
         self.is_protected = is_protected
         self.comment = {}
         shape = [0] * self.memory_size
-        if word_bits <= 8:  # noqa: PLR2004
+        if word_bits <= BYTE_BITS:
             self._table = array("B", shape)
-        elif word_bits <= 16:  # noqa: PLR2004
+        elif word_bits <= 2 * BYTE_BITS:
             self._table = array("H", shape)
-        elif word_bits <= 32:  # noqa: PLR2004
+        elif word_bits <= 4 * BYTE_BITS:
             self._table = array("L", shape)
         else:
             self._table = array("Q", shape)
@@ -147,13 +148,13 @@ class RandomAccessMemory:
         if from_cpu:
             if self.is_protected:
                 msg = (
-                    f"Cannot read memory by address: 0x{address.unsigned:x}, "
+                    f"Cannot read memory by address: {address}, "
                     "it is dirty memory, clean it first"
                 )
                 raise RamAccessError(msg)
 
             warnings.warn(
-                f"Read memory by address: 0x{address.unsigned:x}, "
+                f"Read memory by address: {address}, "
                 "it is dirty memory, clean it first",
                 stacklevel=4,
             )
@@ -226,3 +227,10 @@ class RandomAccessMemory:
             self[address + Cell(i, bits=self.address_bits)] = v
 
         return Cell(len(enc_value), bits=self.address_bits)
+
+    def debug_reverse_step(self) -> None:
+        assert self.write_log is not None
+        for addr, modr in self.write_log.pop().items():
+            self._table[addr] = modr.old
+            if modr.fill:
+                self._fill[addr] = 0

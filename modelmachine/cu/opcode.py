@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..shared.enum_mixin import EnumMixin
+from modelmachine.shared.enum_mixin import EnumMixin
 
 
 class CommonOpcode(EnumMixin):

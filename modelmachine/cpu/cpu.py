@@ -15,24 +15,24 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ..alu import ArithmeticLogicUnit
-from ..cu.control_unit_0 import ControlUnit0
-from ..cu.control_unit_1 import ControlUnit1
-from ..cu.control_unit_2 import ControlUnit2
-from ..cu.control_unit_3 import ControlUnit3
-from ..cu.control_unit_m import ControlUnitM
-from ..cu.control_unit_r import ControlUnitR
-from ..cu.control_unit_s import ControlUnitS
-from ..cu.control_unit_v import ControlUnitV
-from ..io import InputOutputUnit
-from ..memory.ram import RandomAccessMemory
-from ..memory.register import RegisterMemory
-from ..prompt.prompt import NotEnoughInputError, read_word
+from modelmachine.alu import ArithmeticLogicUnit
+from modelmachine.cu.control_unit_0 import ControlUnit0
+from modelmachine.cu.control_unit_1 import ControlUnit1
+from modelmachine.cu.control_unit_2 import ControlUnit2
+from modelmachine.cu.control_unit_3 import ControlUnit3
+from modelmachine.cu.control_unit_m import ControlUnitM
+from modelmachine.cu.control_unit_r import ControlUnitR
+from modelmachine.cu.control_unit_s import ControlUnitS
+from modelmachine.cu.control_unit_v import ControlUnitV
+from modelmachine.io import InputOutputUnit
+from modelmachine.memory.ram import RandomAccessMemory
+from modelmachine.memory.register import RegisterMemory
+from modelmachine.prompt.prompt import NotEnoughInputError, read_word
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
 
-    from ..cu.control_unit import ControlUnit
+    from modelmachine.cu.control_unit import ControlUnit
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ class Cpu:
     registers: Final[RegisterMemory]
     control_unit: Final[ControlUnit]
     _alu: Final[ArithmeticLogicUnit]
-    _io_unit: Final[InputOutputUnit]
+    io_unit: Final[InputOutputUnit]
     _config: dict[str, str]
     input_req: list[IOReq]
     output_req: list[IOReq]
@@ -73,7 +73,7 @@ class Cpu:
             address_bits=control_unit.ADDRESS_BITS,
             is_protected=protect_memory,
         )
-        self._io_unit = InputOutputUnit(
+        self.io_unit = InputOutputUnit(
             ram=self.ram,
             io_bits=control_unit.IR_BITS,
             is_stack_io=control_unit.IS_STACK_IO,
@@ -91,7 +91,7 @@ class Cpu:
 
     def input(self, file: TextIO) -> None:
         for req in self.input_req:
-            self._io_unit.input(
+            self.io_unit.input(
                 address=req.address, message=req.message, file=file
             )
 
@@ -110,7 +110,7 @@ class Cpu:
         """Print calculation result."""
         assert self.output_req is not None
         for req in self.output_req:
-            self._io_unit.output(
+            self.io_unit.output(
                 address=req.address, message=req.message, file=file
             )
 

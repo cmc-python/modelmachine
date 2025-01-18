@@ -13,23 +13,22 @@ import pyparsing as pp
 from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
-from ..cell import Cell, ceil_div
-from ..cu.opcode import OPCODE_BITS, CommonOpcode
-from ..cu.status import Status
-from ..memory.register import RegisterName
-from ..prompt.colors import Colors
-from ..prompt.prompt import (
-    printf,
-    prompt,
-)
+from modelmachine.cell import Cell, ceil_div
+from modelmachine.cu.halt_error import HaltError
+from modelmachine.cu.opcode import OPCODE_BITS, CommonOpcode
+from modelmachine.cu.status import Status
+from modelmachine.memory.register import RegisterName
+from modelmachine.prompt.colors import Colors
+from modelmachine.prompt.prompt import printf, prompt
+
 from .common_parsing import kw, posinteger
 
 if TYPE_CHECKING:
     from types import FrameType
     from typing import Callable, Final, Iterator
 
-    from ..cpu.cpu import Cpu
-    from ..memory.ram import Comment
+    from modelmachine.cpu.cpu import Cpu
+    from modelmachine.memory.ram import Comment
 
 stepc = Gr((kw("step") | kw("s")) + posinteger[0, 1])("step")
 rstepc = Gr((kw("reverse-step") | kw("rstep") | kw("rs")) + posinteger[0, 1])(
@@ -152,15 +151,8 @@ class Ide:
         self._cycle -= 1
         self._ram_access_count.pop()
 
-        assert self.cpu.registers.write_log is not None
-        for reg, modm in self.cpu.registers.write_log.pop().items():
-            self.cpu.registers._table[reg] = modm.old  # noqa: SLF001
-
-        assert self.cpu.ram.write_log is not None
-        for addr, modr in self.cpu.ram.write_log.pop().items():
-            self.cpu.ram._table[addr] = modr.old  # noqa: SLF001
-            if modr.fill:
-                self.cpu.ram._fill[addr] = 0  # noqa: SLF001
+        self.cpu.registers.debug_reverse_step()
+        self.cpu.ram.debug_reverse_step()
 
         self.cpu.ram.access_count = self._ram_access_count[-1]
 
@@ -577,7 +569,7 @@ class Ide:
                     for warn in warns:
                         printf(f"Warning: {warn.message}")
 
-            except Exception:  # noqa: BLE001
+            except HaltError:
                 print_exc()
                 return 1
 

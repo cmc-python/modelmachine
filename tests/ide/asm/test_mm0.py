@@ -22,7 +22,7 @@ def test_asm_data() -> None:
 
 def test_asm_io() -> None:
     cpu = load_from_string(
-        f".cpu {MODEL}\n.asm\n.input 2 a\n" ".enter 0x0102 0x1112"
+        f".cpu {MODEL}\n.asm\n.input 2 a\n.enter 0x0102 0x1112"
     )
     assert cpu.ram.fetch(Cell(0xFFFF, bits=AB), bits=WB) == 0x0102
     assert cpu.ram.fetch(Cell(0xFFFE, bits=AB), bits=WB) == 0x1112

@@ -134,5 +134,5 @@ if HAVE_MYPY:
 
             return ctx.default_attr_type
 
-    def plugin(version: str) -> type[EnumMypyPlugin]:  # noqa: ARG001
+    def plugin(_version: str) -> type[EnumMypyPlugin]:
         return EnumMypyPlugin

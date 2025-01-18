@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from ..cell import Cell
-from ..memory.register import RegisterName
+from modelmachine.cell import Cell
+from modelmachine.memory.register import RegisterName
+
 from .control_unit_r import REG_NO_BITS, ControlUnitR
 from .opcode import JUMP_OPCODES
 
@@ -36,7 +37,7 @@ class ControlUnitM(ControlUnitR):
             self._ir[: self._ram.address_bits] + modifier
         )
 
-    _EXEC_NOP = ControlUnitR._EXEC_NOP | {Opcode.addr}  # noqa: SLF001
+    EXEC_NOP = ControlUnitR.EXEC_NOP | {Opcode.addr}
 
     def _load(self) -> None:
         """Load registers S and S1."""

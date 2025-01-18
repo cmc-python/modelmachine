@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..alu import AluRegisters
-from ..cell import Cell
-from ..memory.register import RegisterName
+from modelmachine.alu import AluRegisters
+from modelmachine.cell import Cell
+from modelmachine.memory.register import RegisterName
+
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
@@ -158,7 +159,7 @@ class ControlUnitR(ControlUnit):
     )
     _EXEC_MOV: Final = frozenset({Opcode.load, Opcode.rmove})
 
-    _EXEC_NOP = frozenset({Opcode.load, Opcode.store, Opcode.rmove})
+    EXEC_NOP = frozenset({Opcode.load, Opcode.store, Opcode.rmove})
 
     def _execute(self) -> None:
         """Execute the command."""

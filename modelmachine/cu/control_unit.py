@@ -4,9 +4,10 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from ..alu import EQUAL, GREATER, LESS, Flags
-from ..cell import Cell
-from ..memory.register import RegisterName
+from modelmachine.alu import EQUAL, GREATER, LESS, Flags
+from modelmachine.cell import Cell
+from modelmachine.memory.register import RegisterName
+
 from .halt_error import HaltError
 from .opcode import OPCODE_BITS, CommonOpcode
 from .status import Status
@@ -15,9 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import ClassVar, Final, TypeAlias
 
-    from ..alu import AluRegisters, ArithmeticLogicUnit
-    from ..memory.ram import RandomAccessMemory
-    from ..memory.register import RegisterMemory
+    from modelmachine.alu import AluRegisters, ArithmeticLogicUnit
+    from modelmachine.memory.ram import RandomAccessMemory
+    from modelmachine.memory.register import RegisterMemory
 
 
 class WrongOpcodeError(ValueError, HaltError):
@@ -148,7 +149,7 @@ class ControlUnit:
             self.step()
 
     @classmethod
-    def instruction_bits(cls, opcode: Opcode) -> int:  # noqa: ARG003
+    def instruction_bits(cls, _opcode: Opcode) -> int:
         return cls.IR_BITS
 
     def _fetch(self) -> None:
@@ -199,11 +200,11 @@ class ControlUnit:
         """Load data from memory to operation registers."""
         raise NotImplementedError
 
-    _EXEC_NOP: ClassVar[frozenset[Opcode]] = frozenset({})
+    EXEC_NOP: ClassVar[frozenset[Opcode]] = frozenset({})
 
     def _execute(self) -> None:
         """Run arithmetic instructions."""
-        if self._opcode in self._EXEC_NOP:
+        if self._opcode in self.EXEC_NOP:
             pass
         elif self._opcode == self.Opcode.halt:
             self._alu.halt()

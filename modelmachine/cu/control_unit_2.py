@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..alu import AluRegisters
-from ..memory.register import RegisterName
+from modelmachine.alu import AluRegisters
+from modelmachine.memory.register import RegisterName
+
 from .control_unit import ControlUnit
 from .opcode import (
     ARITHMETIC_OPCODES,
@@ -18,7 +19,7 @@ from .opcode import (
 if TYPE_CHECKING:
     from typing import Final
 
-    from ..cell import Cell
+    from modelmachine.cell import Cell
 
 
 class ControlUnit2(ControlUnit):
@@ -79,7 +80,7 @@ class ControlUnit2(ControlUnit):
                 address=self._address2, bits=self._alu.operand_bits
             )
 
-    _EXEC_NOP = frozenset({Opcode.move})
+    EXEC_NOP = frozenset({Opcode.move})
 
     def _execute(self) -> None:
         """Add specific commands: conditional jumps and cmp."""

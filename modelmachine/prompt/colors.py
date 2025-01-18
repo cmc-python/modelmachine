@@ -6,7 +6,7 @@ from enum import IntEnum
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
-from ..ide.user_config import user_config
+from modelmachine.ide.user_config import user_config
 
 if TYPE_CHECKING:
     from typing import Callable, Final
@@ -53,16 +53,24 @@ class Style:
         return res
 
 
+RED = Style(foreground=Color.red)
+GREEN = Style(foreground=Color.green)
+BLUE = Style(foreground=Color.blue)
+CYAN = Style(foreground=Color.cyan)
+UNDERLINE = Style(underline=True)
+INVERT = Style(invert=True)
+
+
 @dataclass(frozen=True)
 class StyleScheme:
-    hl: Style = Style(foreground=Color.red)  # noqa: RUF009
-    error: Style = Style(foreground=Color.red)  # noqa: RUF009
-    info: Style = Style(foreground=Color.cyan)  # noqa: RUF009
-    comment: Style = Style(foreground=Color.blue)  # noqa: RUF009
-    next_command: Style = Style(underline=True)  # noqa: RUF009
-    just_updated: Style = Style(foreground=Color.green)  # noqa: RUF009
-    dirty_memory: Style = Style(foreground=Color.cyan)  # noqa: RUF009
-    breakpoint: Style = Style(invert=True)  # noqa: RUF009
+    hl: Style = RED
+    error: Style = RED
+    info: Style = CYAN
+    comment: Style = BLUE
+    next_command: Style = UNDERLINE
+    just_updated: Style = GREEN
+    dirty_memory: Style = CYAN
+    breakpoint: Style = INVERT
 
 
 class Colors:

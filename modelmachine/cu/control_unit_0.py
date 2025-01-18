@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..alu import AluRegisters
-from ..cell import Cell
-from ..memory.register import RegisterName
+from modelmachine.alu import AluRegisters
+from modelmachine.cell import Cell
+from modelmachine.memory.register import RegisterName
+
 from .control_unit import ControlUnit
 from .control_unit_s import StackAccessError
 from .opcode import (
@@ -134,7 +135,7 @@ class ControlUnit0(ControlUnit):
     _SP_MINUS: Final = frozenset(
         {Opcode.sdiv, Opcode.udiv, Opcode.push, Opcode.dup}
     )
-    _EXEC_NOP = frozenset({Opcode.push, Opcode.pop, Opcode.dup})
+    EXEC_NOP = frozenset({Opcode.push, Opcode.pop, Opcode.dup})
 
     def _execute(self) -> None:
         """Add specific commands."""

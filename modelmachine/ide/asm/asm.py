@@ -11,9 +11,7 @@ from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell
 from modelmachine.cu.opcode import OPCODE_BITS
-from modelmachine.memory.ram import Comment
-
-from ..common_parsing import (
+from modelmachine.ide.common_parsing import (
     ch,
     identity,
     integer,
@@ -22,7 +20,9 @@ from ..common_parsing import (
     ngr,
     posinteger,
 )
-from ..directive import Directive
+from modelmachine.ide.directive import Directive
+from modelmachine.memory.ram import Comment
+
 from .errors import (
     DuplicateLabelError,
     ExpectedPositiveIntegerError,
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
     from modelmachine.cpu.cpu import Cpu
     from modelmachine.cu.control_unit import ControlUnit
     from modelmachine.cu.opcode import CommonOpcode
-    from modelmachine.io import InputOutputUnit
 
 
 REG_BITS = 4
@@ -233,7 +232,6 @@ def enroll(operands: Sequence[Operand]) -> Iterator[Operand]:
 class Asm:
     _opcode_table: Final[dict[CommonOpcode, Sequence[Operand]]]
     _cpu: Final[Cpu]
-    _io: Final[InputOutputUnit]
     _labels: dict[str, Link]
     _refs: list[Ref]
     _cur_func: Label | None
@@ -243,7 +241,6 @@ class Asm:
     def __init__(self, cpu: Cpu):
         self._opcode_table = OPCODE_TABLE[type(cpu.control_unit)]
         self._cpu = cpu
-        self._io = cpu._io_unit  # noqa: SLF001
         self._labels = {}
         self._refs = []
         self._cur_addr = Cell(0, bits=self._cpu.ram.address_bits)
@@ -314,7 +311,7 @@ class Asm:
             int(opcode) << (instr_bits - OPCODE_BITS), bits=instr_bits
         )
         instr_addr = self._cur_addr
-        instr_len = self._io.put_code(
+        instr_len = self._cpu.io_unit.put_code(
             address=self._cur_addr,
             value=instr,
         )
@@ -341,7 +338,7 @@ class Asm:
                 addr = self.address(
                     pstr, loc, instr_addr, decl, arg, immediate=True
                 )
-                self._io.override(
+                self._cpu.io_unit.override(
                     address=instr_addr,
                     offset_bits=decl.offset_bits,
                     value=addr,
@@ -353,14 +350,14 @@ class Asm:
         original = "".join(word)
         x = int(original, 0)
         try:
-            self._io.check_word(x)
+            self._cpu.io_unit.check_word(x)
         except ValueError as exc:
             msg = f"Too long literal '{x}' in .word directive"
             raise TooLongWordError(pstr=pstr, loc=loc, msg=msg) from exc
         word_addr = self._cur_addr
         word_len = self._cpu.ram.put(
             address=self._cur_addr,
-            value=Cell(x, bits=self._io.io_bits),
+            value=Cell(x, bits=self._cpu.io_unit.io_bits),
         )
         self._cur_addr += word_len
         com = "".join(self._cur_labels).ljust(8) + original
@@ -421,7 +418,7 @@ class Asm:
             addr = self.address(
                 ref.label.pstr, ref.label.loc, ref.addr, ref.decl, int_addr
             )
-            self._io.override(
+            self._cpu.io_unit.override(
                 address=ref.addr,
                 offset_bits=ref.decl.offset_bits,
                 value=addr,

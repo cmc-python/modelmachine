@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from modelmachine.cu.control_unit_3 import ControlUnit3
-
-from ..operand import Operand
+from modelmachine.ide.asm.operand import Operand
 
 if TYPE_CHECKING:
     from typing import Final, Sequence

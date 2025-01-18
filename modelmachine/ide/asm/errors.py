@@ -1,4 +1,4 @@
-from ..common_parsing import ParsingError
+from modelmachine.ide.common_parsing import ParsingError
 
 
 class UndefinedLabelError(ParsingError):
