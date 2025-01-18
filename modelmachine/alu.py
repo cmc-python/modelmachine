@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import operator
 from dataclasses import dataclass
 from enum import Flag
 from typing import TYPE_CHECKING
@@ -141,16 +142,16 @@ class ArithmeticLogicUnit:
 
     def add(self) -> None:
         """S := R1 + R2."""
-        self._binary_op(lambda a, b: a + b, lambda a, b: a + b)
+        self._binary_op(operator.add, operator.add)
 
     def sub(self) -> None:
         """S := R1 - R2."""
-        self._binary_op(lambda a, b: a - b, lambda a, b: a - b)
+        self._binary_op(operator.sub, operator.sub)
 
     def umul(self) -> None:
         """S := R1 * R2 (unsigned)."""
         self._binary_op(
-            lambda a, b: a * b,
+            operator.mul,
             lambda a, b: a.umul(b),
             op_type=OperationType.UNSIGNED,
         )
@@ -158,7 +159,7 @@ class ArithmeticLogicUnit:
     def smul(self) -> None:
         """S := R1 * R2 (signed)."""
         self._binary_op(
-            lambda a, b: a * b,
+            operator.mul,
             lambda a, b: a.smul(b),
             op_type=OperationType.SIGNED,
         )

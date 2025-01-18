@@ -345,7 +345,7 @@ class Ide:
         page_addr = Cell(page_part.start, bits=self.cpu.ram.address_bits)
 
         before = self._before_space(page_part.start)
-        return f"{page_addr}:{before}{self._format_range(page_part,current_cmd)}\n"
+        return f"{page_addr}:{before}{self._format_range(page_part, current_cmd)}\n"
 
     def _format_page(
         self,
@@ -389,11 +389,12 @@ class Ide:
     def dump_full_memory(self) -> None:
         page_set: set[int] = set()
         for interval in self.cpu.ram.filled_intervals:
-            for i in range(
-                interval.start // self._page_size,
-                ceil_div(interval.stop, self._page_size),
-            ):
-                page_set.add(i)
+            page_set.update(
+                range(
+                    interval.start // self._page_size,
+                    ceil_div(interval.stop, self._page_size),
+                )
+            )
 
         page_list = sorted(page_set)
         current_cmd = self.current_cmd

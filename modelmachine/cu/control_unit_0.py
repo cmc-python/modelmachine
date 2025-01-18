@@ -161,9 +161,7 @@ class ControlUnit0(ControlUnit):
                     f"stack size={self._stack_size}"
                 )
                 raise StackAccessError(msg)
-            self._registers[RegisterName.SP] = (
-                self._registers[RegisterName.SP] + self._a_word_unsigned
-            )
+            self._registers[RegisterName.SP] += self._a_word_unsigned
 
     _WB_R1: Final = frozenset(
         {

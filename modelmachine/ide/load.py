@@ -35,7 +35,7 @@ def load_from_file(
     if filename == "-":
         source_code = sys.stdin.read()
     else:
-        with open(filename) as fin:
+        with open(filename, encoding="utf-8") as fin:
             source_code = fin.read()
 
     cpu = source(source_code, protect_memory=protect_memory)
@@ -46,7 +46,7 @@ def load_from_file(
     elif enter == "-":
         cpu.input(sys.stdin)
     else:
-        with open(enter) as fin:
+        with open(enter, encoding="utf-8") as fin:
             cpu.input(fin)
 
     return cpu

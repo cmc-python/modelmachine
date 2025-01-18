@@ -60,7 +60,7 @@ samples = Path(__file__).parent.parent.parent.resolve() / "samples"
 for f in chain(
     glob(str(samples / "*.mmach")), glob(str(samples / "asm" / "*.mmach"))
 ):
-    with open(f) as fin:
+    with open(f, encoding="utf-8") as fin:
         sample_list.append(fin.read())
 
 

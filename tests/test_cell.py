@@ -121,7 +121,7 @@ class TestCell:
         assert self.first == Cell(10, bits=8)
         assert self.first == 10
         with pytest.raises(TypeError):
-            self.first.__eq__(Cell(10, bits=16))
+            assert self.first == Cell(10, bits=16)
 
     def test_divmod(self) -> None:
         """Test  method."""

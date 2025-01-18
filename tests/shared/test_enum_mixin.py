@@ -42,16 +42,48 @@ def test_equal() -> None:
         ):
             if x._value_ == y._value_:
                 assert x == y
-                assert x in {y}
-                assert x in {y._value_}
-                assert y in {x}
-                assert y in {x._value_}
+                same_set: set[int] | set[EnumA] = {y}
+                assert x in same_set
+                assert x._value_ in same_set
+                assert y in same_set
+                assert y._value_ in same_set
+                same_set = {y._value_}
+                assert x in same_set
+                assert x._value_ in same_set
+                assert y in same_set
+                assert y._value_ in same_set
+                same_set = {x}
+                assert x in same_set
+                assert x._value_ in same_set
+                assert y in same_set
+                assert y._value_ in same_set
+                same_set = {x._value_}
+                assert x in same_set
+                assert x._value_ in same_set
+                assert y in same_set
+                assert y._value_ in same_set
             else:
                 assert x != y
-                assert x not in {y}
-                assert x not in {y._value_}
-                assert y not in {x}
-                assert y not in {x._value_}
+                another_set: set[int] | set[EnumA] = {y}
+                assert y in another_set
+                assert y._value_ in another_set
+                assert x not in another_set
+                assert x._value_ not in another_set
+                another_set = {y._value_}
+                assert y in another_set
+                assert y._value_ in another_set
+                assert x not in another_set
+                assert x._value_ not in another_set
+                another_set = {x}
+                assert x in another_set
+                assert x._value_ in another_set
+                assert y not in another_set
+                assert y._value_ not in another_set
+                another_set = {x._value_}
+                assert x in another_set
+                assert x._value_ in another_set
+                assert y not in another_set
+                assert y._value_ not in another_set
 
 
 def test_in() -> None:

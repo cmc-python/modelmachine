@@ -21,7 +21,7 @@ samples = Path(__file__).parent.parent.resolve() / "samples"
 
 @lru_cache(maxsize=None)
 def load_sample(sample: Path) -> Cpu:
-    with open(sample) as source_code:
+    with open(sample, encoding="utf-8") as source_code:
         return source(source_code.read(), protect_memory=False)
 
 
@@ -590,7 +590,7 @@ def load_sample(sample: Path) -> Cpu:
 def test_sample(sample: Path, enter: str, output: str) -> None:
     cpu = deepcopy(load_sample(sample))
 
-    if enter == "":
+    if not enter:
         enter = cpu.enter
 
     with StringIO(enter) as fin:

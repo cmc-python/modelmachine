@@ -38,7 +38,7 @@ def read_word(file: TextIO) -> str:
             break
         res += c
 
-    if res == "":
+    if not res:
         msg = "Not enough elements in the input"
         raise NotEnoughInputError(msg)
 

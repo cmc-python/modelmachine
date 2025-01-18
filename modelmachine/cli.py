@@ -203,7 +203,7 @@ def asm(
     if source == "-":
         source_code = sys.stdin.read()
     else:
-        with open(source) as fin:
+        with open(source, encoding="utf-8") as fin:
             source_code = fin.read()
 
     cpu = ide_source(source_code, protect_memory=True)
@@ -211,7 +211,7 @@ def asm(
     if output is None:
         ide_dump(cpu, sys.stdout)
     else:
-        with open(output, "w") as fout:
+        with open(output, "w", encoding="utf-8") as fout:
             ide_dump(cpu, fout)
 
     return 0

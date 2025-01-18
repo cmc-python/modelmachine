@@ -12,6 +12,22 @@ WB = 16
 AB = 8
 
 
+def test_not_protected_getitem() -> None:
+    """Test if programmer can shut in his leg."""
+    ram = RandomAccessMemory(word_bits=WB, address_bits=AB, is_protected=False)
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter("always")
+        for i in range(2):
+            assert ram._get(Cell(i, bits=AB)) == 0
+        assert len(warns) == 2
+
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter("always")
+        for i in range(2):
+            assert ram._get(Cell(i, bits=AB), from_cpu=False) == 0
+        assert len(warns) == 0
+
+
 class TestRandomAccessMemory:
     """Test case for RAM."""
 
@@ -42,23 +58,6 @@ class TestRandomAccessMemory:
         for i in range(2, 3):
             with pytest.raises(RamAccessError):
                 self._get(i)
-
-    def test_not_protected_getitem(self) -> None:
-        """Test if programmer can shut in his leg."""
-        ram = RandomAccessMemory(
-            word_bits=WB, address_bits=AB, is_protected=False
-        )
-        with warnings.catch_warnings(record=True) as warns:
-            warnings.simplefilter("always")
-            for i in range(2):
-                assert ram._get(Cell(i, bits=AB)) == 0
-            assert len(warns) == 2
-
-        with warnings.catch_warnings(record=True) as warns:
-            warnings.simplefilter("always")
-            for i in range(2):
-                assert ram._get(Cell(i, bits=AB), from_cpu=False) == 0
-            assert len(warns) == 0
 
     def test_fetch(self) -> None:
         """Fetch is basic operation of transfer data."""

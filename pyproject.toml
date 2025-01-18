@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.17", "hatch-vcs>=0.3"]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.3"]
 build-backend = "hatchling.build"
 
 [project]
@@ -55,10 +55,10 @@ include = [
 [tool.hatch.envs.dev]
 python = "3.13"
 dependencies = [
-    "mypy>=1.13",
+    "mypy>=1.14",
     "tomli~=2.0", # For mypy
-    "pytest>=8.3",
-    "ruff==0.4.10", # Sync with hatch
+    "pytest>=7.4",
+    "ruff==0.6.9",
 ]
 [tool.hatch.envs.hatch-test]
 dependencies = [
@@ -89,7 +89,7 @@ exclude_lines = [
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff_defaults.toml"
-dependencies = ["ruff==0.4.10"]
+dependencies = ["ruff==0.6.9"]
 [tool.ruff]
 extend = "ruff_defaults.toml"
 line-length = 79
