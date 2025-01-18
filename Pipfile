@@ -6,13 +6,12 @@ name = "pypi"
 [packages]
 prompt-toolkit = "*"
 pyparsing = "*"
-typing-extensions = "*"
 
 [dev-packages]
 hatch = "~=1.14"
-mypy = "~=1.10"
-pytest = ">=7.4"
-ruff = "0.9.2"
+mypy = "*"
+pytest = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.7"
