@@ -94,12 +94,18 @@ extend = "ruff_defaults.toml"
 line-length = 79
 indent-width = 4
 target-version = "py37"
+[tool.ruff.lint]
+preview = true
+ignore = [
+    "S101",
+]
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**/*" = [
     "PLR2004",
     "SLF001",
+    "S101",
 ]
 
 [tool.mypy]

@@ -5,8 +5,6 @@ docstring-code-format = true
 docstring-code-line-length = 80
 
 [lint]
-preview = true
-
 select = [
   "A001",
   "A002",
@@ -471,6 +469,7 @@ select = [
   "RUF029",
   "RUF100",
   "RUF101",
+  "S101",
   "S102",
   "S103",
   "S104",
@@ -670,7 +669,7 @@ select = [
 ban-relative-imports = "all"
 
 [lint.isort]
-known-first-party = ["modelmachine"]
+known-first-party = ["hatch"]
 
 [lint.flake8-pytest-style]
 fixture-parentheses = false
