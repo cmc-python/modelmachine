@@ -3,8 +3,10 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
-from prompt_toolkit import ANSI, print_formatted_text
+from prompt_toolkit import ANSI
 from prompt_toolkit import prompt as pprompt
+
+from .is_interactive import is_ipython
 
 if TYPE_CHECKING:
     from typing import TextIO
@@ -15,38 +17,37 @@ class NotEnoughInputError(SystemExit):
 
 
 def printf(out: str, *, end: str = "\n", file: TextIO = sys.stdout) -> None:
-    if file.isatty():
-        print_formatted_text(ANSI(out), end=end, file=file)
-    else:
-        print(out, end=end, file=file)
+    print(out, end=end, file=file)
 
 
-def read_word(file: TextIO) -> str:
-    res = ""
-    while True:
-        c = file.read(1)
-        if not c:
-            break
+class ReadCache:
+    res: list[str]
 
-        if not c.isspace():
-            res += c
-            break
-
-    while True:
-        c = file.read(1)
-        if not c or c.isspace():
-            break
-        res += c
-
-    if not res:
-        msg = "Not enough elements in the input"
-        raise NotEnoughInputError(msg)
-
-    return res
+    def __init__(self) -> None:
+        self.res = []
 
 
-def prompt(inp: str, *, file: TextIO = sys.stdin) -> str:
-    if file.isatty() and file is sys.stdin:
-        return pprompt(ANSI(inp))
+def read_word(file: TextIO, cache: ReadCache) -> str:
+    while not cache.res:
+        line = file.readline()
+        if not line:
+            msg = "Not enough elements in the input"
+            raise NotEnoughInputError(msg)
+        cache.res = line.split()
+        cache.res.reverse()
 
-    return read_word(file)
+    return cache.res.pop()
+
+
+def prompt(
+    inp: str, *, cache: ReadCache | None = None, file: TextIO = sys.stdin
+) -> str:
+    if file is sys.stdin:
+        if file.isatty():
+            return pprompt(ANSI(inp))
+        if is_ipython():
+            return input(inp)
+
+    if cache is None:
+        cache = ReadCache()
+    return read_word(file, cache)

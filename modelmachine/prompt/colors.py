@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from modelmachine.ide.user_config import user_config
 
+from .is_interactive import is_interactive
+
 if TYPE_CHECKING:
     from typing import Callable, Final
 
@@ -83,7 +85,7 @@ class Colors:
 
         self.enabled = (
             enabled
-            and sys.stdout.isatty()
+            and is_interactive(sys.stdout)
             and user_colors.get("enabled", True)
         )
 

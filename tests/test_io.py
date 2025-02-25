@@ -32,9 +32,13 @@ class TestIODevice:
 
     def test_input(self) -> None:
         """Test load data by addresses."""
-        with io.StringIO("-123") as fin:
+        with io.StringIO("-123\n\n  456 789  \n\n") as fin:
             self.io_unit.input(address=10, message="Slot 10", file=fin)
-        assert self.ram.fetch(Cell(10, bits=AB), bits=WB) == -123
+            assert self.ram.fetch(Cell(10, bits=AB), bits=WB) == -123
+            self.io_unit.input(address=20, message="Slot 20", file=fin)
+            assert self.ram.fetch(Cell(20, bits=AB), bits=WB) == 456
+            self.io_unit.input(address=30, message="Slot 30", file=fin)
+            assert self.ram.fetch(Cell(30, bits=AB), bits=WB) == 789
 
         with io.StringIO("") as fin, pytest.raises(
             SystemExit, match="Not enough elements"

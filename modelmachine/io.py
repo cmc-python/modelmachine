@@ -8,7 +8,14 @@ from typing import TYPE_CHECKING
 
 from .cell import Cell, Endianess, ceil_div
 from .memory.register import RegisterName
-from .prompt.prompt import printf, prompt
+from .prompt.is_interactive import is_interactive
+from .prompt.prompt import (
+    NotEnoughInputError,
+    ReadCache,
+    printf,
+    prompt,
+    read_word,
+)
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
@@ -28,6 +35,7 @@ class InputOutputUnit:
     io_bits: Final[int]
     _min_v: Final[int]
     _max_v: Final[int]
+    _cache: ReadCache
 
     def __init__(
         self,
@@ -45,6 +53,7 @@ class InputOutputUnit:
         self.io_bits = io_bits
         self._min_v = -(1 << (io_bits - 1))
         self._max_v = 1 << io_bits
+        self._cache = ReadCache()
 
     def check_word(self, word: int) -> int:
         if not (self._min_v <= word < self._max_v):
@@ -88,13 +97,15 @@ class InputOutputUnit:
         value: int | None = None
         while value is None:
             try:
-                value_str = prompt(f"{message} = ", file=file)
+                value_str = prompt(
+                    f"{message} = ", file=file, cache=self._cache
+                )
                 value = self.check_word(int(value_str, 0))
 
             except ValueError as e:
                 print_exc()
                 msg = f"Cannot parse integer '{value_str}', please repeat"
-                if file.isatty():
+                if is_interactive(file):
                     printf(msg, file=sys.stderr)
                 else:
                     raise SystemExit(msg) from e
@@ -106,6 +117,16 @@ class InputOutputUnit:
             value=Cell(value, bits=self.io_bits),
             from_cpu=False,
         )
+
+    def check_input_empty(self, file: TextIO) -> None:
+        if not is_interactive(file):
+            try:
+                read_word(file, self._cache)
+            except NotEnoughInputError:
+                pass
+            else:
+                msg = "Too many elements in the input"
+                raise SystemExit(msg)
 
     def output(
         self,
@@ -148,7 +169,7 @@ class InputOutputUnit:
         file: TextIO,
     ) -> None:
         value = self._ram.fetch(addr, bits=self.io_bits).signed
-        if file.isatty():
+        if is_interactive(file):
             printf(f"{message} = {value}", file=file)
         else:
             printf(str(value), file=file)

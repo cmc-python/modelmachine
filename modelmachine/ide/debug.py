@@ -6,7 +6,6 @@ import signal
 import sys
 import warnings
 from contextlib import contextmanager
-from traceback import print_exc
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
@@ -14,11 +13,11 @@ from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell, ceil_div
-from modelmachine.cu.halt_error import HaltError
 from modelmachine.cu.opcode import OPCODE_BITS, CommonOpcode
 from modelmachine.cu.status import Status
 from modelmachine.memory.register import RegisterName
 from modelmachine.prompt.colors import Colors
+from modelmachine.prompt.is_interactive import is_ipython
 from modelmachine.prompt.prompt import printf, prompt
 
 from .common_parsing import kw, posinteger
@@ -52,6 +51,12 @@ def tabulate(data: list[tuple[Callable[[str], str], str, str]]) -> str:
         "  " + style(f"{elem.ljust(elem_width)}  {descr}")
         for style, elem, descr in data
     )
+
+
+class InputSession:
+    @staticmethod
+    def prompt(inp: str) -> str:
+        return input(inp)
 
 
 class Ide:
@@ -88,10 +93,18 @@ class Ide:
 
     @contextmanager
     def running(self) -> Iterator[None]:
+        prev_handler = signal.getsignal(signal.SIGINT)
+        assert callable(prev_handler)
+
+        def handler(_signum: int, _frame: FrameType | None) -> None:
+            self._running = False
+
         self._running = True
+        signal.signal(signal.SIGINT, handler)
         try:
             yield
         finally:
+            signal.signal(signal.SIGINT, prev_handler)
             self._running = False
 
     @property
@@ -489,13 +502,16 @@ class Ide:
         return self._quit
 
     def run(self) -> int:
+        session: PromptSession[str] | InputSession = PromptSession()
+
         if not (
             sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()
         ):
-            msg = (
-                "Debug should be run from console; found io stream redirection"
-            )
-            raise ValueError(msg)
+            if is_ipython():
+                session = InputSession()
+            else:
+                msg = "Debug should be run from console; found io stream redirection"
+                raise ValueError(msg)
 
         addr = Cell(0, bits=self.cpu.ram.address_bits)
         cell = Cell(0, bits=self.cpu.ram.word_bits)
@@ -533,21 +549,7 @@ class Ide:
             f"  {self.c.hl('q')}uit\n"
         )
 
-        session: PromptSession[str] = PromptSession()
         command = ""
-
-        def exit_gracefully(_signum: int, _frame: FrameType | None) -> None:
-            if self._running:
-                self._running = False
-                printf(self.c.info("Interrupted"))
-                return
-
-            signal.signal(signal.SIGINT, original_sigint)
-            self.confirm_quit()
-            signal.signal(signal.SIGINT, exit_gracefully)
-
-        original_sigint = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, exit_gracefully)
 
         need_help = True
         while not self._quit:
@@ -557,21 +559,17 @@ class Ide:
             try:
                 command = session.prompt("> ") or command
             except (KeyboardInterrupt, EOFError):
-                self.confirm_quit()
+                if not self._quit:
+                    self.confirm_quit()
                 continue
 
-            try:
-                with warnings.catch_warnings(record=True) as warns:
-                    warnings.simplefilter("always")
+            with warnings.catch_warnings(record=True) as warns:
+                warnings.simplefilter("always")
 
-                    need_help = not self.cmd(command)
+                need_help = not self.cmd(command)
 
-                    for warn in warns:
-                        printf(f"Warning: {warn.message}")
-
-            except HaltError:
-                print_exc()
-                return 1
+                for warn in warns:
+                    printf(f"Warning: {warn.message}")
 
         return 0
 

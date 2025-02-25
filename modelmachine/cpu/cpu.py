@@ -27,7 +27,6 @@ from modelmachine.cu.control_unit_v import ControlUnitV
 from modelmachine.io import InputOutputUnit
 from modelmachine.memory.ram import RandomAccessMemory
 from modelmachine.memory.register import RegisterMemory
-from modelmachine.prompt.prompt import NotEnoughInputError, read_word
 
 if TYPE_CHECKING:
     from typing import Final, TextIO
@@ -95,14 +94,7 @@ class Cpu:
                 address=req.address, message=req.message, file=file
             )
 
-        if not file.isatty():
-            try:
-                read_word(file)
-            except NotEnoughInputError:
-                pass
-            else:
-                msg = "Too many elements in the input"
-                raise SystemExit(msg)
+        self.io_unit.check_input_empty(file)
 
         self.ram.access_count = 0
 

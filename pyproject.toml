@@ -88,7 +88,7 @@ exclude_lines = [
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff_defaults.toml"
-dependencies = ["ruff>=0.9.2"]
+dependencies = ["ruff>=0.9.7"]
 [tool.ruff]
 extend = "ruff_defaults.toml"
 line-length = 79
