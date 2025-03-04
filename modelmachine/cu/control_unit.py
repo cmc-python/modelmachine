@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from traceback import print_exc
 from typing import TYPE_CHECKING
 from warnings import warn
 
 from modelmachine.alu import EQUAL, GREATER, LESS, Flags
 from modelmachine.cell import Cell
 from modelmachine.memory.register import RegisterName
+from modelmachine.prompt.prompt import printf
 
 from .halt_error import HaltError
 from .opcode import OPCODE_BITS, CommonOpcode
@@ -129,8 +129,8 @@ class ControlUnit:
             self._load()
             self._execute()
             self._write_back()
-        except HaltError:
-            print_exc()
+        except HaltError as exc:
+            printf(str(exc))
             warn("Because of previous exception cpu halted", stacklevel=1)
             self._failed = True
             self._alu.halt()

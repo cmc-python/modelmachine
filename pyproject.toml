@@ -57,6 +57,7 @@ python = "3.13"
 dependencies = [
     "mypy",
     "tomli~=2.0", # For mypy
+    "ipython~=9.0", # For mypy
     "pytest",
     "ruff",
 ]
