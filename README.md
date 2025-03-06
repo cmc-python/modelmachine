@@ -678,6 +678,7 @@ Model machine emulator
 
 - [Config](docs/config.md)
 - [Assembler](docs/assembler.md)
+- [IPython/Jupyter integration](docs/ipython.md)
 - [Implementation](docs/implementation.md)
 - [Development](docs/development.md)
 - [Road map](docs/todo.md)
