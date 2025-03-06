@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -U pip
-        pip install hatch~=1.13
+        pip install hatch==1.14.0
         hatch build # Generate __about__.py
     - name: Run tests
       run: |
@@ -42,7 +42,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -U pip
-        pip install hatch~=1.13
+        pip install hatch==1.14.0
         hatch build
     - name: Linting
       run: |

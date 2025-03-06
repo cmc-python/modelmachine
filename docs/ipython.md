@@ -1,18 +1,18 @@
 # IPython
 
 Поддерживается интеграция в ipython/jupyter с помощью
-cell magic.
+[cell magic](https://ipython.org/ipython-doc/stable/interactive/reference.html#magic-command-system).
 
-Сначала выполните
+Сначала выполните импорт
 
 ```py
 import modelmachine.ipython
 ```
 
 Затем можете использовать cell magic:
-- `mm.debug` - отладка
-- `mm.run` - запуск
-- `mm.asm` - ассемблирование
+- `%%mm.debug` - отладка
+- `%%mm.run` - запуск
+- `%%mm.asm` - ассемблирование
 
 ```py
 %%mm.debug

@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import pyparsing as pp
-from prompt_toolkit import PromptSession
 from pyparsing import Group as Gr
 
 from modelmachine.cell import Cell, ceil_div
@@ -17,7 +16,7 @@ from modelmachine.cu.opcode import OPCODE_BITS, CommonOpcode
 from modelmachine.cu.status import Status
 from modelmachine.memory.register import RegisterName
 from modelmachine.prompt.colors import Colors
-from modelmachine.prompt.is_interactive import is_ipython
+from modelmachine.prompt.is_interactive import is_interactive
 from modelmachine.prompt.prompt import printf, prompt
 
 from .common_parsing import kw, posinteger
@@ -51,12 +50,6 @@ def tabulate(data: list[tuple[Callable[[str], str], str, str]]) -> str:
         "  " + style(f"{elem.ljust(elem_width)}  {descr}")
         for style, elem, descr in data
     )
-
-
-class InputSession:
-    @staticmethod
-    def prompt(inp: str) -> str:
-        return input(inp)
 
 
 class Ide:
@@ -502,16 +495,13 @@ class Ide:
         return self._quit
 
     def run(self) -> int:
-        session: PromptSession[str] | InputSession = PromptSession()
-
-        if not (
-            sys.stdin.isatty() and sys.stdout.isatty() and sys.stderr.isatty()
+        if not all(
+            is_interactive(f) for f in (sys.stdin, sys.stdout, sys.stderr)
         ):
-            if is_ipython():
-                session = InputSession()
-            else:
-                msg = "Debug should be run from console; found io stream redirection"
-                raise ValueError(msg)
+            msg = (
+                "Debug should be run from console; found io stream redirection"
+            )
+            raise ValueError(msg)
 
         addr = Cell(0, bits=self.cpu.ram.address_bits)
         cell = Cell(0, bits=self.cpu.ram.word_bits)
@@ -557,7 +547,7 @@ class Ide:
                 printf(instruction)
 
             try:
-                command = session.prompt("> ") or command
+                command = prompt("> ") or command
             except (KeyboardInterrupt, EOFError):
                 if not self._quit:
                     self.confirm_quit()

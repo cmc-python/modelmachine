@@ -27,8 +27,7 @@ classifiers = [
 ]
 requires-python = ">=3.7"
 dependencies = [
-    "pyparsing~=3.1", # Last version supported python=3.7
-    "prompt_toolkit~=3.0",
+    "pyparsing==3.1.4", # Python 3.7
     'tomli~=2.0; python_version<"3.11"',
 ]
 
@@ -55,15 +54,15 @@ include = [
 [tool.hatch.envs.dev]
 python = "3.13"
 dependencies = [
-    "mypy",
+    "mypy==1.15.0",
     "tomli~=2.0", # For mypy
     "ipython~=9.0", # For mypy
-    "pytest",
-    "ruff",
+    "pytest==7.4.4",  # Python 3.7
+    "ruff==0.9.9",
 ]
 [tool.hatch.envs.hatch-test]
 dependencies = [
-    "pytest",
+    "pytest==7.4.4",  # Python 3.7
 ]
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.13", "3.8", "3.7"]
@@ -89,7 +88,7 @@ exclude_lines = [
 
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff_defaults.toml"
-dependencies = ["ruff>=0.9.7"]
+dependencies = ["ruff==0.9.9"]
 [tool.ruff]
 extend = "ruff_defaults.toml"
 line-length = 79

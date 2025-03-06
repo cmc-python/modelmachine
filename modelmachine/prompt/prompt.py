@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 from typing import TYPE_CHECKING
 
-from prompt_toolkit import ANSI
-from prompt_toolkit import prompt as pprompt
+from .is_interactive import is_interactive
 
-from .is_interactive import is_ipython
+with contextlib.suppress(ModuleNotFoundError):
+    import readline  # noqa: F401
 
 if TYPE_CHECKING:
     from typing import TextIO
@@ -42,11 +43,8 @@ def read_word(file: TextIO, cache: ReadCache) -> str:
 def prompt(
     inp: str, *, cache: ReadCache | None = None, file: TextIO = sys.stdin
 ) -> str:
-    if file is sys.stdin:
-        if file.isatty():
-            return pprompt(ANSI(inp))
-        if is_ipython():
-            return input(inp)
+    if is_interactive(file):
+        return input(inp)
 
     if cache is None:
         cache = ReadCache()

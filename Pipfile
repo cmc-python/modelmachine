@@ -4,14 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-prompt-toolkit = "*"
-pyparsing = "*"
+pyparsing = "3.1.4" # Python 3.7
 
 [dev-packages]
-hatch = "~=1.14"
-mypy = "*"
-pytest = "*"
-ruff = "*"
+hatch = "==1.14.0"
+mypy = "==1.15.0"
+pytest = "==7.4.4" # Python 3.7
+ruff = "==0.9.9"
 
 [requires]
 python_version = "3.13"
